@@ -68,7 +68,7 @@ const APPS: App[] = [
     description: 'Automated migration tool for transitioning Edge Services configurations from XIQ to Campus Controller',
     isActive: false,
     icon: Layers,
-    url: 'https://web-production-81c27.up.railway.app/'
+    url: 'https://xiq-edge-migration.up.railway.app/login'
   }
 ];
 
