@@ -61,6 +61,14 @@ const APPS: App[] = [
     isActive: false,
     icon: Key,
     url: 'https://keyai.extremecloudiq.com/'
+  },
+  {
+    id: 'xiq-edge-migration',
+    name: 'XIQ Edge Migration',
+    description: 'Automated migration tool for transitioning Edge Services configurations from XIQ to Campus Controller',
+    isActive: false,
+    icon: Layers,
+    url: 'https://web-production-81c27.up.railway.app/'
   }
 ];
 
