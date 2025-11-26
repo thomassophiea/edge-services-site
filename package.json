@@ -48,7 +48,8 @@
           "recharts": "^2.15.2",
           "sonner": "^2.0.3",
           "tailwind-merge": "*",
-          "vaul": "^1.1.2"
+          "vaul": "^1.1.2",
+          "serve": "^14.2.4"
       },
       "devDependencies": {
           "@types/node": "^20.10.0",
@@ -57,6 +58,7 @@
       },
       "scripts": {
           "dev": "vite",
-          "build": "vite build"
+          "build": "vite build",
+          "start": "serve build -s -l 3000"
       }
   }
