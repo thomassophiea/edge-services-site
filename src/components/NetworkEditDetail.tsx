@@ -13,7 +13,7 @@ import { AlertCircle, Save, RefreshCw, Plus, Trash2, Network, Shield, Wifi, Sett
 import { Alert, AlertDescription } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
 import { ScrollArea } from './ui/scroll-area';
-import { apiService, Service, Role } from '../services/api';
+import { apiService, Service, Role, Topology, AaaPolicy, ClassOfService } from '../services/api';
 import { generateDefaultService, generatePrivacyConfig, validateServiceData } from '../utils/serviceDefaults';
 import { toast } from 'sonner';
 
@@ -139,6 +139,9 @@ interface NetworkFormData {
 export function NetworkEditDetail({ serviceId, onSave, isInline = false }: NetworkEditDetailProps) {
   const [service, setService] = useState<Service | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [topologies, setTopologies] = useState<Topology[]>([]);
+  const [aaaPolicies, setAaaPolicies] = useState<AaaPolicy[]>([]);
+  const [cosOptions, setCosOptions] = useState<ClassOfService[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +152,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
     ssid: '',
     description: '',
     enabled: true,
-    
+
     // Security Configuration
     securityType: 'open',
     privacyType: '',
@@ -157,37 +160,98 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
     authMethod: '',
     encryption: 'none',
     passphrase: '',
-    
+
+    // WPA3-SAE Configuration
+    pmfMode: 'disabled',
+    saeMethod: 'SaeH2e',
+    beaconProtection: false,
+
+    // OWE (Enhanced Open)
+    oweAutogen: false,
+    oweCompanion: '',
+
     // Network Settings
     vlan: '',
+    defaultTopology: '',
+    proxied: 'Local',
     band: 'both',
     channel: 'auto',
     broadcastSSID: true,
     hidden: false,
-    
+
+    // AAA/RADIUS
+    aaaPolicyId: '',
+    accountingEnabled: false,
+
+    // Fast Transition (802.11r)
+    fastTransitionEnabled: false,
+    fastTransitionMdId: 0,
+
+    // Role Assignment
+    authenticatedUserDefaultRoleID: '',
+    unAuthenticatedUserDefaultRoleID: '',
+    mbatimeoutRoleId: '',
+
+    // 802.11k/v/r Support
+    enabled11kSupport: false,
+    rm11kBeaconReport: false,
+    rm11kQuietIe: false,
+    enable11mcSupport: false,
+
+    // Band Steering
+    bandSteering: false,
+    mbo: false,
+
     // Access Control
     captivePortal: false,
+    captivePortalType: '',
+    eGuestPortalId: '',
     guestAccess: false,
     macBasedAuth: false,
+    mbaAuthorization: false,
     macWhitelistEnabled: false,
     macBlacklistEnabled: false,
-    
+
     // Client Management
     maxClients: 100,
     maxClientsPer24: 50,
     maxClientsPer5: 50,
     sessionTimeout: 0,
+    preAuthenticatedIdleTimeout: 300,
+    postAuthenticatedIdleTimeout: 1800,
     idleTimeout: 0,
-    
+    clientToClientCommunication: true,
+    flexibleClientAccess: false,
+    purgeOnDisconnect: false,
+    includeHostname: false,
+
     // Quality of Service
+    defaultCoS: '',
     bandwidthLimitEnabled: false,
     downloadLimit: 0,
     uploadLimit: 0,
     priorityLevel: 'normal',
-    
-    // Advanced Settings
-    defaultAuthRole: 'none',
+    uapsdEnabled: true,
+    admissionControlVideo: false,
+    admissionControlVoice: false,
+    admissionControlBestEffort: false,
+    admissionControlBackgroundTraffic: false,
+
+    // Hotspot 2.0
+    hotspotType: 'Disabled',
     hotspot: false,
+
+    // Roaming
+    roamingAssistPolicy: '',
+
+    // Vendor Attributes
+    vendorSpecificAttributes: ['apName', 'vnsName', 'ssid'],
+
+    // Mesh
+    shutdownOnMeshpointLoss: false,
+
+    // Advanced Settings (Legacy)
+    defaultAuthRole: 'none',
     isolateClients: false,
     fastRoaming: false,
     loadBalancing: false,
@@ -204,83 +268,169 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
       setLoading(true);
       setError(null);
 
-      // Load service details and roles in parallel
-      const [serviceResponse, rolesResponse] = await Promise.allSettled([
+      // Load all data sources in parallel
+      const [serviceResponse, rolesResponse, topologiesResponse, aaaPoliciesResponse, cosResponse] = await Promise.allSettled([
         apiService.getServiceById(serviceId),
-        apiService.getRoles()
+        apiService.getRoles(),
+        apiService.getTopologies(),
+        apiService.getAaaPolicies(),
+        apiService.getClassOfService()
       ]);
 
       if (serviceResponse.status === 'fulfilled') {
         const serviceData = serviceResponse.value;
         setService(serviceData);
-        
-        // Debug: Log service data to understand the structure
+
         console.log('Loading service data:', serviceData);
-        
-        // Map service data to comprehensive form data
+
+        // Get WPA3-SAE configuration
+        const saeElement = serviceData.privacy?.WpaSaeElement || serviceData.WpaSaeElement;
+        const pskElement = serviceData.privacy?.WpaPskElement || serviceData.WpaPskElement;
+        const enterpriseElement = serviceData.privacy?.WpaEnterpriseElement || serviceData.WpaEnterpriseElement;
+
+        // Map service data to comprehensive form data with ALL Campus Controller fields
         const mappedFormData = {
           // Basic Settings
-          name: serviceData.name || serviceData.ssid || 'Unnamed Network',
+          name: serviceData.serviceName || serviceData.name || serviceData.ssid || 'Unnamed Network',
           ssid: serviceData.ssid || serviceData.name || '',
           description: serviceData.description || '',
-          enabled: serviceData.enabled !== false,
-          
+          enabled: serviceData.enabled !== false && serviceData.status !== 'disabled',
+
           // Security Configuration
           securityType: serviceData.security?.type || serviceData.securityType || 'open',
           privacyType: serviceData.security?.privacyType || serviceData.privacyType || '',
           authType: serviceData.security?.authType || serviceData.authType || '',
           authMethod: serviceData.security?.authMethod || serviceData.authMethod || '',
           encryption: serviceData.security?.encryption || serviceData.encryption || 'none',
-          passphrase: serviceData.security?.passphrase || serviceData.passphrase || '',
-          
+          passphrase: pskElement?.presharedKey || saeElement?.presharedKey || serviceData.security?.passphrase || serviceData.passphrase || '',
+
+          // WPA3-SAE Configuration
+          pmfMode: saeElement?.pmfMode || pskElement?.pmfMode || enterpriseElement?.pmfMode || 'disabled',
+          saeMethod: saeElement?.saeMethod || 'SaeH2e',
+          beaconProtection: serviceData.beaconProtection || false,
+
+          // OWE (Enhanced Open)
+          oweAutogen: serviceData.oweAutogen || false,
+          oweCompanion: serviceData.oweCompanion || '',
+
           // Network Settings
           vlan: (serviceData.vlan || serviceData.dot1dPortNumber || '').toString(),
+          defaultTopology: serviceData.defaultTopology || '',
+          proxied: serviceData.proxied || 'Local',
           band: serviceData.band || 'both',
           channel: serviceData.channel?.toString() || 'auto',
-          broadcastSSID: serviceData.broadcastSSID !== false,
-          hidden: serviceData.hidden || serviceData.broadcastSSID === false || false,
-          
+          broadcastSSID: !serviceData.suppressSsid && serviceData.broadcastSSID !== false,
+          hidden: serviceData.suppressSsid || serviceData.hidden || false,
+
+          // AAA/RADIUS
+          aaaPolicyId: serviceData.aaaPolicyId || '',
+          accountingEnabled: serviceData.accountingEnabled || false,
+
+          // Fast Transition (802.11r)
+          fastTransitionEnabled: enterpriseElement?.fastTransitionEnabled || false,
+          fastTransitionMdId: enterpriseElement?.fastTransitionMdId || 0,
+
+          // Role Assignment
+          authenticatedUserDefaultRoleID: serviceData.authenticatedUserDefaultRoleID || '',
+          unAuthenticatedUserDefaultRoleID: serviceData.unAuthenticatedUserDefaultRoleID || '',
+          mbatimeoutRoleId: serviceData.mbatimeoutRoleId || '',
+
+          // 802.11k/v/r Support
+          enabled11kSupport: serviceData.enabled11kSupport || false,
+          rm11kBeaconReport: serviceData.rm11kBeaconReport || false,
+          rm11kQuietIe: serviceData.rm11kQuietIe || false,
+          enable11mcSupport: serviceData.enable11mcSupport || false,
+
+          // Band Steering
+          bandSteering: serviceData.bandSteering || false,
+          mbo: serviceData.mbo || false,
+
           // Access Control
-          captivePortal: serviceData.captivePortal || serviceData.webPortal || false,
-          guestAccess: serviceData.guestAccess || serviceData.guest || false,
-          macBasedAuth: serviceData.macBasedAuth || serviceData.macAuth || false,
+          captivePortal: serviceData.captivePortal || serviceData.enableCaptivePortal || false,
+          captivePortalType: serviceData.captivePortalType || '',
+          eGuestPortalId: serviceData.eGuestPortalId || '',
+          guestAccess: serviceData.guestAccess || false,
+          macBasedAuth: serviceData.macBasedAuth || false,
+          mbaAuthorization: serviceData.mbaAuthorization || false,
           macWhitelistEnabled: serviceData.macWhitelistEnabled || false,
           macBlacklistEnabled: serviceData.macBlacklistEnabled || false,
-          
+
           // Client Management
-          maxClients: serviceData.maxClients || serviceData.maxUsers || 100,
+          maxClients: serviceData.maxClients || 100,
           maxClientsPer24: serviceData.maxClientsPer24 || 50,
           maxClientsPer5: serviceData.maxClientsPer5 || 50,
           sessionTimeout: serviceData.sessionTimeout || 0,
+          preAuthenticatedIdleTimeout: serviceData.preAuthenticatedIdleTimeout || 300,
+          postAuthenticatedIdleTimeout: serviceData.postAuthenticatedIdleTimeout || 1800,
           idleTimeout: serviceData.idleTimeout || 0,
-          
+          clientToClientCommunication: serviceData.clientToClientCommunication !== false,
+          flexibleClientAccess: serviceData.flexibleClientAccess || false,
+          purgeOnDisconnect: serviceData.purgeOnDisconnect || false,
+          includeHostname: serviceData.includeHostname || false,
+
           // Quality of Service
+          defaultCoS: serviceData.defaultCoS || '',
           bandwidthLimitEnabled: serviceData.bandwidthLimitEnabled || false,
           downloadLimit: serviceData.downloadLimit || 0,
           uploadLimit: serviceData.uploadLimit || 0,
           priorityLevel: serviceData.priorityLevel || 'normal',
-          
-          // Advanced Settings
-          defaultAuthRole: serviceData.defaultAuthRole || serviceData.defaultRole || 'none',
-          hotspot: serviceData.hotspot || false,
-          isolateClients: serviceData.isolateClients || serviceData.clientIsolation || false,
-          fastRoaming: serviceData.fastRoaming || serviceData.roaming || false,
+          uapsdEnabled: serviceData.uapsdEnabled !== false,
+          admissionControlVideo: serviceData.admissionControlVideo || false,
+          admissionControlVoice: serviceData.admissionControlVoice || false,
+          admissionControlBestEffort: serviceData.admissionControlBestEffort || false,
+          admissionControlBackgroundTraffic: serviceData.admissionControlBackgroundTraffic || false,
+
+          // Hotspot 2.0
+          hotspotType: serviceData.hotspotType || 'Disabled',
+          hotspot: serviceData.hotspotType !== 'Disabled' && serviceData.hotspotType !== undefined,
+
+          // Roaming
+          roamingAssistPolicy: serviceData.roamingAssistPolicy || '',
+
+          // Vendor Attributes
+          vendorSpecificAttributes: serviceData.vendorSpecificAttributes || ['apName', 'vnsName', 'ssid'],
+
+          // Mesh
+          shutdownOnMeshpointLoss: serviceData.shutdownOnMeshpointLoss || false,
+
+          // Advanced Settings (Legacy fields for backward compatibility)
+          defaultAuthRole: serviceData.defaultAuthRole || 'none',
+          isolateClients: !serviceData.clientToClientCommunication,
+          fastRoaming: enterpriseElement?.fastTransitionEnabled || false,
           loadBalancing: serviceData.loadBalancing || false,
-          radiusAccounting: serviceData.radiusAccounting || false,
+          radiusAccounting: serviceData.accountingEnabled || false,
           customProperties: serviceData.customProperties || {}
         };
-        
+
         console.log('Mapped form data:', mappedFormData);
         setFormData(mappedFormData);
       } else {
         throw new Error('Failed to load service details');
       }
 
+      // Set all optional data sources
       if (rolesResponse.status === 'fulfilled') {
         setRoles(rolesResponse.value);
       } else {
-        // Silently fail - roles endpoint may not be available on all systems
         setRoles([]);
+      }
+
+      if (topologiesResponse.status === 'fulfilled') {
+        setTopologies(topologiesResponse.value);
+      } else {
+        setTopologies([]);
+      }
+
+      if (aaaPoliciesResponse.status === 'fulfilled') {
+        setAaaPolicies(aaaPoliciesResponse.value);
+      } else {
+        setAaaPolicies([]);
+      }
+
+      if (cosResponse.status === 'fulfilled') {
+        setCosOptions(cosResponse.value);
+      } else {
+        setCosOptions([]);
       }
 
     } catch (err) {
@@ -535,6 +685,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
 
         {/* Security Settings Tab */}
         <TabsContent value="security" className="space-y-6">
+          {/* Basic Security */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -555,13 +706,16 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="owe">OWE (Enhanced Open)</SelectItem>
                       <SelectItem value="wep">WEP</SelectItem>
                       <SelectItem value="wpa-personal">WPA-Personal</SelectItem>
                       <SelectItem value="wpa2-personal">WPA2-Personal</SelectItem>
-                      <SelectItem value="wpa3-personal">WPA3-Personal</SelectItem>
+                      <SelectItem value="wpa3-personal">WPA3-Personal (SAE)</SelectItem>
+                      <SelectItem value="wpa23-personal">WPA2/WPA3-Personal (Transition)</SelectItem>
                       <SelectItem value="wpa-enterprise">WPA-Enterprise</SelectItem>
                       <SelectItem value="wpa2-enterprise">WPA2-Enterprise</SelectItem>
                       <SelectItem value="wpa3-enterprise">WPA3-Enterprise</SelectItem>
+                      <SelectItem value="wpa23-enterprise">WPA2/WPA3-Enterprise</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -582,7 +736,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                 </div>
               </div>
 
-              {formData.securityType !== 'open' && (
+              {formData.securityType !== 'open' && formData.securityType !== 'owe' && (
                 <div className="space-y-2">
                   <Label htmlFor="passphrase">Passphrase</Label>
                   <Input
@@ -590,9 +744,241 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                     type="password"
                     value={formData.passphrase}
                     onChange={(e) => handleInputChange('passphrase', e.target.value)}
-                    placeholder="Enter network passphrase"
+                    placeholder="Enter network passphrase (8-63 characters)"
+                    minLength={8}
+                    maxLength={63}
+                  />
+                  <p className="text-xs text-muted-foreground">8-63 characters for WPA/WPA2/WPA3</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* WPA3-SAE Configuration */}
+          {(formData.securityType === 'wpa3-personal' || formData.securityType === 'wpa23-personal') && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">WPA3-SAE Configuration</CardTitle>
+                <CardDescription>WPA3 Simultaneous Authentication of Equals settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pmf-mode">Protected Management Frames (PMF)</Label>
+                    <Select value={formData.pmfMode} onValueChange={(value) => handleInputChange('pmfMode', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="required">Required (WPA3 only)</SelectItem>
+                        <SelectItem value="capable">Capable (WPA2/WPA3 transition)</SelectItem>
+                        <SelectItem value="disabled">Disabled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Required for WPA3, prevents deauth attacks</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="sae-method">SAE Method</Label>
+                    <Select value={formData.saeMethod} onValueChange={(value) => handleInputChange('saeMethod', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SaeH2e">Hash-to-Element (Recommended)</SelectItem>
+                        <SelectItem value="SaeLoop">Hunting-and-Pecking (Legacy)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">H2E provides better security</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Beacon Protection</Label>
+                    <p className="text-sm text-muted-foreground">Enhanced WPA3 security feature</p>
+                  </div>
+                  <Switch
+                    checked={formData.beaconProtection}
+                    onCheckedChange={(checked) => handleInputChange('beaconProtection', checked)}
                   />
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* OWE Configuration */}
+          {formData.securityType === 'owe' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">OWE (Opportunistic Wireless Encryption)</CardTitle>
+                <CardDescription>Enhanced Open - encryption without password</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Auto-generate OWE Transition SSID</Label>
+                    <p className="text-sm text-muted-foreground">Create hidden SSID for legacy device compatibility</p>
+                  </div>
+                  <Switch
+                    checked={formData.oweAutogen}
+                    onCheckedChange={(checked) => handleInputChange('oweAutogen', checked)}
+                  />
+                </div>
+
+                {formData.oweAutogen && (
+                  <div className="space-y-2">
+                    <Label htmlFor="owe-companion">OWE Companion SSID (Optional)</Label>
+                    <Input
+                      id="owe-companion"
+                      value={formData.oweCompanion}
+                      onChange={(e) => handleInputChange('oweCompanion', e.target.value)}
+                      placeholder="Leave empty for auto-generated name"
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* AAA/RADIUS Configuration */}
+          {(formData.securityType.includes('enterprise')) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">AAA/RADIUS Configuration</CardTitle>
+                <CardDescription>Enterprise authentication settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="aaa-policy">AAA Policy</Label>
+                  <Select value={formData.aaaPolicyId} onValueChange={(value) => handleInputChange('aaaPolicyId', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select AAA policy" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {aaaPolicies.map(policy => (
+                        <SelectItem key={policy.id} value={policy.id}>
+                          {policy.name || policy.policyName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {aaaPolicies.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No AAA policies configured</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>RADIUS Accounting</Label>
+                    <p className="text-sm text-muted-foreground">Track user session and usage data</p>
+                  </div>
+                  <Switch
+                    checked={formData.accountingEnabled}
+                    onCheckedChange={(checked) => handleInputChange('accountingEnabled', checked)}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">802.11r Fast Transition</h4>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Enable Fast Roaming (802.11r)</Label>
+                      <p className="text-sm text-muted-foreground">Faster handoff between APs</p>
+                    </div>
+                    <Switch
+                      checked={formData.fastTransitionEnabled}
+                      onCheckedChange={(checked) => handleInputChange('fastTransitionEnabled', checked)}
+                    />
+                  </div>
+
+                  {formData.fastTransitionEnabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="ft-mdid">Mobility Domain ID</Label>
+                      <Input
+                        id="ft-mdid"
+                        type="number"
+                        value={formData.fastTransitionMdId}
+                        onChange={(e) => handleInputChange('fastTransitionMdId', parseInt(e.target.value) || 0)}
+                        placeholder="0-65535"
+                        min="0"
+                        max="65535"
+                      />
+                      <p className="text-xs text-muted-foreground">Unique ID for this mobility domain</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Role Assignment */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Role Assignment</CardTitle>
+              <CardDescription>Default user roles for authentication states</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="unauth-role">Unauthenticated User Role</Label>
+                <Select value={formData.unAuthenticatedUserDefaultRoleID} onValueChange={(value) => handleInputChange('unAuthenticatedUserDefaultRoleID', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select default role before authentication" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {roles.map(role => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Applied before user authenticates</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="auth-role">Authenticated User Role</Label>
+                <Select value={formData.authenticatedUserDefaultRoleID} onValueChange={(value) => handleInputChange('authenticatedUserDefaultRoleID', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select default role after authentication" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {roles.map(role => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Applied after successful authentication</p>
+              </div>
+
+              {formData.macBasedAuth && (
+                <div className="space-y-2">
+                  <Label htmlFor="mba-timeout-role">MAC-Based Auth Timeout Role</Label>
+                  <Select value={formData.mbatimeoutRoleId} onValueChange={(value) => handleInputChange('mbatimeoutRoleId', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role after MBA timeout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {roles.map(role => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {roles.length === 0 && (
+                <p className="text-xs text-muted-foreground">No roles configured</p>
               )}
             </CardContent>
           </Card>
