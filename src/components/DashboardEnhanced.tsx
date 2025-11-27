@@ -71,6 +71,8 @@ interface Station {
   rxRate?: number;
   txBytes?: number;
   rxBytes?: number;
+  inBytes?: number;  // API field for download bytes
+  outBytes?: number; // API field for upload bytes
   uptime?: number;
   authenticated?: boolean;
   connectionTime?: number;
@@ -574,24 +576,32 @@ export function DashboardEnhanced() {
       }
 
       // Sum throughput - txRate/rxRate are in Mbps, convert to bps (bits per second)
-      // If txRate/rxRate not available, calculate from bytes (assuming they're cumulative counters)
+      // If txRate/rxRate not available, use cumulative bytes divided by uptime to estimate bps
       let tx = 0;
       let rx = 0;
-      
-      if (station.txRate !== undefined && station.txRate !== null) {
+
+      if (station.txRate !== undefined && station.txRate !== null && station.txRate > 0) {
         // txRate is in Mbps, convert to bps
         tx = station.txRate * 1000000;
-      } else if (station.txBytes !== undefined) {
-        // Fallback to bytes (this is less accurate as it's cumulative)
-        tx = (station.txBytes || 0) * 8; // Convert bytes to bits
+      } else {
+        // Use cumulative bytes - check multiple field names (outBytes, txBytes)
+        const uploadBytes = station.outBytes || station.txBytes || 0;
+        if (uploadBytes > 0 && station.uptime && station.uptime > 0) {
+          // Calculate average bps: (total bits) / (seconds connected)
+          tx = (uploadBytes * 8) / station.uptime;
+        }
       }
-      
-      if (station.rxRate !== undefined && station.rxRate !== null) {
+
+      if (station.rxRate !== undefined && station.rxRate !== null && station.rxRate > 0) {
         // rxRate is in Mbps, convert to bps
         rx = station.rxRate * 1000000;
-      } else if (station.rxBytes !== undefined) {
-        // Fallback to bytes (this is less accurate as it's cumulative)
-        rx = (station.rxBytes || 0) * 8; // Convert bytes to bits
+      } else {
+        // Use cumulative bytes - check multiple field names (inBytes, rxBytes)
+        const downloadBytes = station.inBytes || station.rxBytes || 0;
+        if (downloadBytes > 0 && station.uptime && station.uptime > 0) {
+          // Calculate average bps: (total bits) / (seconds connected)
+          rx = (downloadBytes * 8) / station.uptime;
+        }
       }
       
       totalUpload += tx;
@@ -699,6 +709,9 @@ export function DashboardEnhanced() {
         rxRate: stations[0].rxRate,
         txBytes: stations[0].txBytes,
         rxBytes: stations[0].rxBytes,
+        outBytes: stations[0].outBytes,
+        inBytes: stations[0].inBytes,
+        uptime: stations[0].uptime,
         allFields: Object.keys(stations[0])
       });
     }
@@ -1543,8 +1556,8 @@ export function DashboardEnhanced() {
                   const signalQuality = rssi >= -50 ? 'excellent' : rssi >= -60 ? 'good' : rssi >= -70 ? 'fair' : 'poor';
                   const SignalIcon = rssi >= -60 ? Signal : rssi >= -70 ? Signal : Signal;
                   
-                  const tx = station.txRate ? (station.txRate * 1000000) : ((station.txBytes || 0) * 8);
-                  const rx = station.rxRate ? (station.rxRate * 1000000) : ((station.rxBytes || 0) * 8);
+                  const tx = station.txRate ? (station.txRate * 1000000) : ((station.outBytes || station.txBytes || 0) * 8);
+                  const rx = station.rxRate ? (station.rxRate * 1000000) : ((station.inBytes || station.rxBytes || 0) * 8);
                   const totalThroughput = tx + rx;
                   
                   return (
@@ -1822,36 +1835,37 @@ export function DashboardEnhanced() {
               )}
 
               {/* Throughput */}
-              {(selectedClient.txRate !== undefined || selectedClient.rxRate !== undefined || 
-                selectedClient.txBytes !== undefined || selectedClient.rxBytes !== undefined) && (
+              {(selectedClient.txRate !== undefined || selectedClient.rxRate !== undefined ||
+                selectedClient.txBytes !== undefined || selectedClient.rxBytes !== undefined ||
+                selectedClient.outBytes !== undefined || selectedClient.inBytes !== undefined) && (
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm">Throughput</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-4">
-                      {(selectedClient.txRate !== undefined || selectedClient.txBytes !== undefined) && (
+                      {(selectedClient.txRate !== undefined || selectedClient.txBytes !== undefined || selectedClient.outBytes !== undefined) && (
                         <div className="flex items-center gap-2">
                           <Upload className="h-4 w-4 text-blue-500" />
                           <div>
                             <p className="text-xs text-muted-foreground">Upload</p>
                             <p className="text-sm font-medium">
-                              {selectedClient.txRate !== undefined 
+                              {selectedClient.txRate !== undefined
                                 ? formatBps(selectedClient.txRate * 1000000)
-                                : formatBytes(selectedClient.txBytes || 0)}
+                                : formatBytes(selectedClient.outBytes || selectedClient.txBytes || 0)}
                             </p>
                           </div>
                         </div>
                       )}
-                      {(selectedClient.rxRate !== undefined || selectedClient.rxBytes !== undefined) && (
+                      {(selectedClient.rxRate !== undefined || selectedClient.rxBytes !== undefined || selectedClient.inBytes !== undefined) && (
                         <div className="flex items-center gap-2">
                           <Download className="h-4 w-4 text-green-500" />
                           <div>
                             <p className="text-xs text-muted-foreground">Download</p>
                             <p className="text-sm font-medium">
-                              {selectedClient.rxRate !== undefined 
+                              {selectedClient.rxRate !== undefined
                                 ? formatBps(selectedClient.rxRate * 1000000)
-                                : formatBytes(selectedClient.rxBytes || 0)}
+                                : formatBytes(selectedClient.inBytes || selectedClient.rxBytes || 0)}
                             </p>
                           </div>
                         </div>
