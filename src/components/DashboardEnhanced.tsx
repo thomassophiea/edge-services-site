@@ -73,6 +73,8 @@ interface Station {
   rxBytes?: number;
   inBytes?: number;  // API field for download bytes
   outBytes?: number; // API field for upload bytes
+  transmittedRate?: number; // API field for upload rate
+  receivedRate?: number;    // API field for download rate
   uptime?: number;
   authenticated?: boolean;
   connectionTime?: number;
@@ -575,32 +577,37 @@ export function DashboardEnhanced() {
         authenticated++;
       }
 
-      // Sum throughput - txRate/rxRate are in Mbps, convert to bps (bits per second)
-      // If txRate/rxRate not available, use cumulative bytes divided by uptime to estimate bps
+      // Sum throughput - try multiple rate field names, then estimate from cumulative bytes
       let tx = 0;
       let rx = 0;
 
-      if (station.txRate !== undefined && station.txRate !== null && station.txRate > 0) {
-        // txRate is in Mbps, convert to bps
-        tx = station.txRate * 1000000;
+      // Try to get upload rate (transmittedRate, txRate in Mbps)
+      if (station.transmittedRate !== undefined && station.transmittedRate !== null && station.transmittedRate > 0) {
+        tx = station.transmittedRate * 1000000; // Mbps to bps
+      } else if (station.txRate !== undefined && station.txRate !== null && station.txRate > 0) {
+        tx = station.txRate * 1000000; // Mbps to bps
       } else {
-        // Use cumulative bytes - check multiple field names (outBytes, txBytes)
+        // Estimate from cumulative bytes
         const uploadBytes = station.outBytes || station.txBytes || 0;
-        if (uploadBytes > 0 && station.uptime && station.uptime > 0) {
-          // Calculate average bps: (total bits) / (seconds connected)
-          tx = (uploadBytes * 8) / station.uptime;
+        if (uploadBytes > 0) {
+          // Use uptime if available, otherwise estimate based on typical 1-hour session
+          const sessionSeconds = (station.uptime && station.uptime > 0) ? station.uptime : 3600;
+          tx = (uploadBytes * 8) / sessionSeconds;
         }
       }
 
-      if (station.rxRate !== undefined && station.rxRate !== null && station.rxRate > 0) {
-        // rxRate is in Mbps, convert to bps
-        rx = station.rxRate * 1000000;
+      // Try to get download rate (receivedRate, rxRate in Mbps)
+      if (station.receivedRate !== undefined && station.receivedRate !== null && station.receivedRate > 0) {
+        rx = station.receivedRate * 1000000; // Mbps to bps
+      } else if (station.rxRate !== undefined && station.rxRate !== null && station.rxRate > 0) {
+        rx = station.rxRate * 1000000; // Mbps to bps
       } else {
-        // Use cumulative bytes - check multiple field names (inBytes, rxBytes)
+        // Estimate from cumulative bytes
         const downloadBytes = station.inBytes || station.rxBytes || 0;
-        if (downloadBytes > 0 && station.uptime && station.uptime > 0) {
-          // Calculate average bps: (total bits) / (seconds connected)
-          rx = (downloadBytes * 8) / station.uptime;
+        if (downloadBytes > 0) {
+          // Use uptime if available, otherwise estimate based on typical 1-hour session
+          const sessionSeconds = (station.uptime && station.uptime > 0) ? station.uptime : 3600;
+          rx = (downloadBytes * 8) / sessionSeconds;
         }
       }
       
@@ -707,6 +714,8 @@ export function DashboardEnhanced() {
         serviceId: stations[0].serviceId,
         txRate: stations[0].txRate,
         rxRate: stations[0].rxRate,
+        transmittedRate: stations[0].transmittedRate,
+        receivedRate: stations[0].receivedRate,
         txBytes: stations[0].txBytes,
         rxBytes: stations[0].rxBytes,
         outBytes: stations[0].outBytes,
