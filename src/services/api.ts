@@ -210,32 +210,55 @@ export interface Service {
   captivePortal?: boolean;
   enableCaptivePortal?: boolean; // Alternative field name for captive portal
   guestAccess?: boolean;
+
   // Campus Controller specific fields
-  dot1dPortNumber?: number; // VLAN ID
+  canEdit?: boolean;
+  canDelete?: boolean;
+
+  // Network/VLAN Configuration
+  dot1dPortNumber?: number; // VLAN ID / Service ID
+  defaultTopology?: string; // Topology UUID for VLAN assignment
+  proxied?: string; // "Local" or "Centralized" - traffic forwarding mode
+
+  // Security Configuration - Top-level elements
   WpaPskElement?: {
-    mode?: string; // Security mode like "aesOnly"
+    mode?: string; // Security mode like "aesOnly", "tkipOnly", "mixed"
+    pmfMode?: string; // Protected Management Frames
+    presharedKey?: string;
+    keyHexEncoded?: boolean;
     [key: string]: any;
   };
   WpaEnterpriseElement?: {
-    mode?: string; // Enterprise security mode
+    mode?: string; // Enterprise security mode "aesOnly", "wpa3only", etc.
+    pmfMode?: string;
+    fastTransitionEnabled?: boolean; // 802.11r
+    fastTransitionMdId?: number; // Mobility Domain ID for 802.11r
     [key: string]: any;
   };
   WpaSaeElement?: {
-    pmfMode?: string; // Protected Management Frames mode
+    pmfMode?: string; // Protected Management Frames mode: "required", "capable", "disabled"
     presharedKey?: string;
     keyHexEncoded?: boolean;
-    saeMethod?: string; // SAE method like "SaeH2e"
+    saeMethod?: string; // SAE method: "SaeH2e" (Hash-to-Element) or "SaeLoop"
     encryption?: string; // Encryption like "AES_CCM_128"
     akmSuiteSelector?: string;
     [key: string]: any;
   };
+
+  // Security Configuration - Nested in privacy object
   privacy?: {
     WpaPskElement?: {
       mode?: string;
+      pmfMode?: string;
+      presharedKey?: string;
+      keyHexEncoded?: boolean;
       [key: string]: any;
     };
     WpaEnterpriseElement?: {
       mode?: string;
+      pmfMode?: string;
+      fastTransitionEnabled?: boolean;
+      fastTransitionMdId?: number;
       [key: string]: any;
     };
     WpaSaeElement?: {
@@ -249,6 +272,78 @@ export interface Service {
     };
     [key: string]: any;
   };
+
+  // OWE (Opportunistic Wireless Encryption) - Enhanced Open
+  oweAutogen?: boolean; // Auto-generate OWE transition SSID
+  oweCompanion?: string | null; // Companion service ID for OWE
+
+  // Advanced Security
+  beaconProtection?: boolean; // WPA3 beacon protection
+
+  // AAA/RADIUS Configuration
+  aaaPolicyId?: string | null; // AAA Policy UUID for RADIUS
+  accountingEnabled?: boolean; // RADIUS accounting
+
+  // Role Assignment
+  unAuthenticatedUserDefaultRoleID?: string; // Default role before authentication
+  authenticatedUserDefaultRoleID?: string; // Default role after authentication
+  mbatimeoutRoleId?: string | null; // Role after MAC-based auth timeout
+  defaultCoS?: string; // Class of Service UUID
+
+  // 802.11k/v/r Support
+  enabled11kSupport?: boolean; // 802.11k Radio Resource Management
+  rm11kBeaconReport?: boolean; // 802.11k beacon report
+  rm11kQuietIe?: boolean; // 802.11k quiet IE
+  enable11mcSupport?: boolean; // 802.11v BSS Transition Management
+
+  // Band Steering & Multi-band
+  bandSteering?: boolean; // Steer clients to less congested band
+  mbo?: boolean; // Multi-Band Operation (802.11k/v enhancements)
+
+  // QoS & Admission Control
+  uapsdEnabled?: boolean; // WMM Power Save (U-APSD)
+  admissionControlVideo?: boolean; // QoS admission control for video
+  admissionControlVoice?: boolean; // QoS admission control for voice
+  admissionControlBestEffort?: boolean; // QoS admission control for best effort
+  admissionControlBackgroundTraffic?: boolean; // QoS admission control for background
+  dscp?: {
+    codePoints?: number[]; // Array of 64 DSCP to UP mappings (0-7)
+  };
+
+  // Client Management
+  clientToClientCommunication?: boolean; // Allow wireless client-to-client (false = isolation)
+  flexibleClientAccess?: boolean; // Dynamic client access control
+  purgeOnDisconnect?: boolean; // Clear client data on disconnect
+  includeHostname?: boolean; // Send hostname to RADIUS
+  mbaAuthorization?: boolean; // MAC-Based Authorization
+
+  // Timeouts
+  preAuthenticatedIdleTimeout?: number; // Idle timeout before auth (seconds)
+  postAuthenticatedIdleTimeout?: number; // Idle timeout after auth (seconds)
+  sessionTimeout?: number; // Maximum session duration (seconds)
+
+  // Captive Portal
+  captivePortalType?: string | null; // Type of captive portal
+  eGuestPortalId?: string | null; // eGuest portal UUID
+  eGuestSettings?: any[]; // eGuest portal settings
+  cpNonAuthenticatedPolicyName?: string | null; // Captive portal policy name
+
+  // Hotspot 2.0 / Passpoint
+  hotspotType?: string; // "Disabled", "Hotspot20", etc.
+  hotspot?: any | null; // Hotspot 2.0 configuration object
+
+  // Roaming
+  roamingAssistPolicy?: string | null; // Roaming assistance policy UUID
+
+  // RADIUS Attributes
+  vendorSpecificAttributes?: string[]; // Custom RADIUS VSAs: ["apName", "vnsName", "ssid", etc.]
+
+  // Mesh
+  shutdownOnMeshpointLoss?: boolean; // Disable service if mesh connection lost
+
+  // Features
+  features?: string[]; // Feature flags like ["CENTRALIZED-SITE"]
+
   // Additional security-related fields that might exist at the service level
   privacyType?: string;
   authType?: string;
@@ -323,6 +418,22 @@ export interface Topology {
   canEdit: boolean;
   canDelete: boolean;
   mode: string;
+  [key: string]: any;
+}
+
+export interface AaaPolicy {
+  id: string;
+  name: string;
+  policyName?: string;
+  description?: string;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  radiusServer?: string;
+  radiusPort?: number;
+  radiusSecret?: string;
+  radiusAuthPort?: number;
+  radiusAcctPort?: number;
+  accountingEnabled?: boolean;
   [key: string]: any;
 }
 
@@ -2152,6 +2263,22 @@ class ApiService {
       throw new Error(`Failed to fetch site stats: ${response.status} ${response.statusText}`);
     }
     return await response.json();
+  }
+
+  // Get AAA Policies (RADIUS configurations)
+  async getAaaPolicies(): Promise<AaaPolicy[]> {
+    try {
+      const response = await this.makeAuthenticatedRequest('/v1/aaa-policies', {}, 8000);
+      if (!response.ok) {
+        console.warn(`AAA Policies API returned status ${response.status}`);
+        return [];
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.warn('Failed to fetch AAA policies:', error);
+      return [];
+    }
   }
 
   // Check if an endpoint is available (returns true if endpoint exists and is reachable)

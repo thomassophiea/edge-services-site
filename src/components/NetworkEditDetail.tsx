@@ -29,49 +29,110 @@ interface NetworkFormData {
   ssid: string;
   description: string;
   enabled: boolean;
-  
+
   // Security Configuration
-  securityType: string;
+  securityType: string; // open, wpa-personal, wpa2-personal, wpa3-personal, wpa-enterprise, etc.
   privacyType: string;
   authType: string;
   authMethod: string;
-  encryption: string;
+  encryption: string; // none, tkip, aes, tkip-aes
   passphrase: string;
-  
+
+  // WPA3-SAE Configuration
+  pmfMode: string; // required, capable, disabled
+  saeMethod: string; // SaeH2e, SaeLoop
+  beaconProtection: boolean;
+
+  // OWE (Enhanced Open)
+  oweAutogen: boolean;
+  oweCompanion: string;
+
   // Network Settings
   vlan: string;
+  defaultTopology: string; // Topology UUID
+  proxied: string; // Local, Centralized
   band: string;
   channel: string;
   broadcastSSID: boolean;
   hidden: boolean;
-  
+
+  // AAA/RADIUS
+  aaaPolicyId: string;
+  accountingEnabled: boolean;
+
+  // Fast Transition (802.11r)
+  fastTransitionEnabled: boolean;
+  fastTransitionMdId: number;
+
+  // Role Assignment
+  authenticatedUserDefaultRoleID: string;
+  unAuthenticatedUserDefaultRoleID: string;
+  mbatimeoutRoleId: string;
+
+  // 802.11k/v/r Support
+  enabled11kSupport: boolean;
+  rm11kBeaconReport: boolean;
+  rm11kQuietIe: boolean;
+  enable11mcSupport: boolean; // 802.11v
+
+  // Band Steering
+  bandSteering: boolean;
+  mbo: boolean;
+
   // Access Control
   captivePortal: boolean;
+  captivePortalType: string;
+  eGuestPortalId: string;
   guestAccess: boolean;
   macBasedAuth: boolean;
+  mbaAuthorization: boolean;
   macWhitelistEnabled: boolean;
   macBlacklistEnabled: boolean;
-  
+
   // Client Management
   maxClients: number;
   maxClientsPer24: number;
   maxClientsPer5: number;
   sessionTimeout: number;
-  idleTimeout: number;
-  
+  preAuthenticatedIdleTimeout: number;
+  postAuthenticatedIdleTimeout: number;
+  idleTimeout: number; // For UI simplification
+  clientToClientCommunication: boolean;
+  flexibleClientAccess: boolean;
+  purgeOnDisconnect: boolean;
+  includeHostname: boolean;
+
   // Quality of Service
+  defaultCoS: string; // CoS UUID
   bandwidthLimitEnabled: boolean;
   downloadLimit: number;
   uploadLimit: number;
   priorityLevel: string;
-  
+  uapsdEnabled: boolean;
+  admissionControlVideo: boolean;
+  admissionControlVoice: boolean;
+  admissionControlBestEffort: boolean;
+  admissionControlBackgroundTraffic: boolean;
+
+  // Hotspot 2.0
+  hotspotType: string; // Disabled, Hotspot20
+  hotspot: boolean; // For UI toggle
+
+  // Roaming
+  roamingAssistPolicy: string;
+
+  // Vendor Attributes
+  vendorSpecificAttributes: string[]; // ["apName", "vnsName", "ssid"]
+
+  // Mesh
+  shutdownOnMeshpointLoss: boolean;
+
   // Advanced Settings
-  defaultAuthRole: string;
-  hotspot: boolean;
-  isolateClients: boolean;
-  fastRoaming: boolean;
-  loadBalancing: boolean;
-  radiusAccounting: boolean;
+  defaultAuthRole: string; // Legacy field
+  isolateClients: boolean; // Maps to !clientToClientCommunication
+  fastRoaming: boolean; // Legacy field
+  loadBalancing: boolean; // Legacy field
+  radiusAccounting: boolean; // Maps to accountingEnabled
   customProperties: Record<string, string>;
 }
 
