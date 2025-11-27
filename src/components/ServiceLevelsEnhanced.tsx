@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { toast } from 'sonner';
+import { throughputService, type ThroughputSnapshot } from '../services/throughput';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 interface Service {
@@ -110,6 +111,9 @@ export function ServiceLevelsEnhanced() {
   // Client Detail Dialog
   const [selectedClient, setSelectedClient] = useState<Station | null>(null);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+
+  // Throughput tracking
+  const [throughputHistory, setThroughputHistory] = useState<ThroughputSnapshot[]>([]);
 
   useEffect(() => {
     loadServices();
@@ -201,7 +205,10 @@ export function ServiceLevelsEnhanced() {
       // Process stations
       if (stationsResult.status === 'fulfilled' && stationsResult.value) {
         setServiceStations(stationsResult.value);
-        
+
+        // Store throughput snapshot from current stations
+        await storeThroughputSnapshot(stationsResult.value, serviceId);
+
         // If we have stations but no report metrics, calculate from stations
         if (reportResult.status === 'rejected' || !reportResult.value?.metrics) {
           calculateMetricsFromStations(stationsResult.value, serviceId);
@@ -209,6 +216,9 @@ export function ServiceLevelsEnhanced() {
       } else {
         setServiceStations([]);
       }
+
+      // Load throughput history for charts
+      await loadThroughputHistory();
 
       setLastUpdate(new Date());
 
@@ -319,12 +329,12 @@ export function ServiceLevelsEnhanced() {
 
     stations.forEach(station => {
       totalThroughput += (station.txBytes || 0) + (station.rxBytes || 0);
-      
+
       if (station.rssi !== undefined) {
         totalRssi += station.rssi;
         rssiCount++;
       }
-      
+
       if (station.snr !== undefined) {
         totalSnr += station.snr;
         snrCount++;
@@ -347,6 +357,81 @@ export function ServiceLevelsEnhanced() {
     };
 
     setServiceReport(calculatedMetrics);
+  };
+
+  const storeThroughputSnapshot = async (stations: Station[], serviceId: string) => {
+    if (stations.length === 0) return;
+
+    const serviceName = services.find(s => s.id === serviceId)?.name || serviceId;
+    let totalUpload = 0;
+    let totalDownload = 0;
+
+    stations.forEach(station => {
+      // Calculate throughput from rates (bps) or bytes
+      if (station.txRate !== undefined) {
+        totalUpload += station.txRate * 1000000; // Convert Mbps to bps
+      } else if (station.txBytes !== undefined) {
+        totalUpload += station.txBytes * 8; // Convert bytes to bits
+      }
+
+      if (station.rxRate !== undefined) {
+        totalDownload += station.rxRate * 1000000;
+      } else if (station.rxBytes !== undefined) {
+        totalDownload += station.rxBytes * 8;
+      }
+    });
+
+    const snapshot: ThroughputSnapshot = {
+      timestamp: Date.now(),
+      totalUpload: totalUpload,
+      totalDownload: totalDownload,
+      totalTraffic: totalUpload + totalDownload,
+      clientCount: stations.length,
+      avgPerClient: stations.length > 0 ? (totalUpload + totalDownload) / stations.length : 0,
+      networkBreakdown: [{
+        network: serviceName,
+        upload: totalUpload,
+        download: totalDownload,
+        total: totalUpload + totalDownload,
+        clients: stations.length
+      }]
+    };
+
+    try {
+      await throughputService.storeSnapshot(snapshot);
+      console.log('[ServiceLevels] Stored throughput snapshot:', snapshot);
+    } catch (error) {
+      console.error('[ServiceLevels] Failed to store throughput snapshot:', error);
+    }
+  };
+
+  const loadThroughputHistory = async () => {
+    try {
+      // Calculate time range based on selected filter
+      const now = Date.now();
+      let startTime: number;
+
+      switch (timeRange) {
+        case '1h':
+          startTime = now - (60 * 60 * 1000); // 1 hour
+          break;
+        case '24h':
+          startTime = now - (24 * 60 * 60 * 1000); // 24 hours
+          break;
+        case '7d':
+          startTime = now - (7 * 24 * 60 * 60 * 1000); // 7 days
+          break;
+        default:
+          startTime = now - (24 * 60 * 60 * 1000); // Default to 24 hours
+      }
+
+      const snapshots = await throughputService.getSnapshots(startTime, now, 100);
+      setThroughputHistory(snapshots);
+      console.log('[ServiceLevels] Loaded', snapshots.length, 'throughput snapshots');
+    } catch (error) {
+      console.error('[ServiceLevels] Failed to load throughput history:', error);
+      setThroughputHistory([]);
+    }
   };
 
   const handleServiceChange = (serviceId: string) => {
@@ -396,37 +481,38 @@ export function ServiceLevelsEnhanced() {
     return Math.round((bytes * 8 / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
-  // Generate historical time-series data (simulated based on current metrics)
+  // Generate time-series data from real throughput history
   const generateTimeSeries = () => {
-    if (!serviceReport?.metrics) return [];
-
-    const points = [];
-    const now = Date.now();
-    const interval = timeRange === '1h' ? 300000 : timeRange === '24h' ? 3600000 : 86400000; // 5min, 1hr, 1day
-    const count = timeRange === '1h' ? 12 : timeRange === '24h' ? 24 : 30;
-
-    for (let i = count - 1; i >= 0; i--) {
-      const timestamp = now - (i * interval);
-      const variation = 0.9 + Math.random() * 0.2;
-      
-      points.push({
-        timestamp,
-        time: new Date(timestamp).toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
-          minute: '2-digit',
-          ...(timeRange === '7d' ? { month: 'short', day: 'numeric' } : {})
-        }),
-        throughput: (serviceReport.metrics.throughput || 0) * variation,
-        clientCount: Math.round((serviceReport.metrics.clientCount || 0) * variation),
-        latency: (serviceReport.metrics.latency || 10) * (0.8 + Math.random() * 0.4),
-        reliability: Math.min(100, (serviceReport.metrics.reliability || 95) * (0.98 + Math.random() * 0.02))
-      });
+    if (throughputHistory.length === 0) {
+      // If no history yet, return empty array
+      return [];
     }
 
-    return points;
+    // Convert snapshots to chart data format
+    return throughputHistory.map(snapshot => ({
+      timestamp: snapshot.timestamp,
+      time: new Date(snapshot.timestamp).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        ...(timeRange === '7d' ? { month: 'short', day: 'numeric' } : {})
+      }),
+      throughput: snapshot.totalTraffic,
+      upload: snapshot.totalUpload,
+      download: snapshot.totalDownload,
+      clientCount: snapshot.clientCount,
+      latency: serviceReport?.metrics?.latency || 10, // Use current latency as estimate
+      reliability: serviceReport?.metrics?.reliability || 95 // Use current reliability as estimate
+    }));
   };
 
   const timeSeries = generateTimeSeries();
+
+  // Reload throughput history when time range changes
+  useEffect(() => {
+    if (selectedService) {
+      loadThroughputHistory();
+    }
+  }, [timeRange]);
 
   // Prepare radar chart data
   const radarData = serviceReport?.metrics ? [
