@@ -1521,6 +1521,24 @@ class ApiService {
     return Array.isArray(data) ? data : [];
   }
 
+  async updateAccessPoint(serialNumber: string, config: Partial<APDetails>): Promise<APDetails> {
+    const response = await this.makeAuthenticatedRequest(
+      `/v1/aps/${encodeURIComponent(serialNumber)}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
+      }
+    );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update AP: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    return await response.json();
+  }
+
   async getAPPlatforms(): Promise<APPlatform[]> {
     const response = await this.makeAuthenticatedRequest('/v1/aps/platforms');
     if (!response.ok) {
