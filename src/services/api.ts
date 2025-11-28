@@ -1775,6 +1775,33 @@ class ApiService {
     return await response.json();
   }
 
+  // Update an existing site
+  async updateSite(siteId: string, siteData: Partial<Site>): Promise<Site> {
+    const response = await this.makeAuthenticatedRequest(`/v3/sites/${encodeURIComponent(siteId)}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(siteData)
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update site: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    return await response.json();
+  }
+
+  // Delete a site
+  async deleteSite(siteId: string): Promise<void> {
+    const response = await this.makeAuthenticatedRequest(`/v3/sites/${encodeURIComponent(siteId)}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to delete site: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+  }
+
   // Get access points filtered by site
   async getAccessPointsBySite(siteId?: string): Promise<AccessPoint[]> {
     if (!siteId) {
