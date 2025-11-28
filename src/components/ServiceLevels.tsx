@@ -68,7 +68,6 @@ interface Network {
 const METRIC_CATALOG: MetricCatalog = {
   wireless: [
     { key: 'time_to_connect', name: 'Time to Connect', unit: 'seconds', threshold_field: 'max_seconds' },
-    { key: 'throughput', name: 'Throughput', unit: 'Mbps', threshold_field: 'min_mbps' },
     { key: 'coverage', name: 'Coverage', unit: 'percent_poor_coverage', threshold_field: 'max_percent' },
     { key: 'capacity', name: 'Capacity', unit: 'percent_available_channel_capacity', threshold_field: 'min_available_channel_capacity_percent' },
     { key: 'roaming', name: 'Roaming', unit: 'severity_score_1_to_5', threshold_field: 'max_severity' },
@@ -76,7 +75,6 @@ const METRIC_CATALOG: MetricCatalog = {
     { key: 'ap_health', name: 'AP Health', unit: 'percent_healthy', threshold_field: 'min_percent' }
   ],
   wired: [
-    { key: 'throughput', name: 'Throughput', unit: 'Mbps', threshold_field: 'min_mbps' },
     { key: 'switch_health', name: 'Switch Health', unit: 'percent_healthy', threshold_field: 'min_percent' },
     { key: 'successful_connects', name: 'Successful Connects', unit: 'percent_success', threshold_field: 'min_percent' }
   ],

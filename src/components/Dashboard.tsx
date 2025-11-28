@@ -35,30 +35,12 @@ interface DashboardData {
     totalClients?: number;
     randomMacClients?: number;
   };
-  throughputReport: Array<{
-    reportName: string;
-    statistics: Array<{
-      statName: string;
-      type: string;
-      unit: string;
-      values: Array<{
-        timestamp: number;
-        value: string;
-      }>;
-    }>;
-  }>;
   countOfUniqueUsersReport: Array<{
     statistics: Array<{
       values: Array<{
         timestamp: number;
         value: string;
       }>;
-    }>;
-  }>;
-  topSitesByThroughput: Array<{
-    distributionStats: Array<{
-      name: string;
-      value: number;
     }>;
   }>;
   topSitesByClientCount: Array<{
@@ -76,7 +58,6 @@ interface DashboardData {
   topActiveDevices?: Array<{
     macAddress: string;
     deviceName?: string;
-    throughput: number;
     apName?: string;
   }>;
   networkUptime?: {
@@ -245,9 +226,7 @@ export function Dashboard() {
           totalClients: 0,
           randomMacClients: 0
         },
-        throughputReport: [],
         countOfUniqueUsersReport: [],
-        topSitesByThroughput: [],
         topSitesByClientCount: []
       };
       
@@ -357,69 +336,6 @@ export function Dashboard() {
               }]
             }];
             hasData = true;
-            
-            // Calculate throughput from client data
-            let totalRxBytes = 0;
-            let totalTxBytes = 0;
-            
-            clientsArray.forEach((client: any) => {
-              const rxBytes = client.inBytes || client.rxBytes || 0;
-              const txBytes = client.outBytes || client.txBytes || 0;
-              totalRxBytes += rxBytes;
-              totalTxBytes += txBytes;
-            });
-            
-            // Create throughput time series with simulated variance
-            const totalThroughputPoints = [];
-            const uploadThroughputPoints = [];
-            const downloadThroughputPoints = [];
-            
-            for (let i = 0, t = oneHourAgo; t <= now; t += interval, i++) {
-              // Add some realistic variance to the data
-              const variance = 0.8 + Math.random() * 0.4; // 80%-120%
-              const baseTotal = (totalRxBytes + totalTxBytes) * variance;
-              const baseDownload = totalRxBytes * variance;
-              const baseUpload = totalTxBytes * variance;
-              
-              totalThroughputPoints.push({
-                timestamp: t,
-                value: baseTotal.toString()
-              });
-              
-              downloadThroughputPoints.push({
-                timestamp: t,
-                value: baseDownload.toString()
-              });
-              
-              uploadThroughputPoints.push({
-                timestamp: t,
-                value: baseUpload.toString()
-              });
-            }
-            
-            componentData.throughputReport = [{
-              reportName: 'Network Throughput',
-              statistics: [
-                {
-                  statName: 'Total',
-                  type: 'throughput',
-                  unit: 'bytes',
-                  values: totalThroughputPoints
-                },
-                {
-                  statName: 'Upload',
-                  type: 'throughput',
-                  unit: 'bytes',
-                  values: uploadThroughputPoints
-                },
-                {
-                  statName: 'Download',
-                  type: 'throughput',
-                  unit: 'bytes',
-                  values: downloadThroughputPoints
-                }
-              ]
-            }];
           }
         } catch (parseError) {
           console.log('[Dashboard] Failed to parse clients response:', parseError);
@@ -440,9 +356,8 @@ export function Dashboard() {
           if (sitesArray.length > 0 && apsArray.length > 0 && clientsArray.length > 0) {
             // Map clients to sites via APs
             const siteClientCounts: Record<string, number> = {};
-            const siteThroughput: Record<string, number> = {};
             const siteNames: Record<string, string> = {};
-            
+
             // Build site name mapping
             sitesArray.forEach((site: any) => {
               const siteId = site.id || site.siteId || site.uuid;
@@ -450,10 +365,9 @@ export function Dashboard() {
               if (siteId) {
                 siteNames[siteId] = siteName;
                 siteClientCounts[siteId] = 0;
-                siteThroughput[siteId] = 0;
               }
             });
-            
+
             // Map APs to sites
             const apSiteMap: Record<string, string> = {};
             apsArray.forEach((ap: any) => {
@@ -463,21 +377,17 @@ export function Dashboard() {
                 apSiteMap[apSerial] = siteId;
               }
             });
-            
-            // Count clients per site and calculate throughput
+
+            // Count clients per site
             clientsArray.forEach((client: any) => {
               const apSerial = client.apSerialNumber || client.apSerial || client.connectedAP;
               const siteId = apSiteMap[apSerial];
-              
+
               if (siteId && siteClientCounts[siteId] !== undefined) {
                 siteClientCounts[siteId]++;
-                
-                const rxBytes = client.inBytes || client.rxBytes || 0;
-                const txBytes = client.outBytes || client.txBytes || 0;
-                siteThroughput[siteId] += (rxBytes + txBytes);
               }
             });
-            
+
             // Build top sites by client count
             const topClientSites = Object.entries(siteClientCounts)
               .sort((a, b) => b[1] - a[1])
@@ -486,26 +396,10 @@ export function Dashboard() {
                 name: siteNames[siteId] || siteId,
                 value: count
               }));
-            
+
             if (topClientSites.length > 0) {
               componentData.topSitesByClientCount = [{
                 distributionStats: topClientSites
-              }];
-              hasData = true;
-            }
-            
-            // Build top sites by throughput
-            const topThroughputSites = Object.entries(siteThroughput)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 10)
-              .map(([siteId, bytes]) => ({
-                name: siteNames[siteId] || siteId,
-                value: Math.round(bytes / 1024 / 1024) // Convert to MB
-              }));
-            
-            if (topThroughputSites.length > 0) {
-              componentData.topSitesByThroughput = [{
-                distributionStats: topThroughputSites
               }];
               hasData = true;
             }
@@ -783,133 +677,6 @@ export function Dashboard() {
     );
   };
 
-  const renderThroughputChart = () => {
-    if (!dashboardData?.throughputReport?.[0]?.statistics) return null;
-
-    const report = dashboardData.throughputReport[0];
-    const totalStat = report.statistics.find(s => s.statName === 'Total');
-    const uploadStat = report.statistics.find(s => s.statName === 'Upload');
-    const downloadStat = report.statistics.find(s => s.statName === 'Download');
-
-    if (!totalStat?.values) return null;
-
-    // Prepare chart data - sample every 10th point to reduce density
-    const chartData = totalStat.values
-      .filter((_, index) => index % 10 === 0)
-      .map((point, index) => ({
-        time: formatTimestamp(point.timestamp),
-        total: parseFloat(point.value) || 0,
-        upload: uploadStat?.values[index * 10] ? parseFloat(uploadStat.values[index * 10].value) || 0 : 0,
-        download: downloadStat?.values[index * 10] ? parseFloat(downloadStat.values[index * 10].value) || 0 : 0,
-      }));
-
-    // Calculate current throughput (last value)
-    const currentThroughput = parseFloat(totalStat.values[totalStat.values.length - 1]?.value || '0');
-    const currentUpload = uploadStat?.values[uploadStat.values.length - 1] 
-      ? parseFloat(uploadStat.values[uploadStat.values.length - 1].value || '0') 
-      : 0;
-    const currentDownload = downloadStat?.values[downloadStat.values.length - 1]
-      ? parseFloat(downloadStat.values[downloadStat.values.length - 1].value || '0')
-      : 0;
-
-    return (
-      <Card className="surface-2dp border-secondary/10">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-secondary" />
-              <CardTitle>Network Throughput</CardTitle>
-            </div>
-            <div className="flex gap-4">
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Current</div>
-                <div className="text-lg font-semibold text-primary">
-                  {formatBytes(currentThroughput)}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Upload</div>
-                <div className="text-sm font-medium text-success">
-                  ↑ {formatBytes(currentUpload)}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Download</div>
-                <div className="text-sm font-medium text-info">
-                  ↓ {formatBytes(currentDownload)}
-                </div>
-              </div>
-            </div>
-          </div>
-          <CardDescription>Real-time network traffic over the last 3 hours</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorUpload" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--success)" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="var(--success)" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorDownload" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--info)" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="var(--info)" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis 
-                dataKey="time" 
-                stroke="var(--muted-foreground)"
-                style={{ fontSize: '12px' }}
-              />
-              <YAxis 
-                stroke="var(--muted-foreground)"
-                style={{ fontSize: '12px' }}
-                tickFormatter={(value) => formatBytes(value)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                }}
-                formatter={(value: number) => formatBytes(value)}
-              />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="upload"
-                name="Upload"
-                stroke="var(--success)"
-                fillOpacity={1}
-                fill="url(#colorUpload)"
-              />
-              <Area
-                type="monotone"
-                dataKey="download"
-                name="Download"
-                stroke="var(--info)"
-                fillOpacity={1}
-                fill="url(#colorDownload)"
-              />
-              <Area
-                type="monotone"
-                dataKey="total"
-                name="Total"
-                stroke="var(--primary)"
-                fillOpacity={1}
-                fill="url(#colorTotal)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-    );
-  };
 
   const renderUniqueClientsChart = () => {
     if (!dashboardData?.countOfUniqueUsersReport?.[0]?.statistics?.[0]?.values) return null;
@@ -988,119 +755,55 @@ export function Dashboard() {
   };
 
   const renderTopSites = () => {
-    const throughputSites = dashboardData?.topSitesByThroughput?.[0]?.distributionStats || [];
     const clientCountSites = dashboardData?.topSitesByClientCount?.[0]?.distributionStats || [];
 
-    if (throughputSites.length === 0 && clientCountSites.length === 0) return null;
+    if (clientCountSites.length === 0) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Top Sites by Throughput */}
-        {throughputSites.length > 0 && (
-          <Card className="surface-2dp border-primary/10">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <CardTitle>Top Sites by Throughput</CardTitle>
-              </div>
-              <CardDescription>Sites ranked by network traffic</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {throughputSites.map((site, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/5 hover:bg-muted/10 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary font-semibold text-sm">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{site.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-primary">{formatBytes(site.value)}</p>
-                    </div>
+      <Card className="surface-2dp border-secondary/10">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-secondary" />
+            <CardTitle>Top Sites by Clients</CardTitle>
+          </div>
+          <CardDescription>Sites ranked by user count</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {clientCountSites.map((site, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 rounded-lg bg-muted/5 hover:bg-muted/10 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-secondary/20 text-secondary font-semibold text-sm">
+                    {index + 1}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Top Sites by Client Count */}
-        {clientCountSites.length > 0 && (
-          <Card className="surface-2dp border-secondary/10">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-secondary" />
-                <CardTitle>Top Sites by Clients</CardTitle>
-              </div>
-              <CardDescription>Sites ranked by user count</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {clientCountSites.map((site, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/5 hover:bg-muted/10 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-secondary/20 text-secondary font-semibold text-sm">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{site.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-secondary">{site.value} clients</p>
-                    </div>
+                  <div>
+                    <p className="font-medium">{site.name}</p>
                   </div>
-                ))}
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-secondary">{site.value} clients</p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
   const renderPerformanceMetrics = () => {
     if (!dashboardData) return null;
 
-    // Calculate performance metrics from available data
-    const throughputReport = dashboardData.throughputReport?.[0];
-    const totalStat = throughputReport?.statistics?.find(s => s.statName === 'Total');
-    const uploadStat = throughputReport?.statistics?.find(s => s.statName === 'Upload');
-    const downloadStat = throughputReport?.statistics?.find(s => s.statName === 'Download');
-    
     const clientReport = dashboardData.countOfUniqueUsersReport?.[0]?.statistics?.[0];
     const networkHealth = dashboardData.networkHealth;
-
-    // Calculate metrics
-    let avgThroughput = 0;
-    let peakThroughput = 0;
-    let currentThroughput = 0;
-    
-    if (totalStat?.values && totalStat.values.length > 0) {
-      const values = totalStat.values.map(v => parseFloat(v.value) || 0);
-      avgThroughput = values.reduce((sum, val) => sum + val, 0) / values.length;
-      peakThroughput = Math.max(...values);
-      currentThroughput = values[values.length - 1];
-    }
 
     // Calculate network health score (0-100)
     const totalAPs = networkHealth.primaryActiveAPs + networkHealth.backupActiveAPs + networkHealth.inactiveAPs;
     const activeAPs = networkHealth.primaryActiveAPs + networkHealth.backupActiveAPs;
     const healthScore = totalAPs > 0 ? Math.round((activeAPs / totalAPs) * 100) : 0;
-
-    // Calculate utilization percentage (based on peak vs average)
-    const utilizationPercent = peakThroughput > 0 
-      ? Math.round((avgThroughput / peakThroughput) * 100) 
-      : 0;
 
     // Calculate average clients
     let avgClients = 0;
@@ -1111,8 +814,8 @@ export function Dashboard() {
       currentClients = clientValues[clientValues.length - 1];
     }
 
-    // Only show if we have some throughput data
-    if (!totalStat?.values || totalStat.values.length === 0) return null;
+    // Only show if we have data
+    if (totalAPs === 0 && avgClients === 0) return null;
 
     return (
       <Card className="surface-2dp border-primary/10">
@@ -1125,34 +828,6 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Average Throughput */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Avg Throughput</p>
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-primary">{formatBytes(avgThroughput)}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Current: {formatBytes(currentThroughput)}
-                </p>
-              </div>
-            </div>
-
-            {/* Peak Throughput */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Peak Throughput</p>
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-secondary">{formatBytes(peakThroughput)}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {peakThroughput > avgThroughput * 1.5 ? 'High variance' : 'Stable'}
-                </p>
-              </div>
-            </div>
-
             {/* Network Health Score */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -1173,31 +848,8 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Network Utilization */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Utilization</p>
-              </div>
-              <div>
-                <p className={`text-2xl font-semibold ${
-                  utilizationPercent >= 80 ? 'text-red-500' :
-                  utilizationPercent >= 60 ? 'text-yellow-500' :
-                  'text-info'
-                }`}>
-                  {utilizationPercent}%
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {utilizationPercent >= 80 ? 'High load' : utilizationPercent >= 60 ? 'Moderate' : 'Normal'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Metrics Row */}
-          {avgClients > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
-              {/* Average Clients */}
+            {/* Average Clients */}
+            {avgClients > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
@@ -1210,62 +862,46 @@ export function Dashboard() {
                   </p>
                 </div>
               </div>
+            )}
 
-              {/* Throughput per Client */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Network className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Per Client</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-semibold text-primary">
-                    {currentClients > 0 ? formatBytes(currentThroughput / currentClients) : '0 B'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Avg throughput
-                  </p>
-                </div>
+            {/* Connection Quality */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Quality</p>
               </div>
-
-              {/* Connection Quality */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Quality</p>
-                </div>
-                <div>
-                  <p className={`text-2xl font-semibold ${
-                    healthScore >= 90 && utilizationPercent < 80 ? 'text-green-500' :
-                    healthScore >= 70 && utilizationPercent < 90 ? 'text-yellow-500' :
-                    'text-red-500'
-                  }`}>
-                    {healthScore >= 90 && utilizationPercent < 80 ? 'Excellent' :
-                     healthScore >= 70 && utilizationPercent < 90 ? 'Good' :
-                     'Fair'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Overall rating
-                  </p>
-                </div>
+              <div>
+                <p className={`text-2xl font-semibold ${
+                  healthScore >= 90 ? 'text-green-500' :
+                  healthScore >= 70 ? 'text-yellow-500' :
+                  'text-red-500'
+                }`}>
+                  {healthScore >= 90 ? 'Excellent' :
+                   healthScore >= 70 ? 'Good' :
+                   'Fair'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Overall rating
+                </p>
               </div>
-
-              {/* Low Power APs Warning */}
-              {networkHealth.lowPowerAPs > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
-                    <p className="text-sm text-muted-foreground">Low Power</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-warning">{networkHealth.lowPowerAPs}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      APs affected
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
-          )}
+
+            {/* Low Power APs Warning */}
+            {networkHealth.lowPowerAPs > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                  <p className="text-sm text-muted-foreground">Low Power</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold text-warning">{networkHealth.lowPowerAPs}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    APs affected
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -1393,12 +1029,12 @@ export function Dashboard() {
     );
   }
 
-  const hasFullData = dashboardData && 
-    dashboardData.throughputReport && 
-    dashboardData.throughputReport.length > 0;
-  
-  const hasPartialData = dashboardData && 
-    (dashboardData.networkHealth.primaryActiveAPs > 0 || 
+  const hasFullData = dashboardData &&
+    dashboardData.countOfUniqueUsersReport &&
+    dashboardData.countOfUniqueUsersReport.length > 0;
+
+  const hasPartialData = dashboardData &&
+    (dashboardData.networkHealth.primaryActiveAPs > 0 ||
      dashboardData.networkHealth.inactiveAPs > 0 ||
      (dashboardData.countOfUniqueUsersReport && dashboardData.countOfUniqueUsersReport.length > 0));
 
@@ -1448,9 +1084,6 @@ export function Dashboard() {
       {/* Performance Metrics */}
       {renderPerformanceMetrics()}
 
-      {/* Throughput Chart */}
-      {renderThroughputChart()}
-
       {/* Unique Clients Chart */}
       {renderUniqueClientsChart()}
 
@@ -1468,21 +1101,21 @@ export function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 rounded-lg bg-muted/5 border border-dashed border-border">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm font-medium text-muted-foreground">Throughput Analysis</p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Network traffic metrics unavailable
-                </p>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-muted/5 border border-dashed border-border">
-                <div className="flex items-center gap-2 mb-2">
                   <Activity className="h-4 w-4 text-muted-foreground" />
                   <p className="text-sm font-medium text-muted-foreground">Performance Trends</p>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Historical data unavailable
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-muted/5 border border-dashed border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm font-medium text-muted-foreground">Client Analytics</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Advanced metrics unavailable
                 </p>
               </div>
             </div>
