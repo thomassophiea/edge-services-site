@@ -463,44 +463,176 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
 
       console.log('=== SERVICE UPDATE DEBUG INFO ===');
       console.log('Service ID:', serviceId);
-      console.log('Original service data:', JSON.stringify(service, null, 2));
-      console.log('Form data changes:', {
-        name: formData.name,
-        ssid: formData.ssid,
-        enabled: formData.enabled,
-        securityType: formData.securityType,
-        suppressSsid: formData.hidden,
-        description: formData.description
-      });
-      
-      // Generate privacy configuration if security type changed
+      console.log('Form data to save:', formData);
+
+      // === CONSTRUCT PRIVACY CONFIGURATION ===
       let privacyConfig = service.privacy;
-      if (formData.passphrase && formData.passphrase.trim()) {
+
+      // Build privacy object based on security type
+      if (formData.securityType === 'wpa3-personal' || formData.securityType === 'wpa23-personal') {
+        // WPA3-SAE (Simultaneous Authentication of Equals)
+        privacyConfig = {
+          type: formData.securityType === 'wpa3-personal' ? 'WPA3-SAE' : 'WPA2/3-SAE',
+          WpaSaeElement: {
+            pmfMode: formData.pmfMode,
+            saeMethod: formData.saeMethod,
+            presharedKey: formData.passphrase || service.privacy?.WpaSaeElement?.presharedKey || '',
+            keyHexEncoded: false,
+            encryption: formData.encryption === 'aes' ? 'AES' : formData.encryption === 'tkip-aes' ? 'TKIP_AES' : 'AES',
+            akmSuiteSelector: 'SAE'
+          }
+        };
+      } else if (formData.securityType === 'wpa2-personal' || formData.securityType === 'wpa-personal') {
+        // WPA2-Personal (PSK)
+        privacyConfig = {
+          type: formData.securityType === 'wpa2-personal' ? 'WPA2' : 'WPA',
+          WpaPskElement: {
+            mode: formData.securityType === 'wpa2-personal' ? 'WPA2' : 'WPA',
+            pmfMode: formData.pmfMode || 'disabled',
+            presharedKey: formData.passphrase || service.privacy?.WpaPskElement?.presharedKey || '',
+            keyHexEncoded: false,
+            encryption: formData.encryption === 'aes' ? 'AES' : formData.encryption === 'tkip' ? 'TKIP' : formData.encryption === 'tkip-aes' ? 'TKIP_AES' : 'AES'
+          }
+        };
+      } else if (formData.securityType.includes('enterprise')) {
+        // WPA-Enterprise / WPA2-Enterprise / WPA3-Enterprise
+        const mode = formData.securityType === 'wpa3-enterprise' ? 'WPA3' :
+                     formData.securityType === 'wpa2-enterprise' ? 'WPA2' :
+                     formData.securityType === 'wpa23-enterprise' ? 'WPA2/3' : 'WPA';
+
+        privacyConfig = {
+          type: mode,
+          WpaEnterpriseElement: {
+            mode: mode,
+            pmfMode: formData.pmfMode || (formData.securityType === 'wpa3-enterprise' ? 'required' : 'disabled'),
+            encryption: formData.encryption === 'aes' ? 'AES' : formData.encryption === 'tkip' ? 'TKIP' : formData.encryption === 'tkip-aes' ? 'TKIP_AES' : 'AES',
+            fastTransitionEnabled: formData.fastTransitionEnabled,
+            fastTransitionMdId: formData.fastTransitionMdId || 0
+          }
+        };
+      } else if (formData.securityType === 'owe') {
+        // OWE (Opportunistic Wireless Encryption)
+        privacyConfig = {
+          type: 'OWE',
+          OweElement: {
+            encryption: 'AES'
+          }
+        };
+      } else if (formData.securityType === 'open') {
+        // Open network
+        privacyConfig = {
+          type: 'Open'
+        };
+      } else if (formData.passphrase && formData.passphrase.trim()) {
+        // Fallback: use existing privacy config generator
         privacyConfig = generatePrivacyConfig(formData.securityType, formData.passphrase);
-        console.log('Generated new privacy config:', privacyConfig);
       }
 
-      // Build complete service payload with ALL required fields
-      // Start with defaults, then overlay existing service, then apply form changes
+      console.log('Generated privacy config:', privacyConfig);
+
+      // === BUILD COMPLETE SERVICE PAYLOAD ===
       const completeServiceData: Partial<Service> = {
         ...generateDefaultService(), // Start with all defaults
         ...service, // Overlay existing service data to preserve everything
-        
-        // Apply user's changes
+
+        // === BASIC SETTINGS ===
         id: serviceId,
         serviceName: formData.name.trim(),
         ssid: formData.ssid.trim(),
         status: formData.enabled ? 'enabled' : 'disabled',
-        suppressSsid: formData.hidden,
+        enabled: formData.enabled,
+        description: formData.description?.trim() || '',
+
+        // === SECURITY CONFIGURATION ===
         privacy: privacyConfig,
-        
-        // Clean up any undefined or null values that might cause issues
-        description: formData.description?.trim() || service.description || '',
+        suppressSsid: formData.hidden,
+
+        // WPA3-SAE specific fields
+        beaconProtection: formData.beaconProtection,
+
+        // OWE specific fields
+        oweAutogen: formData.oweAutogen,
+        oweCompanion: formData.oweCompanion || null,
+
+        // === AAA/RADIUS CONFIGURATION ===
+        aaaPolicyId: formData.aaaPolicyId || null,
+        accountingEnabled: formData.accountingEnabled,
+
+        // === ROLE ASSIGNMENT ===
+        authenticatedUserDefaultRoleID: formData.authenticatedUserDefaultRoleID || '',
+        unAuthenticatedUserDefaultRoleID: formData.unAuthenticatedUserDefaultRoleID || '',
+        mbatimeoutRoleId: formData.mbatimeoutRoleId || null,
+
+        // === NETWORK SETTINGS ===
+        defaultTopology: formData.defaultTopology || null,
+        proxied: formData.proxied,
+        vlan: formData.vlan ? parseInt(formData.vlan) : undefined,
+        band: formData.band,
+        channel: formData.channel === 'auto' ? undefined : parseInt(formData.channel),
+
+        // === 802.11k/v/r SUPPORT ===
+        enabled11kSupport: formData.enabled11kSupport,
+        rm11kBeaconReport: formData.rm11kBeaconReport,
+        rm11kQuietIe: formData.rm11kQuietIe,
+        enable11mcSupport: formData.enable11mcSupport,
+
+        // === BAND STEERING ===
+        bandSteering: formData.bandSteering,
+        mbo: formData.mbo,
+
+        // === QUALITY OF SERVICE ===
+        defaultCoS: formData.defaultCoS || null,
+        uapsdEnabled: formData.uapsdEnabled,
+        admissionControlVideo: formData.admissionControlVideo,
+        admissionControlVoice: formData.admissionControlVoice,
+        admissionControlBestEffort: formData.admissionControlBestEffort,
+        admissionControlBackgroundTraffic: formData.admissionControlBackgroundTraffic,
+
+        // === CAPTIVE PORTAL & HOTSPOT ===
+        captivePortal: formData.captivePortal,
+        enableCaptivePortal: formData.captivePortal,
+        captivePortalType: formData.captivePortalType || '',
+        eGuestPortalId: formData.eGuestPortalId || '',
+        hotspotType: formData.hotspotType,
+
+        // === ACCESS CONTROL ===
+        guestAccess: formData.guestAccess,
+        macBasedAuth: formData.macBasedAuth,
+        mbaAuthorization: formData.mbaAuthorization,
+
+        // === CLIENT MANAGEMENT ===
+        maxClients: formData.maxClients,
+        maxClientsPer24: formData.maxClientsPer24,
+        maxClientsPer5: formData.maxClientsPer5,
+        sessionTimeout: formData.sessionTimeout,
+        preAuthenticatedIdleTimeout: formData.preAuthenticatedIdleTimeout,
+        postAuthenticatedIdleTimeout: formData.postAuthenticatedIdleTimeout,
+        clientToClientCommunication: formData.clientToClientCommunication,
+        flexibleClientAccess: formData.flexibleClientAccess,
+        purgeOnDisconnect: formData.purgeOnDisconnect,
+        includeHostname: formData.includeHostname,
+
+        // === ROAMING & OPTIMIZATION ===
+        roamingAssistPolicy: formData.roamingAssistPolicy || null,
+        loadBalancing: formData.loadBalancing,
+
+        // === RADIUS VENDOR ATTRIBUTES ===
+        vendorSpecificAttributes: formData.vendorSpecificAttributes,
+
+        // === MESH SETTINGS ===
+        shutdownOnMeshpointLoss: formData.shutdownOnMeshpointLoss,
       };
-      
+
+      // Remove undefined values to avoid API issues
+      Object.keys(completeServiceData).forEach(key => {
+        if (completeServiceData[key as keyof Service] === undefined) {
+          delete completeServiceData[key as keyof Service];
+        }
+      });
+
       console.log('=== COMPLETE SERVICE PAYLOAD ===');
       console.log(JSON.stringify(completeServiceData, null, 2));
-      
+
       // Validate the complete payload
       const validation = validateServiceData(completeServiceData);
       if (!validation.valid) {
@@ -510,12 +642,12 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
       // Send the complete service update
       const updatedService = await apiService.updateService(serviceId, completeServiceData);
       console.log('Service update successful!');
-      
+
       // Update local service state with response
       setService(updatedService);
-      
+
       toast.success('Network configuration saved successfully', {
-        description: `Settings for ${formData.name} have been updated.`
+        description: `Settings for ${formData.name} have been updated with all Campus Controller features.`
       });
 
       // Call onSave callback to refresh parent component
@@ -526,7 +658,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save network configuration';
       setError(errorMessage);
-      
+
       // Enhanced error logging for debugging
       console.error('=== COMPREHENSIVE ERROR ANALYSIS ===');
       console.error('Error message:', errorMessage);
@@ -534,40 +666,33 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
       console.error('Error constructor:', err?.constructor?.name);
       console.error('Service ID:', serviceId);
       console.error('Original service structure:', Object.keys(service || {}));
-      console.error('Form data structure:', {
-        name: formData.name,
-        ssid: formData.ssid,
-        enabled: formData.enabled,
-        securityType: formData.securityType,
-        vlan: formData.vlan,
-        description: formData.description
-      });
-      
+      console.error('Form data structure:', formData);
+
       // Log specific Campus Controller API expectations
       console.error('Campus Controller API debugging hints:');
       console.error('- Check if service ID exists:', serviceId);
       console.error('- Verify field names match API expectations');
       console.error('- Check for required fields that might be missing');
-      console.error('- VLAN field might need to be "vlan" instead of "dot1dPortNumber"');
-      console.error('- Security settings might need to be nested in "security" object');
-      
+      console.error('- Privacy object structure:', service.privacy);
+      console.error('- Security type:', formData.securityType);
+
       if (err && typeof err === 'object') {
         console.error('Error object properties:', Object.getOwnPropertyNames(err));
         console.error('Error object values:', Object.fromEntries(
           Object.getOwnPropertyNames(err).map(prop => [prop, (err as any)[prop]])
         ));
       }
-      
+
       // Provide actionable error message to user
       let userFriendlyError = errorMessage;
       if (errorMessage.includes('422')) {
-        userFriendlyError = 'Validation failed. The Campus Controller rejected the update. Check that all field values are valid and try updating fewer fields at once.';
+        userFriendlyError = 'Validation failed. The Campus Controller rejected the update. Check that all field values are valid (e.g., valid VLAN range, proper passphrase length, valid UUIDs for roles/topologies).';
       } else if (errorMessage.includes('404')) {
         userFriendlyError = 'Service not found. The network configuration may have been deleted by another user.';
       } else if (errorMessage.includes('403')) {
         userFriendlyError = 'Access denied. You may not have permission to modify this network configuration.';
       }
-      
+
       toast.error('Failed to save network configuration', {
         description: userFriendlyError,
         duration: 10000 // Longer duration for error messages
@@ -986,6 +1111,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
 
         {/* Network Settings Tab */}
         <TabsContent value="network" className="space-y-6">
+          {/* Basic Network Settings */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -993,24 +1119,49 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                 <span>Network Settings</span>
               </CardTitle>
               <CardDescription>
-                Configure VLAN, band, and broadcast settings
+                Configure VLAN, topology, band, and broadcast settings
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="vlan">VLAN ID</Label>
-                  <Input
-                    id="vlan"
-                    type="number"
-                    value={formData.vlan}
-                    onChange={(e) => handleInputChange('vlan', e.target.value)}
-                    placeholder="VLAN ID"
-                    min="1"
-                    max="4094"
-                  />
+                  <Label htmlFor="topology">Network Topology (VLAN)</Label>
+                  <Select value={formData.defaultTopology} onValueChange={(value) => handleInputChange('defaultTopology', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select topology" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {topologies.map(topo => (
+                        <SelectItem key={topo.id} value={topo.id}>
+                          {topo.name} (VLAN {topo.vlanid})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {topologies.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No topologies configured</p>
+                  )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="proxied">Traffic Forwarding Mode</Label>
+                  <Select value={formData.proxied} onValueChange={(value) => handleInputChange('proxied', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Local">Local (Bridged at AP)</SelectItem>
+                      <SelectItem value="Centralized">Centralized (Tunneled)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.proxied === 'Local' ? 'Traffic bridged locally at AP' : 'Traffic tunneled to controller'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="band">Frequency Band</Label>
                   <Select value={formData.band} onValueChange={(value) => handleInputChange('band', value)}>
@@ -1045,15 +1196,28 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="vlan">VLAN ID (Manual Override)</Label>
+                  <Input
+                    id="vlan"
+                    type="number"
+                    value={formData.vlan}
+                    onChange={(e) => handleInputChange('vlan', e.target.value)}
+                    placeholder="Use topology"
+                    min="1"
+                    max="4094"
+                  />
+                </div>
               </div>
+
+              <Separator />
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <Label>Broadcast SSID</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Make network visible to clients
-                    </p>
+                    <p className="text-sm text-muted-foreground">Make network visible to clients</p>
                   </div>
                   <Switch
                     checked={formData.broadcastSSID}
@@ -1067,9 +1231,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <Label>Hidden Network</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Don't broadcast SSID (clients must know network name)
-                    </p>
+                    <p className="text-sm text-muted-foreground">Don't broadcast SSID</p>
                   </div>
                   <Switch
                     checked={formData.hidden}
@@ -1082,67 +1244,326 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
               </div>
             </CardContent>
           </Card>
+
+          {/* 802.11k/v/r Support */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">802.11k/v/r Support</CardTitle>
+              <CardDescription>Radio resource management and roaming optimization</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>802.11k (Radio Resource Management)</Label>
+                  <p className="text-sm text-muted-foreground">Help clients find best AP</p>
+                </div>
+                <Switch
+                  checked={formData.enabled11kSupport}
+                  onCheckedChange={(checked) => handleInputChange('enabled11kSupport', checked)}
+                />
+              </div>
+
+              {formData.enabled11kSupport && (
+                <>
+                  <div className="flex items-center justify-between pl-6">
+                    <div className="space-y-1">
+                      <Label>Beacon Report</Label>
+                      <p className="text-sm text-muted-foreground">Request neighbor AP info from clients</p>
+                    </div>
+                    <Switch
+                      checked={formData.rm11kBeaconReport}
+                      onCheckedChange={(checked) => handleInputChange('rm11kBeaconReport', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pl-6">
+                    <div className="space-y-1">
+                      <Label>Quiet IE</Label>
+                      <p className="text-sm text-muted-foreground">Coordinate spectrum measurements</p>
+                    </div>
+                    <Switch
+                      checked={formData.rm11kQuietIe}
+                      onCheckedChange={(checked) => handleInputChange('rm11kQuietIe', checked)}
+                    />
+                  </div>
+                </>
+              )}
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>802.11v (BSS Transition Management)</Label>
+                  <p className="text-sm text-muted-foreground">Suggest better APs to clients</p>
+                </div>
+                <Switch
+                  checked={formData.enable11mcSupport}
+                  onCheckedChange={(checked) => handleInputChange('enable11mcSupport', checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Band Steering */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Band Steering & Optimization</CardTitle>
+              <CardDescription>Optimize client band selection</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Band Steering</Label>
+                  <p className="text-sm text-muted-foreground">Steer dual-band clients to 5GHz</p>
+                </div>
+                <Switch
+                  checked={formData.bandSteering}
+                  onCheckedChange={(checked) => handleInputChange('bandSteering', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>MBO (Multi-Band Operation)</Label>
+                  <p className="text-sm text-muted-foreground">Enhanced 802.11k/v features</p>
+                </div>
+                <Switch
+                  checked={formData.mbo}
+                  onCheckedChange={(checked) => handleInputChange('mbo', checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Access Control Tab */}
         <TabsContent value="access" className="space-y-6">
+          {/* QoS & Admission Control */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Lock className="h-5 w-5" />
-                <span>Access Control</span>
-              </CardTitle>
-              <CardDescription>
-                Configure client access and authentication policies
-              </CardDescription>
+              <CardTitle className="text-sm">Quality of Service (QoS)</CardTitle>
+              <CardDescription>Traffic prioritization and admission control</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="cos">Class of Service (CoS)</Label>
+                <Select value={formData.defaultCoS} onValueChange={(value) => handleInputChange('defaultCoS', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select CoS" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None (Best Effort)</SelectItem>
+                    {cosOptions.map(cos => (
+                      <SelectItem key={cos.id} value={cos.id}>
+                        {cos.cosName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {cosOptions.length === 0 && (
+                  <p className="text-xs text-muted-foreground">No CoS options configured</p>
+                )}
+              </div>
+
+              <Separator />
+
               <div className="space-y-4">
+                <h4 className="text-sm font-medium">Admission Control</h4>
+                <p className="text-xs text-muted-foreground">Require channel capacity before admitting traffic</p>
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label>Captive Portal</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Require web authentication before network access
-                    </p>
+                    <Label>Video Traffic</Label>
+                    <p className="text-sm text-muted-foreground">Require admission for video (AC_VI)</p>
                   </div>
                   <Switch
-                    checked={formData.captivePortal}
-                    onCheckedChange={(checked) => handleInputChange('captivePortal', checked)}
+                    checked={formData.admissionControlVideo}
+                    onCheckedChange={(checked) => handleInputChange('admissionControlVideo', checked)}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label>Guest Access</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow guest users with limited access
-                    </p>
+                    <Label>Voice Traffic</Label>
+                    <p className="text-sm text-muted-foreground">Require admission for voice (AC_VO)</p>
                   </div>
                   <Switch
-                    checked={formData.guestAccess}
-                    onCheckedChange={(checked) => handleInputChange('guestAccess', checked)}
+                    checked={formData.admissionControlVoice}
+                    onCheckedChange={(checked) => handleInputChange('admissionControlVoice', checked)}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label>MAC-based Authentication</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Authenticate devices based on MAC address
-                    </p>
+                    <Label>Best Effort Traffic</Label>
+                    <p className="text-sm text-muted-foreground">Require admission for best effort (AC_BE)</p>
                   </div>
                   <Switch
-                    checked={formData.macBasedAuth}
-                    onCheckedChange={(checked) => handleInputChange('macBasedAuth', checked)}
+                    checked={formData.admissionControlBestEffort}
+                    onCheckedChange={(checked) => handleInputChange('admissionControlBestEffort', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Background Traffic</Label>
+                    <p className="text-sm text-muted-foreground">Require admission for background (AC_BK)</p>
+                  </div>
+                  <Switch
+                    checked={formData.admissionControlBackgroundTraffic}
+                    onCheckedChange={(checked) => handleInputChange('admissionControlBackgroundTraffic', checked)}
                   />
                 </div>
               </div>
 
               <Separator />
 
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>U-APSD (WMM Power Save)</Label>
+                  <p className="text-sm text-muted-foreground">Unscheduled Automatic Power Save Delivery</p>
+                </div>
+                <Switch
+                  checked={formData.uapsdEnabled}
+                  onCheckedChange={(checked) => handleInputChange('uapsdEnabled', checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Captive Portal & Hotspot */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Captive Portal & Guest Access</CardTitle>
+              <CardDescription>Web authentication and guest portal settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Enable Captive Portal</Label>
+                  <p className="text-sm text-muted-foreground">Require web authentication</p>
+                </div>
+                <Switch
+                  checked={formData.captivePortal}
+                  onCheckedChange={(checked) => handleInputChange('captivePortal', checked)}
+                />
+              </div>
+
+              {formData.captivePortal && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="cp-type">Captive Portal Type</Label>
+                    <Select value={formData.captivePortalType} onValueChange={(value) => handleInputChange('captivePortalType', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select portal type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="internal">Internal Portal</SelectItem>
+                        <SelectItem value="external">External Portal</SelectItem>
+                        <SelectItem value="custom">Custom Portal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="eguest-portal">eGuest Portal</Label>
+                    <Input
+                      id="eguest-portal"
+                      value={formData.eGuestPortalId}
+                      onChange={(e) => handleInputChange('eGuestPortalId', e.target.value)}
+                      placeholder="eGuest Portal ID (optional)"
+                    />
+                    <p className="text-xs text-muted-foreground">Leave empty if not using eGuest</p>
+                  </div>
+                </>
+              )}
+
+              <Separator />
+
               <div className="space-y-4">
-                <h4 className="text-sm font-medium">Client Limits</h4>
-                
+                <h4 className="text-sm font-medium">Hotspot 2.0 / Passpoint</h4>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Enable Hotspot 2.0</Label>
+                    <p className="text-sm text-muted-foreground">Standards-based guest access</p>
+                  </div>
+                  <Switch
+                    checked={formData.hotspot}
+                    onCheckedChange={(checked) => {
+                      handleInputChange('hotspot', checked);
+                      handleInputChange('hotspotType', checked ? 'Hotspot20' : 'Disabled');
+                    }}
+                  />
+                </div>
+
+                {formData.hotspot && (
+                  <div className="space-y-2">
+                    <Label htmlFor="hotspot-type">Hotspot Type</Label>
+                    <Select value={formData.hotspotType} onValueChange={(value) => handleInputChange('hotspotType', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Disabled">Disabled</SelectItem>
+                        <SelectItem value="Hotspot20">Hotspot 2.0 (Passpoint)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Guest Access</Label>
+                  <p className="text-sm text-muted-foreground">Allow limited guest network access</p>
+                </div>
+                <Switch
+                  checked={formData.guestAccess}
+                  onCheckedChange={(checked) => handleInputChange('guestAccess', checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* MAC-Based Auth & Client Limits */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">MAC-Based Authentication & Client Limits</CardTitle>
+              <CardDescription>Device authentication and connection limits</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>MAC-based Authentication</Label>
+                  <p className="text-sm text-muted-foreground">Authenticate by MAC address</p>
+                </div>
+                <Switch
+                  checked={formData.macBasedAuth}
+                  onCheckedChange={(checked) => handleInputChange('macBasedAuth', checked)}
+                />
+              </div>
+
+              {formData.macBasedAuth && (
+                <div className="flex items-center justify-between pl-6">
+                  <div className="space-y-1">
+                    <Label>MAC-Based Authorization</Label>
+                    <p className="text-sm text-muted-foreground">Require RADIUS authorization</p>
+                  </div>
+                  <Switch
+                    checked={formData.mbaAuthorization}
+                    onCheckedChange={(checked) => handleInputChange('mbaAuthorization', checked)}
+                  />
+                </div>
+              )}
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium">Client Connection Limits</h4>
+
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="max-clients">Max Clients (Total)</Label>
@@ -1157,7 +1578,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="max-clients-24">Max Clients (2.4GHz)</Label>
+                    <Label htmlFor="max-clients-24">2.4GHz Band</Label>
                     <Input
                       id="max-clients-24"
                       type="number"
@@ -1169,7 +1590,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="max-clients-5">Max Clients (5GHz)</Label>
+                    <Label htmlFor="max-clients-5">5GHz Band</Label>
                     <Input
                       id="max-clients-5"
                       type="number"
@@ -1181,75 +1602,208 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                   </div>
                 </div>
               </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium">Session Timeouts</h4>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pre-auth-timeout">Pre-Auth Idle (seconds)</Label>
+                    <Input
+                      id="pre-auth-timeout"
+                      type="number"
+                      value={formData.preAuthenticatedIdleTimeout}
+                      onChange={(e) => handleInputChange('preAuthenticatedIdleTimeout', parseInt(e.target.value) || 0)}
+                      min="0"
+                      max="999999"
+                    />
+                    <p className="text-xs text-muted-foreground">Before authentication (default: 300)</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="post-auth-timeout">Post-Auth Idle (seconds)</Label>
+                    <Input
+                      id="post-auth-timeout"
+                      type="number"
+                      value={formData.postAuthenticatedIdleTimeout}
+                      onChange={(e) => handleInputChange('postAuthenticatedIdleTimeout', parseInt(e.target.value) || 0)}
+                      min="0"
+                      max="999999"
+                    />
+                    <p className="text-xs text-muted-foreground">After authentication (default: 1800)</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="session-timeout">Session Timeout (seconds)</Label>
+                    <Input
+                      id="session-timeout"
+                      type="number"
+                      value={formData.sessionTimeout}
+                      onChange={(e) => handleInputChange('sessionTimeout', parseInt(e.target.value) || 0)}
+                      min="0"
+                      max="999999"
+                    />
+                    <p className="text-xs text-muted-foreground">Max session duration (0 = unlimited)</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Advanced Settings Tab */}
         <TabsContent value="advanced" className="space-y-6">
+          {/* Client Management */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
-                <span>Advanced Configuration</span>
-              </CardTitle>
-              <CardDescription>
-                Advanced network features and quality of service settings
-              </CardDescription>
+              <CardTitle className="text-sm">Client Management</CardTitle>
+              <CardDescription>Advanced client communication and behavior settings</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Hotspot Mode</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Enable hotspot functionality
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.hotspot}
-                    onCheckedChange={(checked) => handleInputChange('hotspot', checked)}
-                  />
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Client-to-Client Communication</Label>
+                  <p className="text-sm text-muted-foreground">Allow wireless clients to communicate directly</p>
                 </div>
+                <Switch
+                  checked={formData.clientToClientCommunication}
+                  onCheckedChange={(checked) => {
+                    handleInputChange('clientToClientCommunication', checked);
+                    handleInputChange('isolateClients', !checked);
+                  }}
+                />
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Client Isolation</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Prevent clients from communicating with each other
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.isolateClients}
-                    onCheckedChange={(checked) => handleInputChange('isolateClients', checked)}
-                  />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Client Isolation</Label>
+                  <p className="text-sm text-muted-foreground">Prevent wireless client-to-client communication</p>
                 </div>
+                <Switch
+                  checked={formData.isolateClients}
+                  onCheckedChange={(checked) => {
+                    handleInputChange('isolateClients', checked);
+                    handleInputChange('clientToClientCommunication', !checked);
+                  }}
+                />
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Fast Roaming</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Enable fast roaming between access points
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.fastRoaming}
-                    onCheckedChange={(checked) => handleInputChange('fastRoaming', checked)}
-                  />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Flexible Client Access</Label>
+                  <p className="text-sm text-muted-foreground">Dynamic client access control</p>
                 </div>
+                <Switch
+                  checked={formData.flexibleClientAccess}
+                  onCheckedChange={(checked) => handleInputChange('flexibleClientAccess', checked)}
+                />
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Load Balancing</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Distribute clients across access points
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.loadBalancing}
-                    onCheckedChange={(checked) => handleInputChange('loadBalancing', checked)}
-                  />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Purge on Disconnect</Label>
+                  <p className="text-sm text-muted-foreground">Clear client data when disconnected</p>
                 </div>
+                <Switch
+                  checked={formData.purgeOnDisconnect}
+                  onCheckedChange={(checked) => handleInputChange('purgeOnDisconnect', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Include Hostname in RADIUS</Label>
+                  <p className="text-sm text-muted-foreground">Send client hostname to RADIUS server</p>
+                </div>
+                <Switch
+                  checked={formData.includeHostname}
+                  onCheckedChange={(checked) => handleInputChange('includeHostname', checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Roaming & Optimization */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Roaming & Optimization</CardTitle>
+              <CardDescription>Client roaming and load distribution settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="roaming-policy">Roaming Assist Policy</Label>
+                <Input
+                  id="roaming-policy"
+                  value={formData.roamingAssistPolicy}
+                  onChange={(e) => handleInputChange('roamingAssistPolicy', e.target.value)}
+                  placeholder="Roaming policy UUID (optional)"
+                />
+                <p className="text-xs text-muted-foreground">Advanced roaming optimization policy</p>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Load Balancing</Label>
+                  <p className="text-sm text-muted-foreground">Distribute clients across APs</p>
+                </div>
+                <Switch
+                  checked={formData.loadBalancing}
+                  onCheckedChange={(checked) => handleInputChange('loadBalancing', checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* RADIUS Vendor Attributes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">RADIUS Vendor-Specific Attributes</CardTitle>
+              <CardDescription>Customize RADIUS attributes sent with authentication</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Vendor Attributes (comma-separated)</Label>
+                <Input
+                  value={formData.vendorSpecificAttributes.join(', ')}
+                  onChange={(e) => {
+                    const attrs = e.target.value.split(',').map(s => s.trim()).filter(s => s);
+                    handleInputChange('vendorSpecificAttributes', attrs);
+                  }}
+                  placeholder="apName, vnsName, ssid, etc."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Common attributes: apName, vnsName, ssid, apMac, apLocation
+                </p>
+              </div>
+
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-xs text-muted-foreground">
+                  <strong>Current attributes:</strong> {formData.vendorSpecificAttributes.length > 0 ? formData.vendorSpecificAttributes.join(', ') : 'None'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mesh & Special Features */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Mesh & Special Features</CardTitle>
+              <CardDescription>Mesh networking and advanced features</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Shutdown on Meshpoint Loss</Label>
+                  <p className="text-sm text-muted-foreground">Disable service if mesh backhaul is lost</p>
+                </div>
+                <Switch
+                  checked={formData.shutdownOnMeshpointLoss}
+                  onCheckedChange={(checked) => handleInputChange('shutdownOnMeshpointLoss', checked)}
+                />
               </div>
             </CardContent>
           </Card>
