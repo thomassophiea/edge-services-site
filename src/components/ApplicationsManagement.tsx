@@ -75,49 +75,14 @@ export function ApplicationsManagement() {
   const loadApplications = async () => {
     setLoading(true);
     try {
-      // Generate mock applications
-      const mockApps: Application[] = [
-        {
-          id: '1',
-          name: 'Monitoring Dashboard',
-          description: 'External monitoring and analytics dashboard',
-          clientId: 'mon-dash-client-' + Math.random().toString(36).substring(7),
-          clientSecret: 'secret-' + Math.random().toString(36).substring(2, 15),
-          grantType: 'client_credentials',
-          scopes: ['read:devices', 'read:networks', 'read:clients'],
-          enabled: true,
-          createdAt: '2025-01-15T00:00:00Z',
-          lastUsed: new Date(Date.now() - 3600000).toISOString(),
-          requestCount: 15234
-        },
-        {
-          id: '2',
-          name: 'Configuration Tool',
-          description: 'Automated configuration management tool',
-          clientId: 'config-tool-' + Math.random().toString(36).substring(7),
-          clientSecret: 'secret-' + Math.random().toString(36).substring(2, 15),
-          grantType: 'client_credentials',
-          scopes: ['read:devices', 'write:devices', 'read:networks', 'write:networks'],
-          enabled: true,
-          createdAt: '2025-03-20T00:00:00Z',
-          lastUsed: new Date(Date.now() - 86400000).toISOString(),
-          requestCount: 5678
-        },
-        {
-          id: '3',
-          name: 'Legacy Integration',
-          description: 'Legacy system integration (deprecated)',
-          clientId: 'legacy-int-' + Math.random().toString(36).substring(7),
-          clientSecret: 'secret-' + Math.random().toString(36).substring(2, 15),
-          grantType: 'password',
-          scopes: ['read:devices'],
-          enabled: false,
-          createdAt: '2024-06-10T00:00:00Z',
-          requestCount: 0
-        }
-      ];
+      const response = await apiService.makeAuthenticatedRequest('/v1/applications', {
+        method: 'GET'
+      });
 
-      setApplications(mockApps);
+      if (response.ok) {
+        const data = await response.json();
+        setApplications(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       console.error('Failed to load applications:', error);
       toast.error('Failed to load applications');

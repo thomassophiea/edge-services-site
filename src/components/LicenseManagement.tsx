@@ -59,35 +59,14 @@ export function LicenseManagement() {
   const loadLicenseInfo = async () => {
     setLoading(true);
     try {
-      // Generate mock license info
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + 45); // 45 days from now
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/license', {
+        method: 'GET'
+      });
 
-      const mockLicense: LicenseInfo = {
-        licenseKey: 'EXTR-ENT-2025-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-        type: 'enterprise',
-        status: 'active',
-        issuedTo: 'Example Corporation',
-        issuedDate: '2025-01-01T00:00:00Z',
-        expirationDate: expirationDate.toISOString(),
-        daysRemaining: 45,
-        features: {
-          maxAccessPoints: 500,
-          maxClients: 10000,
-          maxSites: 50,
-          advancedSecurity: true,
-          guestPortal: true,
-          apiAccess: true,
-          technicalSupport: true
-        },
-        usage: {
-          accessPoints: 123,
-          clients: 3456,
-          sites: 8
-        }
-      };
-
-      setLicense(mockLicense);
+      if (response.ok) {
+        const data = await response.json();
+        setLicense(data);
+      }
     } catch (error) {
       console.error('Failed to load license info:', error);
       toast.error('Failed to load license information');
@@ -105,12 +84,20 @@ export function LicenseManagement() {
     setUploading(true);
     try {
       toast.info('Validating license key...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Simulate license upload
-      toast.success('License updated successfully');
-      setNewLicenseKey('');
-      await loadLicenseInfo();
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/license', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseKey: newLicenseKey })
+      });
+
+      if (response.ok) {
+        toast.success('License updated successfully');
+        setNewLicenseKey('');
+        await loadLicenseInfo();
+      } else {
+        throw new Error('Invalid license key');
+      }
     } catch (error) {
       toast.error('Invalid license key');
     } finally {

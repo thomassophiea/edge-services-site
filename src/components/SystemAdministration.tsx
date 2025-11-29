@@ -99,12 +99,14 @@ export function SystemAdministration() {
   const loadSystemConfig = async () => {
     setLoading(true);
     try {
-      // In production, this would load from API
-      // const configData = await apiService.getSystemConfig();
-      // setConfig(configData);
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/config', {
+        method: 'GET'
+      });
 
-      // Simulate loading
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (response.ok) {
+        const data = await response.json();
+        setConfig(prevConfig => ({ ...prevConfig, ...data }));
+      }
     } catch (error) {
       console.error('Failed to load system config:', error);
       toast.error('Failed to load system configuration');
@@ -118,10 +120,17 @@ export function SystemAdministration() {
     try {
       toast.info('Saving system configuration...');
 
-      // In production: await apiService.updateSystemConfig(config);
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
 
-      toast.success('System configuration saved successfully');
+      if (response.ok) {
+        toast.success('System configuration saved successfully');
+      } else {
+        throw new Error('Failed to save configuration');
+      }
     } catch (error) {
       console.error('Failed to save config:', error);
       toast.error('Failed to save configuration');

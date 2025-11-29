@@ -31,14 +31,25 @@ export function AccessControlRules() {
   const [formData, setFormData] = useState<Partial<AccessRule>>({ name: '', priority: 100, condition: 'ssid', action: 'allow', enabled: true });
 
   useEffect(() => {
-    setLoading(true);
-    const mockRules: AccessRule[] = [
-      { id: '1', name: 'Block Rogue Devices', priority: 10, condition: 'mac', conditionValue: '00:11:22:*', action: 'deny', group: 'N/A', enabled: true },
-      { id: '2', name: 'Guest SSID to Guest Group', priority: 20, condition: 'ssid', conditionValue: 'Guest-WiFi', action: 'allow', group: 'Guests', enabled: true },
-      { id: '3', name: 'Employee SSID to Employee Group', priority: 30, condition: 'ssid', conditionValue: 'Corporate', action: 'allow', group: 'Employees', enabled: true }
-    ];
-    setRules(mockRules.sort((a, b) => a.priority - b.priority));
-    setLoading(false);
+    const loadRules = async () => {
+      setLoading(true);
+      try {
+        const response = await apiService.makeAuthenticatedRequest('/v1/access-control/rules', {
+          method: 'GET'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setRules(Array.isArray(data) ? data.sort((a: AccessRule, b: AccessRule) => a.priority - b.priority) : []);
+        }
+      } catch (error) {
+        toast.error('Failed to load rules');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRules();
   }, []);
 
   const handleSave = () => {

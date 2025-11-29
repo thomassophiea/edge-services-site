@@ -49,33 +49,14 @@ export function AccessControlAAA() {
   const loadProfiles = async () => {
     setLoading(true);
     try {
-      const mockProfiles: AAAProfile[] = [
-        {
-          id: '1',
-          name: 'Corporate RADIUS',
-          description: 'Primary authentication for corporate users',
-          authMethod: 'radius',
-          radiusServer: '192.168.1.50',
-          radiusPort: 1812,
-          radiusSecret: '***',
-          accountingEnabled: true,
-          macAuthEnabled: false,
-          enabled: true
-        },
-        {
-          id: '2',
-          name: 'Guest LDAP',
-          description: 'Guest user authentication via LDAP',
-          authMethod: 'ldap',
-          ldapServer: 'ldap.example.com',
-          ldapPort: 389,
-          ldapBaseDN: 'dc=example,dc=com',
-          accountingEnabled: false,
-          macAuthEnabled: true,
-          enabled: true
-        }
-      ];
-      setProfiles(mockProfiles);
+      const response = await apiService.makeAuthenticatedRequest('/v1/access-control/aaa', {
+        method: 'GET'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProfiles(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       toast.error('Failed to load AAA profiles');
     } finally {

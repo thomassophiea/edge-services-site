@@ -27,14 +27,25 @@ export function AccessControlGroups() {
   const [formData, setFormData] = useState<Partial<AccessGroup>>({ name: '', description: '', vlan: 10, bandwidth: 100 });
 
   useEffect(() => {
-    setLoading(true);
-    const mockGroups: AccessGroup[] = [
-      { id: '1', name: 'Employees', description: 'Corporate employees', vlan: 10, bandwidth: 1000, memberCount: 245 },
-      { id: '2', name: 'Guests', description: 'Guest users', vlan: 20, bandwidth: 50, memberCount: 89 },
-      { id: '3', name: 'IoT Devices', description: 'Internet of Things devices', vlan: 30, bandwidth: 10, memberCount: 156 }
-    ];
-    setGroups(mockGroups);
-    setLoading(false);
+    const loadGroups = async () => {
+      setLoading(true);
+      try {
+        const response = await apiService.makeAuthenticatedRequest('/v1/access-control/groups', {
+          method: 'GET'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setGroups(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        toast.error('Failed to load groups');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGroups();
   }, []);
 
   const handleSave = () => {

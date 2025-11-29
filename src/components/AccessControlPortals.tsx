@@ -28,13 +28,25 @@ export function AccessControlPortals() {
   const [formData, setFormData] = useState<Partial<Portal>>({ name: '', portalUrl: '', redirectUrl: '', sessionTimeout: 3600, enabled: true });
 
   useEffect(() => {
-    setLoading(true);
-    const mockPortals: Portal[] = [
-      { id: '1', name: 'Guest Portal', portalUrl: 'https://guest.example.com', redirectUrl: 'https://example.com/welcome', sessionTimeout: 3600, enabled: true },
-      { id: '2', name: 'Employee Portal', portalUrl: 'https://employees.example.com', redirectUrl: 'https://intranet.example.com', sessionTimeout: 7200, enabled: true }
-    ];
-    setPortals(mockPortals);
-    setLoading(false);
+    const loadPortals = async () => {
+      setLoading(true);
+      try {
+        const response = await apiService.makeAuthenticatedRequest('/v1/access-control/portals', {
+          method: 'GET'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setPortals(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        toast.error('Failed to load portals');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPortals();
   }, []);
 
   const handleSave = () => {

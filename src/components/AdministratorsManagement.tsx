@@ -58,50 +58,14 @@ export function AdministratorsManagement() {
   const loadAdministrators = async () => {
     setLoading(true);
     try {
-      // Generate mock administrators
-      const mockAdmins: Administrator[] = [
-        {
-          id: '1',
-          username: 'admin',
-          email: 'admin@example.com',
-          role: 'super_admin',
-          enabled: true,
-          lastLogin: new Date(Date.now() - 3600000).toISOString(),
-          createdAt: '2025-01-01T00:00:00Z',
-          twoFactorEnabled: true
-        },
-        {
-          id: '2',
-          username: 'operator1',
-          email: 'operator@example.com',
-          role: 'operator',
-          enabled: true,
-          lastLogin: new Date(Date.now() - 86400000).toISOString(),
-          createdAt: '2025-06-15T00:00:00Z',
-          twoFactorEnabled: false
-        },
-        {
-          id: '3',
-          username: 'viewer1',
-          email: 'viewer@example.com',
-          role: 'viewer',
-          enabled: true,
-          lastLogin: new Date(Date.now() - 172800000).toISOString(),
-          createdAt: '2025-08-20T00:00:00Z',
-          twoFactorEnabled: false
-        },
-        {
-          id: '4',
-          username: 'disabled_user',
-          email: 'disabled@example.com',
-          role: 'operator',
-          enabled: false,
-          createdAt: '2025-09-10T00:00:00Z',
-          twoFactorEnabled: false
-        }
-      ];
+      const response = await apiService.makeAuthenticatedRequest('/v1/administrators', {
+        method: 'GET'
+      });
 
-      setAdministrators(mockAdmins);
+      if (response.ok) {
+        const data = await response.json();
+        setAdministrators(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       console.error('Failed to load administrators:', error);
       toast.error('Failed to load administrators');
@@ -196,33 +160,51 @@ export function AdministratorsManagement() {
     try {
       if (editingAdmin) {
         // Update existing administrator
-        const updatedAdmins = administrators.map(admin =>
-          admin.id === editingAdmin.id
-            ? {
-                ...admin,
-                username: formData.username,
-                email: formData.email,
-                role: formData.role,
-                enabled: formData.enabled,
-                twoFactorEnabled: formData.twoFactorEnabled
-              }
-            : admin
-        );
-        setAdministrators(updatedAdmins);
-        toast.success('Administrator updated successfully');
-      } else {
-        // Create new administrator
-        const newAdmin: Administrator = {
-          id: Date.now().toString(),
+        const updateData: any = {
           username: formData.username,
           email: formData.email,
           role: formData.role,
           enabled: formData.enabled,
-          createdAt: new Date().toISOString(),
           twoFactorEnabled: formData.twoFactorEnabled
         };
-        setAdministrators([...administrators, newAdmin]);
-        toast.success('Administrator created successfully');
+
+        if (formData.password) {
+          updateData.password = formData.password;
+        }
+
+        const response = await apiService.makeAuthenticatedRequest(`/v1/administrators/${editingAdmin.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        });
+
+        if (response.ok) {
+          toast.success('Administrator updated successfully');
+          await loadAdministrators();
+        } else {
+          throw new Error('Failed to update administrator');
+        }
+      } else {
+        // Create new administrator
+        const response = await apiService.makeAuthenticatedRequest('/v1/administrators', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            role: formData.role,
+            enabled: formData.enabled,
+            twoFactorEnabled: formData.twoFactorEnabled
+          })
+        });
+
+        if (response.ok) {
+          toast.success('Administrator created successfully');
+          await loadAdministrators();
+        } else {
+          throw new Error('Failed to create administrator');
+        }
       }
 
       handleCloseDialog();
@@ -231,7 +213,7 @@ export function AdministratorsManagement() {
     }
   };
 
-  const handleDeleteAdministrator = (admin: Administrator) => {
+  const handleDeleteAdministrator = async (admin: Administrator) => {
     if (admin.role === 'super_admin') {
       toast.error('Cannot delete super admin account');
       return;
@@ -243,21 +225,44 @@ export function AdministratorsManagement() {
 
     if (!confirmed) return;
 
-    setAdministrators(administrators.filter(a => a.id !== admin.id));
-    toast.success('Administrator deleted successfully');
+    try {
+      const response = await apiService.makeAuthenticatedRequest(`/v1/administrators/${admin.id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        toast.success('Administrator deleted successfully');
+        await loadAdministrators();
+      } else {
+        throw new Error('Failed to delete administrator');
+      }
+    } catch (error) {
+      toast.error('Failed to delete administrator');
+    }
   };
 
-  const handleToggleEnabled = (admin: Administrator, enabled: boolean) => {
+  const handleToggleEnabled = async (admin: Administrator, enabled: boolean) => {
     if (admin.role === 'super_admin') {
       toast.error('Cannot disable super admin account');
       return;
     }
 
-    const updatedAdmins = administrators.map(a =>
-      a.id === admin.id ? { ...a, enabled } : a
-    );
-    setAdministrators(updatedAdmins);
-    toast.success(enabled ? 'Administrator enabled' : 'Administrator disabled');
+    try {
+      const response = await apiService.makeAuthenticatedRequest(`/v1/administrators/${admin.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled })
+      });
+
+      if (response.ok) {
+        toast.success(enabled ? 'Administrator enabled' : 'Administrator disabled');
+        await loadAdministrators();
+      } else {
+        throw new Error('Failed to update administrator');
+      }
+    } catch (error) {
+      toast.error('Failed to update administrator');
+    }
   };
 
   const getRoleBadge = (role: Administrator['role']) => {
