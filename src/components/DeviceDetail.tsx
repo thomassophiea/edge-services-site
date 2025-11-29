@@ -508,18 +508,16 @@ export function DeviceDetail({ deviceId }: DeviceDetailProps) {
               )}
 
               {/* Throughput */}
-              {stats?.throughput && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground">RX Throughput</label>
-                    <p className="font-medium">{formatBytes(stats.throughput.rx)}/s</p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground">TX Throughput</label>
-                    <p className="font-medium">{formatBytes(stats.throughput.tx)}/s</p>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-muted-foreground">RX Throughput</label>
+                  <p className="font-medium">{formatBytes(stats?.throughput?.rx || 0)}/s</p>
                 </div>
-              )}
+                <div>
+                  <label className="text-sm text-muted-foreground">TX Throughput</label>
+                  <p className="font-medium">{formatBytes(stats?.throughput?.tx || 0)}/s</p>
+                </div>
+              </div>
 
               {/* Errors */}
               {stats?.errors && (

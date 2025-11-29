@@ -863,12 +863,15 @@ export function PerformanceAnalytics() {
                           <div className="font-medium">{Math.round(ap.uptime)}%</div>
                           <div className="text-muted-foreground">Uptime</div>
                         </div>
-                        {ap.throughput !== undefined && (
-                          <div className="text-center">
-                            <div className="font-medium">{Math.round(ap.throughput)} Mbps</div>
-                            <div className="text-muted-foreground">Throughput</div>
+                        <div className="text-center">
+                          <div className="font-medium">
+                            {ap.throughput >= 1000
+                              ? `${(ap.throughput / 1000).toFixed(2)} GB/s`
+                              : `${Math.round(ap.throughput)} MB/s`
+                            }
                           </div>
-                        )}
+                          <div className="text-muted-foreground">Throughput</div>
+                        </div>
                       </div>
                     </div>
                   ))}
