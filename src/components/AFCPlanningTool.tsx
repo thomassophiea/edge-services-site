@@ -88,8 +88,15 @@ export function AFCPlanningTool() {
         setSites(sitesData.value);
       }
 
-      // Load existing AFC plans (mock data for now)
-      setPlans([]);
+      // Load existing AFC plans from API
+      const response = await apiService.makeAuthenticatedRequest('/v1/afc/plans', {
+        method: 'GET'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPlans(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       console.error('Failed to load AFC data:', error);
       toast.error('Failed to load AFC planning data');
@@ -105,25 +112,28 @@ export function AFCPlanningTool() {
     }
 
     try {
-      // Get APs for the selected site
-      const aps = await apiService.getAccessPointsBySite(selectedSiteId);
       const site = sites.find(s => s.id === selectedSiteId);
 
-      const newPlan: AFCPlan = {
-        id: Date.now().toString(),
-        name: newPlanName,
-        siteId: selectedSiteId,
-        siteName: site?.name || 'Unknown Site',
-        status: 'draft',
-        createdAt: new Date().toISOString(),
-        apCount: aps.length
-      };
+      const response = await apiService.makeAuthenticatedRequest('/v1/afc/plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newPlanName,
+          siteId: selectedSiteId,
+          siteName: site?.name || 'Unknown Site'
+        })
+      });
 
-      setPlans([...plans, newPlan]);
-      setNewPlanName('');
-      setSelectedSiteId('');
-      toast.success('AFC plan created');
+      if (response.ok) {
+        toast.success('AFC plan created');
+        setNewPlanName('');
+        setSelectedSiteId('');
+        await loadData();
+      } else {
+        throw new Error('Failed to create plan');
+      }
     } catch (error) {
+      console.error('Failed to create plan:', error);
       toast.error('Failed to create plan');
     }
   };
@@ -133,50 +143,28 @@ export function AFCPlanningTool() {
     setSelectedPlan({ ...plan, status: 'analyzing' });
 
     try {
-      // Simulate AFC analysis
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      toast.info('Running AFC analysis...');
 
-      // Get APs for analysis
-      const aps = await apiService.getAccessPointsBySite(plan.siteId);
+      // Call API to run AFC analysis
+      const response = await apiService.makeAuthenticatedRequest(`/v1/afc/plans/${plan.id}/analyze`, {
+        method: 'POST'
+      });
 
-      // Generate mock channel and power recommendations
-      const channelPlan: ChannelAssignment[] = aps.slice(0, 10).map((ap, idx) => ({
-        apSerial: ap.serialNumber,
-        apName: ap.displayName || ap.serialNumber,
-        radioIndex: 0,
-        currentChannel: [1, 6, 11][idx % 3],
-        recommendedChannel: [1, 6, 11][(idx + 1) % 3],
-        band: '2.4GHz',
-        interference: Math.floor(Math.random() * 100),
-        neighbors: Math.floor(Math.random() * 10)
-      }));
+      if (response.ok) {
+        const completedPlan = await response.json();
 
-      const powerPlan: PowerAssignment[] = aps.slice(0, 10).map((ap, idx) => ({
-        apSerial: ap.serialNumber,
-        apName: ap.displayName || ap.serialNumber,
-        radioIndex: 0,
-        currentPower: 20,
-        recommendedPower: 15 + (idx % 3) * 2,
-        coverage: 85 + Math.floor(Math.random() * 15)
-      }));
-
-      const completedPlan: AFCPlan = {
-        ...plan,
-        status: 'completed',
-        lastRun: new Date().toISOString(),
-        channelPlan,
-        powerPlan,
-        interferenceScore: 75 + Math.floor(Math.random() * 20),
-        coverageScore: 80 + Math.floor(Math.random() * 15)
-      };
-
-      setPlans(plans.map(p => p.id === plan.id ? completedPlan : p));
-      setSelectedPlan(completedPlan);
-      setActiveTab('results');
-      toast.success('AFC analysis completed');
+        setPlans(plans.map(p => p.id === plan.id ? completedPlan : p));
+        setSelectedPlan(completedPlan);
+        setActiveTab('results');
+        toast.success('AFC analysis completed');
+      } else {
+        throw new Error('Analysis failed');
+      }
     } catch (error) {
+      console.error('AFC analysis failed:', error);
       toast.error('Analysis failed');
       setSelectedPlan({ ...plan, status: 'failed' });
+      setPlans(plans.map(p => p.id === plan.id ? { ...p, status: 'failed' as const } : p));
     } finally {
       setRunning(false);
     }
@@ -191,11 +179,17 @@ export function AFCPlanningTool() {
     try {
       toast.info('Applying channel and power recommendations...');
 
-      // In real implementation, this would apply the recommendations to APs
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await apiService.makeAuthenticatedRequest(`/v1/afc/plans/${plan.id}/apply`, {
+        method: 'POST'
+      });
 
-      toast.success('AFC plan applied successfully');
+      if (response.ok) {
+        toast.success('AFC plan applied successfully');
+      } else {
+        throw new Error('Failed to apply plan');
+      }
     } catch (error) {
+      console.error('Failed to apply AFC plan:', error);
       toast.error('Failed to apply plan');
     }
   };

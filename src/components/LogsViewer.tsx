@@ -22,6 +22,7 @@ import {
   Pause
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiService } from '../services/api';
 
 interface LogEntry {
   id: string;
@@ -95,64 +96,31 @@ export function LogsViewer() {
     if (!silent) setLoading(true);
 
     try {
-      // Simulate log loading - in production, this would call apiService.getLogs()
-      const mockLogs = generateMockLogs(200);
-      setLogs(mockLogs);
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedLevel !== 'all') {
+        params.append('level', selectedLevel);
+      }
+      if (selectedCategory !== 'all') {
+        params.append('category', selectedCategory);
+      }
+      params.append('limit', '200');
+
+      const response = await apiService.makeAuthenticatedRequest(
+        `/v1/logs${params.toString() ? '?' + params.toString() : ''}`,
+        { method: 'GET' }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setLogs(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       console.error('Failed to load logs:', error);
       toast.error('Failed to load logs');
     } finally {
       if (!silent) setLoading(false);
     }
-  };
-
-  const generateMockLogs = (count: number): LogEntry[] => {
-    const messages = [
-      { category: 'system', message: 'System started successfully', level: 'info' },
-      { category: 'network', message: 'DHCP server started on VLAN 10', level: 'info' },
-      { category: 'device', message: 'AP AP3935i-ROW (SN: 12345) connected', level: 'info' },
-      { category: 'client', message: 'Client 00:11:22:33:44:55 authenticated successfully', level: 'info' },
-      { category: 'security', message: 'Failed authentication attempt from 192.168.1.100', level: 'warning' },
-      { category: 'configuration', message: 'WLAN "Corporate" configuration updated', level: 'info' },
-      { category: 'authentication', message: 'RADIUS server timeout for request', level: 'error' },
-      { category: 'network', message: 'High channel utilization detected on AP radio0', level: 'warning' },
-      { category: 'device', message: 'AP firmware upgrade completed', level: 'info' },
-      { category: 'client', message: 'Client roamed from AP-1 to AP-2', level: 'debug' },
-      { category: 'authorization', message: 'User assigned to role "Employee"', level: 'info' },
-      { category: 'system', message: 'Database backup completed', level: 'info' },
-      { category: 'security', message: 'Intrusion detection alert: possible rogue AP', level: 'critical' },
-      { category: 'application', message: 'Service "captive-portal" restarted', level: 'warning' },
-      { category: 'network', message: 'VLAN 20 created successfully', level: 'info' }
-    ];
-
-    const sourceSystems = [
-      'controller-core',
-      'auth-service',
-      'radius-proxy',
-      'dhcp-server',
-      'captive-portal',
-      'ap-manager',
-      'client-tracker',
-      'topology-service',
-      'policy-engine',
-      'monitoring-daemon'
-    ];
-
-    return Array.from({ length: count }, (_, i) => {
-      const template = messages[Math.floor(Math.random() * messages.length)];
-      const now = new Date();
-      const timestamp = new Date(now.getTime() - i * 30000); // 30 seconds apart
-
-      return {
-        id: `log-${Date.now()}-${i}`,
-        timestamp: timestamp.toISOString(),
-        level: template.level as LogEntry['level'],
-        category: template.category,
-        source: sourceSystems[Math.floor(Math.random() * sourceSystems.length)],
-        message: template.message,
-        details: Math.random() > 0.7 ? `Additional details for log entry ${i}` : undefined
-      };
-    });
   };
 
   const filterLogs = () => {

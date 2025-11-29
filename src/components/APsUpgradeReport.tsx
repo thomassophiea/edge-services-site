@@ -58,32 +58,19 @@ export function APsUpgradeReport() {
   const loadUpgradeData = async () => {
     setLoading(true);
     try {
-      const [apsData, sitesData] = await Promise.all([
-        apiService.getAccessPoints(),
+      const [sitesData] = await Promise.all([
         apiService.getSites()
       ]);
 
-      // Generate mock upgrade info
-      const upgradeInfo: APUpgradeInfo[] = apsData.map((ap, idx) => {
-        const currentVersion = ap.softwareVersion || '6.5.2.0';
-        const hasUpdate = idx % 3 === 0; // Every 3rd AP has an update
-        const availableVersion = hasUpdate ? '6.5.3.0' : currentVersion;
-
-        return {
-          serialNumber: ap.serialNumber,
-          displayName: ap.displayName || ap.serialNumber,
-          model: ap.model || 'AP3935i-ROW',
-          currentVersion,
-          availableVersion,
-          updateAvailable: hasUpdate,
-          status: hasUpdate ? 'upgrade_available' : 'current',
-          site: ap.hostSite || 'Unknown',
-          lastChecked: new Date().toISOString(),
-          releaseNotes: hasUpdate ? 'Bug fixes and performance improvements' : undefined
-        };
+      // Get AP firmware upgrade info from API
+      const response = await apiService.makeAuthenticatedRequest('/v1/aps/firmware/status', {
+        method: 'GET'
       });
 
-      setAps(upgradeInfo);
+      if (response.ok) {
+        const data = await response.json();
+        setAps(Array.isArray(data) ? data : []);
+      }
 
       // Extract unique sites
       const uniqueSites = Array.from(new Set(sitesData.map(s => s.name)));
@@ -153,7 +140,7 @@ export function APsUpgradeReport() {
     toast.info(`Starting upgrade for ${selectedAps.size} AP(s)...`);
 
     try {
-      // Update status to upgrading
+      // Update status to upgrading locally
       const updatedAps = aps.map(ap =>
         selectedAps.has(ap.serialNumber)
           ? { ...ap, status: 'upgrading' as const }
@@ -161,26 +148,25 @@ export function APsUpgradeReport() {
       );
       setAps(updatedAps);
 
-      // Simulate upgrade process
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      // Update to completed
-      const completedAps = aps.map(ap => {
-        if (selectedAps.has(ap.serialNumber)) {
-          return {
-            ...ap,
-            status: 'current' as const,
-            currentVersion: ap.availableVersion,
-            updateAvailable: false
-          };
-        }
-        return ap;
+      // Call API to initiate firmware upgrade
+      const response = await apiService.makeAuthenticatedRequest('/v1/aps/firmware/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serialNumbers: Array.from(selectedAps)
+        })
       });
-      setAps(completedAps);
-      setSelectedAps(new Set());
 
-      toast.success('AP upgrades completed successfully');
+      if (response.ok) {
+        toast.success('AP upgrades initiated successfully');
+        setSelectedAps(new Set());
+        // Reload upgrade data to get updated status
+        await loadUpgradeData();
+      } else {
+        throw new Error('Upgrade request failed');
+      }
     } catch (error) {
+      console.error('Failed to upgrade APs:', error);
       toast.error('Upgrade failed for some APs');
 
       // Mark failed APs

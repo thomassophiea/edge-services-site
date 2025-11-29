@@ -23,6 +23,7 @@ import {
   Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiService } from '../services/api';
 
 export function SystemUtilities() {
   const [activeTab, setActiveTab] = useState('backup');
@@ -56,43 +57,30 @@ export function SystemUtilities() {
     try {
       toast.info('Creating database backup...');
 
-      // Simulate backup progress
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 300);
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/backup', {
+        method: 'POST'
+      });
 
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      clearInterval(interval);
-      setProgress(100);
+      if (response.ok) {
+        // Get backup file as blob
+        const blob = await response.blob();
 
-      // Create mock backup file
-      const backupData = {
-        timestamp: new Date().toISOString(),
-        version: systemInfo.version,
-        database: {
-          ...dbStats,
-          data: 'Encrypted backup data...'
-        }
-      };
+        // Download the backup file
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `database-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `database-backup-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast.success('Database backup created and downloaded');
+        toast.success('Database backup created and downloaded');
+      } else {
+        throw new Error('Backup failed');
+      }
     } catch (error) {
+      console.error('Backup failed:', error);
       toast.error('Backup failed');
     } finally {
       setProcessing(false);
@@ -112,24 +100,22 @@ export function SystemUtilities() {
     try {
       toast.info('Restoring database from backup...');
 
-      // Simulate restore progress
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 8;
-        });
-      }, 400);
+      const formData = new FormData();
+      formData.append('backup', backupFile);
 
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      clearInterval(interval);
-      setProgress(100);
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/restore', {
+        method: 'POST',
+        body: formData
+      });
 
-      toast.success('Database restored successfully');
-      setBackupFile(null);
+      if (response.ok) {
+        toast.success('Database restored successfully');
+        setBackupFile(null);
+      } else {
+        throw new Error('Restore failed');
+      }
     } catch (error) {
+      console.error('Restore failed:', error);
       toast.error('Restore failed');
     } finally {
       setProcessing(false);
@@ -143,39 +129,28 @@ export function SystemUtilities() {
     try {
       toast.info('Exporting system configuration...');
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/config/export', {
+        method: 'GET'
+      });
 
-      const config = {
-        timestamp: new Date().toISOString(),
-        version: systemInfo.version,
-        networks: {
-          wlans: 12,
-          roles: 8,
-          policies: 5
-        },
-        devices: {
-          aps: 45,
-          switches: 12
-        },
-        settings: {
-          ntp: true,
-          syslog: true,
-          snmp: true
-        }
-      };
+      if (response.ok) {
+        const blob = await response.blob();
 
-      const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `system-config-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `system-config-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-      toast.success('Configuration exported successfully');
+        toast.success('Configuration exported successfully');
+      } else {
+        throw new Error('Export failed');
+      }
     } catch (error) {
+      console.error('Export failed:', error);
       toast.error('Export failed');
     } finally {
       setProcessing(false);
@@ -189,22 +164,21 @@ export function SystemUtilities() {
     try {
       toast.info('Importing system configuration...');
 
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 12;
-        });
-      }, 350);
+      const formData = new FormData();
+      formData.append('config', file);
 
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      clearInterval(interval);
-      setProgress(100);
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/config/import', {
+        method: 'POST',
+        body: formData
+      });
 
-      toast.success('Configuration imported successfully');
+      if (response.ok) {
+        toast.success('Configuration imported successfully');
+      } else {
+        throw new Error('Import failed');
+      }
     } catch (error) {
+      console.error('Import failed:', error);
       toast.error('Import failed');
     } finally {
       setProcessing(false);
@@ -219,28 +193,23 @@ export function SystemUtilities() {
     try {
       toast.info('Optimizing database...');
 
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 15;
-        });
-      }, 300);
-
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      clearInterval(interval);
-      setProgress(100);
-
-      // Update last optimized time
-      setDbStats({
-        ...dbStats,
-        lastOptimized: new Date().toLocaleString()
+      const response = await apiService.makeAuthenticatedRequest('/v1/database/optimize', {
+        method: 'POST'
       });
 
-      toast.success('Database optimized successfully');
+      if (response.ok) {
+        // Update last optimized time
+        setDbStats({
+          ...dbStats,
+          lastOptimized: new Date().toLocaleString()
+        });
+
+        toast.success('Database optimized successfully');
+      } else {
+        throw new Error('Optimization failed');
+      }
     } catch (error) {
+      console.error('Optimization failed:', error);
       toast.error('Optimization failed');
     } finally {
       setProcessing(false);
@@ -253,9 +222,19 @@ export function SystemUtilities() {
 
     try {
       toast.info('Cleaning up old logs...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('Log cleanup completed - 1.2 GB freed');
+
+      const response = await apiService.makeAuthenticatedRequest('/v1/database/cleanup-logs', {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(`Log cleanup completed${data.spaceFreed ? ' - ' + data.spaceFreed + ' freed' : ''}`);
+      } else {
+        throw new Error('Cleanup failed');
+      }
     } catch (error) {
+      console.error('Cleanup failed:', error);
       toast.error('Cleanup failed');
     } finally {
       setProcessing(false);
@@ -267,9 +246,18 @@ export function SystemUtilities() {
 
     try {
       toast.info(`Restarting ${service} service...`);
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      toast.success(`${service} service restarted successfully`);
+
+      const response = await apiService.makeAuthenticatedRequest(`/v1/services/${service.toLowerCase().replace(/\s+/g, '-')}/restart`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        toast.success(`${service} service restarted successfully`);
+      } else {
+        throw new Error('Restart failed');
+      }
     } catch (error) {
+      console.error(`Failed to restart ${service}:`, error);
       toast.error(`Failed to restart ${service}`);
     } finally {
       setProcessing(false);
@@ -287,9 +275,18 @@ export function SystemUtilities() {
 
     try {
       toast.info('System reboot initiated...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('System is rebooting. Please wait 2-3 minutes before reconnecting.');
+
+      const response = await apiService.makeAuthenticatedRequest('/v1/system/reboot', {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        toast.success('System is rebooting. Please wait 2-3 minutes before reconnecting.');
+      } else {
+        throw new Error('Reboot failed');
+      }
     } catch (error) {
+      console.error('Reboot failed:', error);
       toast.error('Reboot failed');
     } finally {
       setProcessing(false);

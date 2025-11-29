@@ -24,6 +24,7 @@ import {
   Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiService } from '../services/api';
 
 interface Report {
   id: string;
@@ -66,45 +67,14 @@ export function ReportManagement() {
   const loadReports = async () => {
     setLoading(true);
     try {
-      // Generate mock reports
-      const mockReports: Report[] = [
-        {
-          id: '1',
-          name: 'Daily Network Health Report',
-          type: 'network_health',
-          schedule: 'daily',
-          format: 'pdf',
-          enabled: true,
-          lastRun: new Date(Date.now() - 86400000).toISOString(),
-          nextRun: new Date(Date.now() + 3600000).toISOString(),
-          recipients: ['admin@example.com'],
-          filters: { dateRange: 'last_24_hours' }
-        },
-        {
-          id: '2',
-          name: 'Weekly Client Statistics',
-          type: 'client_stats',
-          schedule: 'weekly',
-          format: 'csv',
-          enabled: true,
-          lastRun: new Date(Date.now() - 604800000).toISOString(),
-          nextRun: new Date(Date.now() + 86400000).toISOString(),
-          recipients: ['manager@example.com'],
-          filters: { dateRange: 'last_7_days' }
-        },
-        {
-          id: '3',
-          name: 'AP Performance Analysis',
-          type: 'ap_performance',
-          schedule: 'manual',
-          format: 'pdf',
-          enabled: false,
-          recipients: [],
-          filters: {}
-        }
-      ];
+      const response = await apiService.makeAuthenticatedRequest('/v1/reports', {
+        method: 'GET'
+      });
 
-      setReports(mockReports);
+      if (response.ok) {
+        const data = await response.json();
+        setReports(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       console.error('Failed to load reports:', error);
       toast.error('Failed to load reports');
@@ -113,39 +83,50 @@ export function ReportManagement() {
     }
   };
 
-  const handleCreateReport = () => {
+  const handleCreateReport = async () => {
     if (!newReport.name?.trim()) {
       toast.error('Please enter a report name');
       return;
     }
 
-    const report: Report = {
-      id: Date.now().toString(),
-      name: newReport.name,
-      type: newReport.type || 'network_health',
-      schedule: newReport.schedule || 'manual',
-      format: newReport.format || 'pdf',
-      enabled: newReport.enabled || false,
-      recipients: newReport.recipients || [],
-      filters: newReport.filters || {},
-      ...(newReport.schedule !== 'manual' && {
-        nextRun: new Date(Date.now() + 3600000).toISOString()
-      })
-    };
+    try {
+      const reportData = {
+        name: newReport.name,
+        type: newReport.type || 'network_health',
+        schedule: newReport.schedule || 'manual',
+        format: newReport.format || 'pdf',
+        enabled: newReport.enabled || false,
+        recipients: newReport.recipients || [],
+        filters: newReport.filters || {}
+      };
 
-    setReports([...reports, report]);
-    setNewReport({
-      name: '',
-      type: 'network_health',
-      schedule: 'manual',
-      format: 'pdf',
-      enabled: false,
-      recipients: [],
-      filters: {}
-    });
-    setEmailInput('');
-    toast.success('Report created successfully');
-    setActiveTab('reports');
+      const response = await apiService.makeAuthenticatedRequest('/v1/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reportData)
+      });
+
+      if (response.ok) {
+        toast.success('Report created successfully');
+        setNewReport({
+          name: '',
+          type: 'network_health',
+          schedule: 'manual',
+          format: 'pdf',
+          enabled: false,
+          recipients: [],
+          filters: {}
+        });
+        setEmailInput('');
+        setActiveTab('reports');
+        await loadReports();
+      } else {
+        throw new Error('Failed to create report');
+      }
+    } catch (error) {
+      console.error('Failed to create report:', error);
+      toast.error('Failed to create report');
+    }
   };
 
   const handleGenerateReport = async (report: Report) => {
@@ -153,61 +134,81 @@ export function ReportManagement() {
     toast.info(`Generating ${report.name}...`);
 
     try {
-      // Simulate report generation
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      const response = await apiService.makeAuthenticatedRequest(`/v1/reports/${report.id}/generate`, {
+        method: 'POST'
+      });
 
-      // Update last run time
-      const updatedReports = reports.map(r =>
-        r.id === report.id
-          ? { ...r, lastRun: new Date().toISOString() }
-          : r
-      );
-      setReports(updatedReports);
+      if (response.ok) {
+        // Get the report file as blob
+        const blob = await response.blob();
 
-      // Create mock report file
-      const reportData = {
-        reportName: report.name,
-        reportType: report.type,
-        generatedAt: new Date().toISOString(),
-        format: report.format,
-        data: {
-          summary: 'Report data would be here...',
-          metrics: []
-        }
-      };
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${report.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.${report.format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${report.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.${report.format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+        toast.success('Report generated and downloaded');
 
-      toast.success('Report generated and downloaded');
+        // Reload reports to get updated lastRun timestamp
+        await loadReports();
+      } else {
+        throw new Error('Report generation failed');
+      }
     } catch (error) {
+      console.error('Failed to generate report:', error);
       toast.error('Failed to generate report');
     } finally {
       setGenerating(false);
     }
   };
 
-  const handleToggleReport = (reportId: string, enabled: boolean) => {
-    const updatedReports = reports.map(r =>
-      r.id === reportId ? { ...r, enabled } : r
-    );
-    setReports(updatedReports);
-    toast.success(enabled ? 'Report enabled' : 'Report disabled');
+  const handleToggleReport = async (reportId: string, enabled: boolean) => {
+    try {
+      const response = await apiService.makeAuthenticatedRequest(`/v1/reports/${reportId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled })
+      });
+
+      if (response.ok) {
+        const updatedReports = reports.map(r =>
+          r.id === reportId ? { ...r, enabled } : r
+        );
+        setReports(updatedReports);
+        toast.success(enabled ? 'Report enabled' : 'Report disabled');
+      } else {
+        throw new Error('Failed to update report');
+      }
+    } catch (error) {
+      console.error('Failed to toggle report:', error);
+      toast.error('Failed to update report');
+    }
   };
 
-  const handleDeleteReport = (reportId: string) => {
+  const handleDeleteReport = async (reportId: string) => {
     const confirmed = window.confirm('Are you sure you want to delete this report?');
     if (!confirmed) return;
 
-    setReports(reports.filter(r => r.id !== reportId));
-    toast.success('Report deleted');
+    try {
+      const response = await apiService.makeAuthenticatedRequest(`/v1/reports/${reportId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setReports(reports.filter(r => r.id !== reportId));
+        toast.success('Report deleted');
+      } else {
+        throw new Error('Failed to delete report');
+      }
+    } catch (error) {
+      console.error('Failed to delete report:', error);
+      toast.error('Failed to delete report');
+    }
   };
 
   const handleAddEmail = () => {
