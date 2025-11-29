@@ -9,7 +9,7 @@ import { ConfigurePolicy } from './components/ConfigurePolicy';
 import { ConfigureAAAPolicies } from './components/ConfigureAAAPolicies';
 import { ConfigureAdoptionRules } from './components/ConfigureAdoptionRules';
 import { ConfigureGuest } from './components/ConfigureGuest';
-import { Settings } from './components/Settings';
+import { Administration } from './components/Administration';
 import { LoginForm } from './components/LoginForm';
 import { Sidebar } from './components/Sidebar';
 import { AccessPoints } from './components/AccessPoints';
@@ -45,7 +45,7 @@ const pageInfo = {
   'performance-analytics': { title: 'Performance Analytics', description: 'Analyze network performance and trends' },
   'network-visualization': { title: 'Network Visualization', description: 'Visualize network topology and connections' },
   'report-widgets': { title: 'Report Widgets', description: 'Real-time analytics and monitoring widgets' },
-  'settings': { title: 'Settings', description: 'Manage preferences, audit logs, and system health' },
+  'administration': { title: 'Administration', description: 'System administration, users, applications, and licensing' },
   'api-test': { title: 'API Test Tool', description: 'Test and explore AURA API endpoints' },
   'configure-sites': { title: 'Sites', description: 'Manage and configure network sites and locations' },
   'configure-networks': { title: 'Configure Networks', description: 'Set up and manage network configurations' },
@@ -726,8 +726,8 @@ export default function App() {
         return <ConfigureGuest />;
       case 'configure-sites':
         return <ConfigureSites onShowDetail={handleShowSiteDetail} />;
-      case 'settings':
-        return <Settings />;
+      case 'administration':
+        return <Administration />;
       case 'api-test':
         return <ApiTestTool />;
       default:

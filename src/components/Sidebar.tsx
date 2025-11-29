@@ -180,20 +180,20 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
           )}
         </div>
         
-        {/* Settings - Bottom Navigation Item */}
+        {/* Administration - Bottom Navigation Item */}
         <Button
-          variant={currentPage === 'settings' ? "default" : "ghost"}
+          variant={currentPage === 'administration' ? "default" : "ghost"}
           className={cn(
             "w-full justify-start h-10",
             isCollapsed ? "px-2" : "px-3",
-            currentPage === 'settings' 
-              ? "bg-sidebar-primary text-sidebar-primary-foreground" 
+            currentPage === 'administration'
+              ? "bg-sidebar-primary text-sidebar-primary-foreground"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
-          onClick={() => onPageChange('settings')}
+          onClick={() => onPageChange('administration')}
         >
           <Settings className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-          {!isCollapsed && <span>Settings</span>}
+          {!isCollapsed && <span>Administration</span>}
         </Button>
       </nav>
 
