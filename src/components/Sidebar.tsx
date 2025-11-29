@@ -42,7 +42,6 @@ interface SidebarProps {
 
 const navigationItems = [
   { id: 'service-levels', label: 'Service Levels', icon: TrendingUp },
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'connected-clients', label: 'Connected Clients', icon: Users },
   { id: 'access-points', label: 'Access Points', icon: Wifi },
   { id: 'report-widgets', label: 'Report Widgets', icon: BarChart3 },

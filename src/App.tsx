@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { DashboardEnhanced } from './components/DashboardEnhanced';
 import { ServiceLevelsEnhanced } from './components/ServiceLevelsEnhanced';
 import { AlertsEventsEnhanced } from './components/AlertsEventsEnhanced';
 import { ReportWidgets } from './components/ReportWidgets';
@@ -33,7 +32,6 @@ import { DevModePanel } from './components/DevModePanel';
 import { toast } from 'sonner';
 
 const pageInfo = {
-  'dashboard': { title: 'Dashboard', description: 'Overview and real-time metrics' },
   'service-levels': { title: 'Service Levels', description: 'Monitor network SLAs and performance metrics' },
   'connected-clients': { title: 'Connected Clients', description: 'View and manage connected devices' },
   'access-points': { title: 'Access Points', description: 'Manage and monitor wireless access points' },
@@ -701,8 +699,6 @@ export default function App() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'dashboard':
-        return <DashboardEnhanced />;
       case 'service-levels':
         return <ServiceLevelsEnhanced />;
       case 'access-points':
@@ -733,9 +729,9 @@ export default function App() {
       default:
         const info = pageInfo[currentPage as keyof typeof pageInfo];
         if (!info) {
-          // If page info doesn't exist, redirect to dashboard and show placeholder
-          setCurrentPage('dashboard');
-          return <PlaceholderPage title="Page Not Found" description="The requested page is not available. Redirecting to Dashboard." />;
+          // If page info doesn't exist, redirect to service levels and show placeholder
+          setCurrentPage('service-levels');
+          return <PlaceholderPage title="Page Not Found" description="The requested page is not available. Redirecting to Service Levels." />;
         }
         return <PlaceholderPage title={info.title} description={info.description} />;
     }
