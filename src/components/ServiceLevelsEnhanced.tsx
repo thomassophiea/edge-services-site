@@ -208,9 +208,13 @@ export function ServiceLevelsEnhanced() {
       setServices(filteredServices);
 
       // If no service is selected and we have services, select the first one
-      if (!selectedService && servicesList.length > 0) {
-        setSelectedService(servicesList[0].id);
-        await loadServiceDetails(servicesList[0].id);
+      if (!selectedService && filteredServices.length > 0) {
+        setSelectedService(filteredServices[0].id);
+        await loadServiceDetails(filteredServices[0].id);
+      } else if (filteredServices.length === 0) {
+        console.log('[ServiceLevels] No services found for selected site');
+        setSelectedService(null);
+        setServiceReport(null);
       }
 
       setLastUpdate(new Date());
@@ -1313,8 +1317,19 @@ export function ServiceLevelsEnhanced() {
             <Server className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
             <h3 className="text-lg font-medium mb-2">No Services Found</h3>
             <p className="text-sm text-muted-foreground">
-              No services are configured in the system
+              {selectedSite && selectedSite !== 'all'
+                ? `No services found for site "${selectedSite}". Try selecting "All Sites" or a different site.`
+                : 'No services are configured in the system'}
             </p>
+            {selectedSite && selectedSite !== 'all' && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => setSelectedSite('all')}
+              >
+                Show All Sites
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
