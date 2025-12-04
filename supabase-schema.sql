@@ -1,6 +1,6 @@
 -- Network Rewind Feature - Supabase Schema
 -- Run this in your Supabase SQL Editor
--- Dashboard: https://supabase.com/dashboard/project/sdcanlpqxfjcmjpeaesj/sql
+-- Dashboard: https://supabase.com/dashboard/project/ufqjnesldbacyltbsvys/sql
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

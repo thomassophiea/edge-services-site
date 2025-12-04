@@ -1,14 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Supabase configuration
-// NOTE: These should ideally be in environment variables
-// For now, using the project URL from existing server functions
-const SUPABASE_URL = 'https://sdcanlpqxfjcmjpeaesj.supabase.co';
+// Using existing project credentials from utils/supabase/info.tsx
+const SUPABASE_URL = 'https://ufqjnesldbacyltbsvys.supabase.co';
 
 // This is the anon key (public), not the service role key
-// You'll need to get this from your Supabase dashboard
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkY2FubHBxeGZqY21qcGVhZXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI4MzQ3MzgsImV4cCI6MjA0ODQxMDczOH0.placeholder';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmcWpuZXNsZGJhY3lsdGJzdnlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3MjA4MTUsImV4cCI6MjA3NjI5NjgxNX0.9lZXSp3mRNb9h4Q0aO5wKouZ5yp8FVjotJunFF_bu4g';
 
 // Create a single supabase client for interacting with your database
 export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
