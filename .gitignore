@@ -30,3 +30,5 @@ build
 .env.production
 .env.local
 .mcp.json
+.vercel
+.env*.local
