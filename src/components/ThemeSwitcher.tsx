@@ -24,8 +24,8 @@ export function ThemeSwitcher() {
   const [currentTheme, setCurrentTheme] = useState<ThemeMode>(getStoredTheme());
   const [showHighDialog, setShowHighDialog] = useState(false);
 
-  const handleMaybeClick = () => {
-    // Play "Be a lot cooler if you did" 3 times
+  const handleHighAnswer = () => {
+    // Play "Alright alright alright" 3 times on either answer
     playCoolerSound();
     setShowHighDialog(false);
   };
@@ -102,12 +102,15 @@ export function ThemeSwitcher() {
           </AlertDialogHeader>
           <AlertDialogFooter className="flex gap-3 sm:gap-3">
             <AlertDialogCancel
-              onClick={handleMaybeClick}
+              onClick={handleHighAnswer}
               className="bg-pink-200 hover:bg-pink-300 border-pink-400"
             >
               Maybe... 😳
             </AlertDialogCancel>
-            <AlertDialogAction className="bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 text-white">
+            <AlertDialogAction
+              onClick={handleHighAnswer}
+              className="bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 text-white"
+            >
               Yes! 🌈✨
             </AlertDialogAction>
           </AlertDialogFooter>
