@@ -16,7 +16,7 @@ export function playMagicWordWarning() {
   if (!audioInstance) {
     // Using a direct MP3 URL from a CDN that hosts the Jurassic Park sound
     audioInstance = new Audio('https://www.myinstants.com/media/sounds/ah-ah-ah-you-didnt-say-the-magic-word.mp3');
-    audioInstance.loop = true; // Loop it!
+    audioInstance.loop = false; // Play once only
     audioInstance.volume = 0.7;
 
     // Debug logging
@@ -29,13 +29,15 @@ export function playMagicWordWarning() {
       isPlaying = true;
       console.log('🦖 Ah ah ah, you didn\'t say the magic word!');
 
-      // Auto-stop after 30 seconds (so it doesn't drive you crazy)
-      setTimeout(() => {
-        stopMagicWordWarning();
-      }, 30000);
+      // Reset isPlaying when sound ends
+      audioInstance!.onended = () => {
+        isPlaying = false;
+        console.log('🦖 Magic word sound finished');
+      };
     })
     .catch((error) => {
       console.error('Failed to play magic word sound:', error);
+      isPlaying = false;
     });
 }
 

@@ -18,10 +18,17 @@ import {
 } from './ui/alert-dialog';
 import { Palette } from 'lucide-react';
 import { applyTheme, getStoredTheme, themes, type ThemeMode } from '../lib/themes';
+import { playCoolerSound } from '../lib/cooler-sound';
 
 export function ThemeSwitcher() {
   const [currentTheme, setCurrentTheme] = useState<ThemeMode>(getStoredTheme());
   const [showHighDialog, setShowHighDialog] = useState(false);
+
+  const handleMaybeClick = () => {
+    // Play "Be a lot cooler if you did" 3 times
+    playCoolerSound();
+    setShowHighDialog(false);
+  };
 
   useEffect(() => {
     // Apply theme on mount
@@ -94,7 +101,10 @@ export function ThemeSwitcher() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex gap-3 sm:gap-3">
-            <AlertDialogCancel className="bg-pink-200 hover:bg-pink-300 border-pink-400">
+            <AlertDialogCancel
+              onClick={handleMaybeClick}
+              className="bg-pink-200 hover:bg-pink-300 border-pink-400"
+            >
               Maybe... 😳
             </AlertDialogCancel>
             <AlertDialogAction className="bg-gradient-to-r from-pink-400 to-pink-600 hover:from-pink-500 hover:to-pink-700 text-white">
