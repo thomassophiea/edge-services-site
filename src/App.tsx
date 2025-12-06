@@ -30,6 +30,7 @@ import { AppsMenu } from './components/AppsMenu';
 import { UserMenu } from './components/UserMenu';
 import { NotificationsMenu } from './components/NotificationsMenu';
 import { DevModePanel } from './components/DevModePanel';
+import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { toast } from 'sonner';
 
 const pageInfo = {
@@ -836,7 +837,10 @@ export default function App() {
                 >
                   <Code className="h-4 w-4" />
                 </Button>
-                
+
+                {/* Theme Switcher */}
+                <ThemeSwitcher />
+
                 {/* Notifications Menu */}
                 <NotificationsMenu />
                 
