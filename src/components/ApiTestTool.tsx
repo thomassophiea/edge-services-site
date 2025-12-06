@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -12,6 +12,7 @@ import { Play, Copy, Trash2, Filter, Info, BarChart3 } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 import { apiService } from '../services/api';
 import { TopApplicationsDebug } from './TopApplicationsDebug';
+import { playMagicWordWarning } from '../lib/magic-word';
 
 interface ApiRequest {
   id: string;
@@ -363,6 +364,11 @@ export function ApiTestTool() {
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<ApiRequest[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  // 🦖 Play Jurassic Park "magic word" sound when API test tool opens
+  useEffect(() => {
+    playMagicWordWarning();
+  }, []);
 
   const loadEndpoint = (endpointPath: string, endpointMethod: string) => {
     setEndpoint(endpointPath);
