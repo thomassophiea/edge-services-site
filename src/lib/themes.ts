@@ -1,9 +1,9 @@
 /**
  * Theme Configuration
- * Supports: Default, Dark, and Hello Kitty themes
+ * Supports: Default and Dark themes
  */
 
-export type ThemeMode = 'default' | 'dark' | 'hello-kitty';
+export type ThemeMode = 'default' | 'dark';
 
 export interface Theme {
   name: string;
@@ -84,33 +84,6 @@ export const themes: Record<ThemeMode, Theme> = {
       input: '217.2 32.6% 17.5%',
       ring: '212.7 26.8% 83.9%'
     }
-  },
-  'hello-kitty': {
-    name: 'hello-kitty',
-    displayName: 'Hello Kitty',
-    emoji: '🎀',
-    colors: {
-      // Hello Kitty signature pink theme
-      primary: '330 81% 60%',        // Hot pink
-      primaryForeground: '0 0% 100%', // White
-      secondary: '340 82% 95%',       // Light pink
-      secondaryForeground: '330 81% 25%', // Dark pink
-      background: '340 100% 99%',     // Very light pink/white
-      foreground: '330 81% 25%',      // Dark pink text
-      card: '0 0% 100%',             // White cards
-      cardForeground: '330 81% 25%',  // Dark pink
-      popover: '0 0% 100%',          // White
-      popoverForeground: '330 81% 25%', // Dark pink
-      muted: '340 82% 95%',          // Light pink
-      mutedForeground: '330 30% 50%', // Medium pink
-      accent: '350 100% 88%',        // Soft pink accent
-      accentForeground: '330 81% 30%', // Dark pink
-      destructive: '0 84% 60%',      // Red (kept for consistency)
-      destructiveForeground: '0 0% 100%', // White
-      border: '340 82% 90%',         // Pink border
-      input: '340 82% 95%',          // Light pink input
-      ring: '330 81% 60%'            // Pink focus ring
-    }
   }
 };
 
@@ -128,7 +101,7 @@ export function applyTheme(theme: ThemeMode) {
   localStorage.setItem('theme', theme);
 
   // Add theme class for additional styling
-  root.classList.remove('theme-default', 'theme-dark', 'theme-hello-kitty');
+  root.classList.remove('theme-default', 'theme-dark');
   root.classList.add(`theme-${theme}`);
 }
 

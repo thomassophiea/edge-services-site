@@ -8,7 +8,6 @@ import { Loader2, Sun, Moon, Monitor } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import extremeNetworksLogo from 'figma:asset/f6780e138108fdbc214f37376d5cea1e3356ac35.png';
 import { apiService } from '../services/api';
-import { playSpaceballsSound } from '../lib/spaceballs-sound';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -29,10 +28,6 @@ export function LoginForm({ onLoginSuccess, theme = 'system', onThemeToggle }: L
 
     try {
       await apiService.login(userId, password);
-
-      // 🧳 Play Spaceballs "That's the same code on my luggage!" sound
-      playSpaceballsSound();
-
       onLoginSuccess();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
