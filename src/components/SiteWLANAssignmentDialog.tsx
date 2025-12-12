@@ -21,6 +21,8 @@ import { apiService } from '../services/api';
 import { toast } from 'sonner';
 import { ReconciliationDialog } from './wlans/ReconciliationDialog';
 import { assignmentStorageService } from '../services/assignmentStorage';
+import { wlanDeploymentStatusService } from '../services/wlanDeploymentStatus';
+import type { SiteWLANInventory } from '../types/network';
 
 interface SiteWLANAssignmentDialogProps {
   open: boolean;
@@ -38,14 +40,13 @@ export function SiteWLANAssignmentDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<any>(null);
+  const [inventory, setInventory] = useState<SiteWLANInventory | null>(null);
   const [reconcileDialogOpen, setReconcileDialogOpen] = useState(false);
   const [selectedWLAN, setSelectedWLAN] = useState<{ id: string; name: string } | null>(null);
-  const [expectedWLANCounts, setExpectedWLANCounts] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     if (open && siteId) {
       loadAssignmentSummary();
-      loadExpectedCounts();
     }
   }, [open, siteId]);
 
@@ -65,6 +66,18 @@ export function SiteWLANAssignmentDialog({
       console.log('[SiteWLANDialog] Device Groups:', data.deviceGroups);
       console.log('[SiteWLANDialog] Profiles:', data.profiles);
       console.log('[SiteWLANDialog] WLANs:', data.wlans);
+
+      // Create comprehensive inventory with deployment status
+      const siteInventory = await wlanDeploymentStatusService.createSiteInventory(
+        siteId,
+        siteName,
+        data.wlans || [],
+        data.profiles || [],
+        [] // TODO: Add observed WLANs when API endpoint available
+      );
+
+      setInventory(siteInventory);
+      console.log('[SiteWLANDialog] Site inventory created:', siteInventory);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load WLAN assignments';
       setError(errorMessage);
@@ -77,30 +90,6 @@ export function SiteWLANAssignmentDialog({
     }
   };
 
-  const loadExpectedCounts = () => {
-    try {
-      // Load expected WLAN counts from assignment tracking
-      const allSiteAssignments = assignmentStorageService.getAllWLANSiteAssignments();
-      const siteAssignments = allSiteAssignments.filter(a => a.siteId === siteId);
-
-      const countsMap = new Map<string, number>();
-
-      // For each WLAN assigned to this site, count expected profile assignments
-      siteAssignments.forEach(siteAssignment => {
-        const profileAssignments = assignmentStorageService.getWLANProfileAssignments(
-          siteAssignment.wlanId
-        ).filter(pa => pa.siteId === siteId && pa.expectedState === 'ASSIGNED');
-
-        countsMap.set(siteAssignment.wlanId, profileAssignments.length);
-      });
-
-      setExpectedWLANCounts(countsMap);
-      console.log('[SiteWLANDialog] Expected WLAN counts loaded:', Object.fromEntries(countsMap));
-    } catch (err) {
-      console.error('[SiteWLANDialog] Error loading expected counts:', err);
-    }
-  };
-
   const handleReconcileWLAN = (wlanId: string, wlanName: string) => {
     setSelectedWLAN({ id: wlanId, name: wlanName });
     setReconcileDialogOpen(true);
@@ -110,7 +99,6 @@ export function SiteWLANAssignmentDialog({
     setReconcileDialogOpen(false);
     // Reload data after reconciliation to show updated state
     loadAssignmentSummary();
-    loadExpectedCounts();
   };
 
   const getSecurityBadge = (security?: string) => {
@@ -220,10 +208,21 @@ export function SiteWLANAssignmentDialog({
                   WLANs in this Site
                 </CardTitle>
                 <CardDescription>
-                  Wireless networks available in this site
+                  Wireless networks and their deployment status
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* Mismatch Alert */}
+                {inventory && inventory.mismatches.length > 0 && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      {inventory.mismatches.length} mismatch{inventory.mismatches.length !== 1 ? 'es' : ''} detected.
+                      Review WLANs below for details.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {summary.wlans.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground text-sm">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -231,14 +230,10 @@ export function SiteWLANAssignmentDialog({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {summary.wlans.map((wlan: any) => {
-                      // Calculate actual profile count with this WLAN
-                      const actualCount = summary.profiles.filter(
-                        (p: any) => p.wlans?.some((w: any) => w.id === wlan.id)
-                      ).length;
-
-                      const expectedCount = expectedWLANCounts.get(wlan.id) || 0;
-                      const hasMismatch = expectedCount > 0 && actualCount !== expectedCount;
+                    {inventory?.intendedWLANs.map((item) => {
+                      const wlan = item.wlan;
+                      const hasMismatch = item.mismatchReason !== null;
+                      const deploymentStatus = item.deploymentStatus;
 
                       return (
                         <div
@@ -253,19 +248,32 @@ export function SiteWLANAssignmentDialog({
                                 {hasMismatch && (
                                   <AlertTriangle className="h-4 w-4 text-orange-500" />
                                 )}
+                                {deploymentStatus === 'NOT_DEPLOYED' && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    Not Deployed
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                                 {wlan.vlan && <span>VLAN {wlan.vlan}</span>}
-                                {expectedCount > 0 && (
+                                {item.expectedProfiles > 0 && (
                                   <>
-                                    <span className="text-muted-foreground">•</span>
+                                    {wlan.vlan && <span className="text-muted-foreground">•</span>}
                                     <span>
-                                      Expected: {expectedCount} profile{expectedCount !== 1 ? 's' : ''}
+                                      Expected: {item.expectedProfiles} profile{item.expectedProfiles !== 1 ? 's' : ''}
                                     </span>
                                     <span className="text-muted-foreground">•</span>
                                     <span className={hasMismatch ? 'text-orange-500 font-medium' : ''}>
-                                      Actual: {actualCount} profile{actualCount !== 1 ? 's' : ''}
+                                      Actual: {item.actualProfiles} profile{item.actualProfiles !== 1 ? 's' : ''}
                                     </span>
+                                  </>
+                                )}
+                                {hasMismatch && item.mismatchReason && (
+                                  <>
+                                    <span className="text-muted-foreground">•</span>
+                                    <Badge variant={wlanDeploymentStatusService.getMismatchBadgeVariant(item.mismatchReason)} className="text-xs">
+                                      {wlanDeploymentStatusService.getMismatchDescription(item.mismatchReason)}
+                                    </Badge>
                                   </>
                                 )}
                               </div>
@@ -274,7 +282,7 @@ export function SiteWLANAssignmentDialog({
                           <div className="flex items-center gap-2">
                             {getSecurityBadge(wlan.security)}
                             {getBandBadge(wlan.band)}
-                            {expectedCount > 0 && (
+                            {item.expectedProfiles > 0 && (
                               <Button
                                 variant="outline"
                                 size="sm"

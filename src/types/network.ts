@@ -130,7 +130,23 @@ export type MismatchReason =
   | 'PROFILE_DELETED'           // Profile no longer exists
   | 'PROFILE_MOVED'             // Profile moved to different device group
   | 'SYNC_FAILED'               // Assignment succeeded but sync failed
+  | 'WLAN_NOT_DEPLOYED'         // WLAN has no assignments anywhere
+  | 'SITE_ASSIGNMENT_MISSING'   // Site has no assignment for this WLAN
+  | 'PROFILE_MAPPING_MISSING'   // Profile to site mapping is broken
+  | 'PROVISIONING_FAILED'       // Provisioning job failed
+  | 'CACHE_STALE'               // Cached data is stale
+  | 'OBSERVED_ONLY'             // WLAN observed but not in intended state
+  | 'INTENDED_ONLY'             // WLAN intended but not observed
   | null;
+
+/**
+ * WLAN deployment status
+ */
+export type WLANDeploymentStatus =
+  | 'DEPLOYED'                  // WLAN has at least one assignment
+  | 'NOT_DEPLOYED'              // WLAN has zero assignments
+  | 'PARTIALLY_DEPLOYED'        // WLAN has some failed assignments
+  | 'UNKNOWN';                  // Cannot determine status
 
 /**
  * Site-level WLAN assignment tracking
@@ -208,4 +224,52 @@ export interface RemediationAction {
   siteId: string;
   reason: string;
   mismatchReason: MismatchReason;
+}
+
+/**
+ * Observed WLAN state from actual device broadcasts
+ */
+export interface ObservedWLAN {
+  id: string;
+  ssid: string;
+  security?: string;
+  band?: string;
+  vlan?: number;
+  broadcastCount: number;         // Number of APs broadcasting this WLAN
+  lastSeen: string;
+  source: 'DEVICE_STATE' | 'TELEMETRY' | 'MANUAL';
+}
+
+/**
+ * Site WLAN inventory combining intended and observed state
+ */
+export interface SiteWLANInventory {
+  siteId: string;
+  siteName: string;
+  intendedWLANs: Array<{
+    wlan: Service;
+    expectedProfiles: number;
+    actualProfiles: number;
+    deploymentStatus: WLANDeploymentStatus;
+    mismatchReason?: MismatchReason;
+  }>;
+  observedWLANs: ObservedWLAN[];
+  mismatches: Array<{
+    wlanId: string;
+    wlanName: string;
+    reason: MismatchReason;
+    severity: 'error' | 'warning' | 'info';
+  }>;
+  timestamp: string;
+}
+
+/**
+ * WLAN with deployment status for display
+ */
+export interface WLANWithDeploymentStatus extends Service {
+  deploymentStatus: WLANDeploymentStatus;
+  totalSites: number;
+  totalProfiles: number;
+  mismatchCount: number;
+  lastReconciled?: string;
 }
