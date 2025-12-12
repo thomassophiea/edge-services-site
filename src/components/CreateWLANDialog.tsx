@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle, AlertCircle, Wifi, MapPin, Users } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from './ui/sheet';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -385,19 +385,19 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl w-[95vw] h-[95vh] flex flex-col p-0 gap-0 overflow-hidden">
-          <DialogHeader className="flex-shrink-0 px-6 pt-5 pb-3 border-b">
-            <DialogTitle className="flex items-center gap-2 text-lg">
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col overflow-hidden">
+          <SheetHeader className="px-6 py-4 border-b">
+            <SheetTitle className="flex items-center gap-2">
               <Wifi className="h-5 w-5" />
               Create Wireless Network
-            </DialogTitle>
-            <DialogDescription className="text-sm">
+            </SheetTitle>
+            <SheetDescription>
               Configure a new WLAN with site-centric deployment
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="space-y-4 py-4 px-6 flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {/* WLAN Configuration Section */}
             <Card>
               <CardHeader className="pb-2">
@@ -405,22 +405,21 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                 <CardDescription className="text-xs">Basic WLAN settings</CardDescription>
               </CardHeader>
               <CardContent>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-4">
                 {/* SSID */}
-                <div className="space-y-1.5 col-span-2">
-                  <Label htmlFor="ssid" className="text-xs">SSID *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="ssid">SSID *</Label>
                   <Input
                     id="ssid"
                     value={formData.ssid}
                     onChange={(e) => setFormData({ ...formData, ssid: e.target.value })}
                     placeholder="MyNetwork"
-                    className="h-9"
                   />
                 </div>
 
                 {/* Security Type */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="security" className="text-xs">Security *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="security">Security *</Label>
                   <Select
                     value={formData.security}
                     onValueChange={(value: any) => setFormData({ ...formData, security: value })}
@@ -438,13 +437,13 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                 </div>
 
                 {/* Band */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="band" className="text-xs">Band *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="band">Band *</Label>
                   <Select
                     value={formData.band}
                     onValueChange={(value: any) => setFormData({ ...formData, band: value })}
                   >
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -457,22 +456,21 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
 
                 {/* Passphrase (conditional) */}
                 {formData.security !== 'open' && (
-                  <div className="space-y-1.5 col-span-2">
-                    <Label htmlFor="passphrase" className="text-xs">Passphrase *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="passphrase">Passphrase *</Label>
                     <Input
                       id="passphrase"
                       type="password"
                       value={formData.passphrase}
                       onChange={(e) => setFormData({ ...formData, passphrase: e.target.value })}
                       placeholder="Enter passphrase"
-                      className="h-9"
                     />
                   </div>
                 )}
 
                 {/* VLAN */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="vlan" className="text-xs">VLAN ID</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="vlan">VLAN ID (Optional)</Label>
                   <Input
                     id="vlan"
                     type="number"
@@ -481,18 +479,17 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                     placeholder="100"
                     min="1"
                     max="4094"
-                    className="h-9"
                   />
                 </div>
 
                 {/* Role */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="role" className="text-xs">User Role</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="role">User Role</Label>
                   <Select
                     value={formData.authenticatedUserDefaultRoleID || 'none'}
                     onValueChange={(value) => setFormData({ ...formData, authenticatedUserDefaultRoleID: value === 'none' ? null : value })}
                   >
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger>
                       <SelectValue placeholder={loadingRoles ? "Loading roles..." : "Select role..."} />
                     </SelectTrigger>
                     <SelectContent>
@@ -526,22 +523,22 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                 </div>
               </CardHeader>
               <CardContent>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Select Sites</Label>
+              <div className="space-y-3">
+                <Label>Select Sites</Label>
                 {loadingSites ? (
-                  <div className="space-y-1.5">
-                    {[1, 2].map(i => <Skeleton key={i} className="h-8 w-full" />)}
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
                   </div>
                 ) : sites.length === 0 ? (
-                  <div className="text-xs text-muted-foreground text-center py-3">
+                  <div className="text-sm text-muted-foreground text-center py-4">
                     No sites available
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
                     {sites.map(site => (
                       <div
                         key={site.id}
-                        className={`flex items-center gap-2 p-2 border rounded cursor-pointer transition-colors ${
+                        className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                           formData.selectedSites.includes(site.id)
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-accent/50'
@@ -552,10 +549,10 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                           type="checkbox"
                           checked={formData.selectedSites.includes(site.id)}
                           onChange={() => {}}
-                          className="h-3.5 w-3.5 flex-shrink-0"
+                          className="h-4 w-4"
                         />
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="flex-1 truncate text-xs">{site.name || site.siteName || site.id}</span>
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="flex-1">{site.name || site.siteName || site.id}</span>
                       </div>
                     ))}
                   </div>
@@ -571,8 +568,8 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                   <CardTitle className="text-sm font-medium">Deployment Configuration</CardTitle>
                   <CardDescription className="text-xs">Choose how WLANs are assigned to profiles</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid gap-2">
+                <CardContent>
+                  <div className="space-y-3">
                     {Array.from(siteConfigs.values()).map((config) => (
                       <DeploymentModeSelector
                         key={config.siteId}
@@ -599,7 +596,7 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
             )}
           </div>
 
-          <DialogFooter className="flex-shrink-0 px-6 py-3 border-t bg-muted/30">
+          <SheetFooter className="px-6 py-4 border-t mt-auto">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
               Cancel
             </Button>
@@ -619,9 +616,9 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                 </>
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* Profile Picker Dialog */}
       {profilePickerSite && (
