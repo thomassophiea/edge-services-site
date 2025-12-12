@@ -386,46 +386,46 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl w-[90vw] max-h-[90vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Wifi className="h-6 w-6" />
+        <DialogContent className="max-w-6xl w-[95vw] h-[95vh] flex flex-col p-0 gap-0 overflow-hidden">
+          <DialogHeader className="flex-shrink-0 px-6 pt-5 pb-3 border-b">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Wifi className="h-5 w-5" />
               Create Wireless Network
             </DialogTitle>
-            <DialogDescription className="text-base">
+            <DialogDescription className="text-sm">
               Configure a new WLAN with site-centric deployment
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-6 px-6 overflow-y-auto flex-1">
+          <div className="space-y-4 py-4 px-6 flex-1 overflow-y-auto">
             {/* WLAN Configuration Section */}
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Network Configuration</CardTitle>
                 <CardDescription className="text-xs">Basic WLAN settings</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-
-              <div className="grid gap-4">
+              <CardContent>
+              <div className="grid grid-cols-2 gap-3">
                 {/* SSID */}
-                <div className="space-y-2">
-                  <Label htmlFor="ssid">SSID *</Label>
+                <div className="space-y-1.5 col-span-2">
+                  <Label htmlFor="ssid" className="text-xs">SSID *</Label>
                   <Input
                     id="ssid"
                     value={formData.ssid}
                     onChange={(e) => setFormData({ ...formData, ssid: e.target.value })}
                     placeholder="MyNetwork"
+                    className="h-9"
                   />
                 </div>
 
                 {/* Security Type */}
-                <div className="space-y-2">
-                  <Label htmlFor="security">Security *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="security" className="text-xs">Security *</Label>
                   <Select
                     value={formData.security}
                     onValueChange={(value: any) => setFormData({ ...formData, security: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -437,28 +437,14 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                   </Select>
                 </div>
 
-                {/* Passphrase (conditional) */}
-                {formData.security !== 'open' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="passphrase">Passphrase *</Label>
-                    <Input
-                      id="passphrase"
-                      type="password"
-                      value={formData.passphrase}
-                      onChange={(e) => setFormData({ ...formData, passphrase: e.target.value })}
-                      placeholder="Enter passphrase"
-                    />
-                  </div>
-                )}
-
                 {/* Band */}
-                <div className="space-y-2">
-                  <Label htmlFor="band">Band *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="band" className="text-xs">Band *</Label>
                   <Select
                     value={formData.band}
                     onValueChange={(value: any) => setFormData({ ...formData, band: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -469,9 +455,24 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                   </Select>
                 </div>
 
+                {/* Passphrase (conditional) */}
+                {formData.security !== 'open' && (
+                  <div className="space-y-1.5 col-span-2">
+                    <Label htmlFor="passphrase" className="text-xs">Passphrase *</Label>
+                    <Input
+                      id="passphrase"
+                      type="password"
+                      value={formData.passphrase}
+                      onChange={(e) => setFormData({ ...formData, passphrase: e.target.value })}
+                      placeholder="Enter passphrase"
+                      className="h-9"
+                    />
+                  </div>
+                )}
+
                 {/* VLAN */}
-                <div className="space-y-2">
-                  <Label htmlFor="vlan">VLAN ID (Optional)</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="vlan" className="text-xs">VLAN ID</Label>
                   <Input
                     id="vlan"
                     type="number"
@@ -480,17 +481,18 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                     placeholder="100"
                     min="1"
                     max="4094"
+                    className="h-9"
                   />
                 </div>
 
                 {/* Role */}
-                <div className="space-y-2">
-                  <Label htmlFor="role">User Role</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="role" className="text-xs">User Role</Label>
                   <Select
                     value={formData.authenticatedUserDefaultRoleID || 'none'}
                     onValueChange={(value) => setFormData({ ...formData, authenticatedUserDefaultRoleID: value === 'none' ? null : value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9">
                       <SelectValue placeholder={loadingRoles ? "Loading roles..." : "Select role..."} />
                     </SelectTrigger>
                     <SelectContent>
@@ -509,26 +511,26 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
 
             {/* Site Selection Section */}
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-sm font-medium">Site Assignment *</CardTitle>
-                    <CardDescription className="text-xs mt-1">Select sites for deployment</CardDescription>
+                    <CardDescription className="text-xs mt-0.5">Select sites for deployment</CardDescription>
                   </div>
                   {discoveringProfiles && (
-                    <Badge variant="secondary" className="gap-1">
+                    <Badge variant="secondary" className="gap-1 text-xs">
                       <Loader2 className="h-3 w-3 animate-spin" />
-                      Discovering profiles...
+                      Discovering...
                     </Badge>
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select Sites</Label>
+              <CardContent>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Select Sites</Label>
                 {loadingSites ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+                  <div className="space-y-1.5">
+                    {[1, 2].map(i => <Skeleton key={i} className="h-8 w-full" />)}
                   </div>
                 ) : sites.length === 0 ? (
                   <div className="text-sm text-muted-foreground text-center py-4">
@@ -561,12 +563,12 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
             {/* Deployment Mode Selectors */}
             {formData.selectedSites.length > 0 && !discoveringProfiles && (
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">Deployment Configuration</CardTitle>
                   <CardDescription className="text-xs">Choose how WLANs are assigned to profiles</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4">
+                <CardContent className="space-y-3">
+                  <div className="grid gap-2">
                     {Array.from(siteConfigs.values()).map((config) => (
                       <DeploymentModeSelector
                         key={config.siteId}
@@ -593,7 +595,7 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
             )}
           </div>
 
-          <DialogFooter className="flex-shrink-0 px-6 py-4 border-t bg-muted/30">
+          <DialogFooter className="flex-shrink-0 px-6 py-3 border-t bg-muted/30">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
               Cancel
             </Button>
