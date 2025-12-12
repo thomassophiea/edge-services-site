@@ -273,6 +273,211 @@ export class WLANAssignmentService {
     const allProfiles = Object.values(profileMap).flat();
     return this.deduplicateProfiles(allProfiles);
   }
+
+  /**
+   * Site-centric WLAN deployment with deployment modes
+   *
+   * Creates WLAN and assigns to profiles based on site-level deployment configuration.
+   * Supports three deployment modes:
+   * - ALL_PROFILES_AT_SITE: Assign to all profiles at each site
+   * - INCLUDE_ONLY: Assign only to specified profiles
+   * - EXCLUDE_SOME: Assign to all except specified profiles
+   *
+   * @param serviceData - WLAN/Service configuration
+   * @param siteAssignments - Array of site assignments with deployment modes
+   * @param options - Optional settings (dryRun, skipSync)
+   * @returns AutoAssignmentResponse with assignment results
+   */
+  async createWLANWithSiteCentricDeployment(
+    serviceData: CreateServiceRequest,
+    siteAssignments: Array<{
+      siteId: string;
+      siteName: string;
+      deploymentMode: 'ALL_PROFILES_AT_SITE' | 'INCLUDE_ONLY' | 'EXCLUDE_SOME';
+      includedProfiles?: string[];
+      excludedProfiles?: string[];
+    }>,
+    options: {
+      dryRun?: boolean;
+      skipSync?: boolean;
+    } = {}
+  ): Promise<AutoAssignmentResponse> {
+    console.log('[WLANAssignment] Starting site-centric deployment workflow', {
+      serviceData,
+      siteAssignments,
+      options
+    });
+
+    // Import services dynamically to avoid circular dependencies
+    const { assignmentStorageService } = await import('./assignmentStorage');
+    const { effectiveSetCalculator } = await import('./effectiveSetCalculator');
+
+    try {
+      // Step 1: Validate site assignments
+      console.log('[WLANAssignment] Step 1: Validating site assignments...');
+      for (const assignment of siteAssignments) {
+        const validation = effectiveSetCalculator.validateSiteAssignment(assignment);
+        if (!validation.valid) {
+          throw new Error(`Invalid site assignment for ${assignment.siteName}: ${validation.errors.join(', ')}`);
+        }
+      }
+
+      // Step 2: Discover profiles for all sites
+      console.log('[WLANAssignment] Step 2: Discovering profiles for sites...');
+      const siteIds = siteAssignments.map(a => a.siteId);
+      const profileMap = await this.discoverProfilesForSites(siteIds);
+
+      // Step 3: Calculate effective profile sets
+      console.log('[WLANAssignment] Step 3: Calculating effective profile sets...');
+      const profilesBySite = new Map<string, Profile[]>();
+      for (const [siteId, profiles] of Object.entries(profileMap)) {
+        profilesBySite.set(siteId, profiles);
+      }
+
+      const effectiveSets = effectiveSetCalculator.calculateMultipleEffectiveSets(
+        siteAssignments,
+        profilesBySite
+      );
+
+      // Merge all effective sets to get final profile list
+      const profilesToAssign = effectiveSetCalculator.mergeEffectiveSets(effectiveSets);
+
+      console.log('[WLANAssignment] Effective profile sets calculated:', {
+        sites: effectiveSets.length,
+        totalProfiles: profilesToAssign.length
+      });
+
+      if (options.dryRun) {
+        console.log('[WLANAssignment] Dry run mode - skipping actual deployment');
+        return {
+          serviceId: 'dry-run',
+          sitesProcessed: siteAssignments.length,
+          deviceGroupsFound: 0,
+          profilesAssigned: 0,
+          assignments: profilesToAssign.map(p => ({
+            profileId: p.id,
+            profileName: p.name || p.profileName || p.id,
+            success: true,
+            error: 'Dry run - not executed'
+          })),
+          success: true
+        };
+      }
+
+      // Step 4: Create the WLAN/Service
+      console.log('[WLANAssignment] Step 4: Creating service...');
+      const service = await apiService.createService({
+        name: serviceData.name,
+        ssid: serviceData.ssid,
+        security: serviceData.security,
+        passphrase: serviceData.passphrase,
+        vlan: serviceData.vlan,
+        band: serviceData.band,
+        enabled: serviceData.enabled,
+      });
+
+      const wlanId = service.id;
+      const wlanName = service.serviceName || service.name || service.ssid || wlanId;
+      console.log('[WLANAssignment] Service created:', { wlanId, wlanName });
+
+      // Step 5: Assign service to profiles
+      console.log('[WLANAssignment] Step 5: Assigning service to profiles...');
+      const assignments = await this.assignToProfiles(wlanId, profilesToAssign);
+
+      const successfulAssignments = assignments.filter(a => a.success);
+      const failedAssignments = assignments.filter(a => !a.success);
+
+      console.log('[WLANAssignment] Assignment results:', {
+        successful: successfulAssignments.length,
+        failed: failedAssignments.length
+      });
+
+      // Step 6: Save assignment tracking data
+      console.log('[WLANAssignment] Step 6: Saving assignment tracking data...');
+
+      // Save site assignments
+      for (const siteAssignment of siteAssignments) {
+        assignmentStorageService.saveWLANSiteAssignment({
+          wlanId,
+          wlanName,
+          siteId: siteAssignment.siteId,
+          siteName: siteAssignment.siteName,
+          deploymentMode: siteAssignment.deploymentMode,
+          includedProfiles: siteAssignment.includedProfiles || [],
+          excludedProfiles: siteAssignment.excludedProfiles || [],
+          createdAt: new Date().toISOString(),
+          lastModified: new Date().toISOString()
+        });
+      }
+
+      // Save profile assignments
+      const profileAssignments = profilesToAssign.map(profile => {
+        const assignment = assignments.find(a => a.profileId === profile.id);
+        const siteAssignment = siteAssignments.find(sa => {
+          const profiles = profileMap[sa.siteId] || [];
+          return profiles.some(p => p.id === profile.id);
+        });
+
+        return {
+          wlanId,
+          wlanName,
+          profileId: profile.id,
+          profileName: profile.name || profile.profileName || profile.id,
+          siteId: siteAssignment?.siteId || '',
+          siteName: siteAssignment?.siteName || '',
+          source: 'SITE_PROPAGATION' as const,
+          expectedState: 'ASSIGNED' as const,
+          actualState: (assignment?.success ? 'ASSIGNED' : 'UNKNOWN') as const,
+          mismatch: null,
+          lastReconciled: new Date().toISOString(),
+          syncStatus: 'PENDING' as const
+        };
+      });
+
+      assignmentStorageService.saveWLANProfileAssignmentsBatch(profileAssignments);
+
+      // Step 7: Trigger profile synchronization
+      let syncResults;
+      if (!options.skipSync && successfulAssignments.length > 0) {
+        console.log('[WLANAssignment] Step 7: Triggering profile sync...');
+        syncResults = await this.syncProfiles(
+          successfulAssignments.map(a => a.profileId)
+        );
+
+        // Update sync status in storage
+        for (const syncResult of syncResults) {
+          assignmentStorageService.updateProfileAssignmentSyncStatus(
+            wlanId,
+            syncResult.profileId,
+            syncResult.success ? 'SYNCED' : 'FAILED',
+            syncResult.error
+          );
+        }
+
+        console.log('[WLANAssignment] Sync completed');
+      }
+
+      const response: AutoAssignmentResponse = {
+        serviceId: wlanId,
+        sitesProcessed: siteAssignments.length,
+        deviceGroupsFound: Object.keys(profileMap).length,
+        profilesAssigned: successfulAssignments.length,
+        assignments,
+        syncResults,
+        success: failedAssignments.length === 0,
+        errors: failedAssignments.length > 0
+          ? [`${failedAssignments.length} profile(s) failed to assign`]
+          : undefined
+      };
+
+      console.log('[WLANAssignment] Site-centric deployment completed:', response);
+      return response;
+
+    } catch (error) {
+      console.error('[WLANAssignment] Site-centric deployment failed:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance
