@@ -332,6 +332,16 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
     setSiteConfigs(newConfigs);
   };
 
+  // Check if form has all required fields filled
+  const isFormValid = () => {
+    if (!formData.ssid.trim()) return false;
+    if (!formData.security) return false;
+    if (!formData.band) return false;
+    if (formData.security !== 'open' && !formData.passphrase.trim()) return false;
+    if (formData.selectedSites.length === 0) return false;
+    return true;
+  };
+
   const handleSubmit = async () => {
     console.log('=== WLAN CREATION DEBUG START ===');
     console.log('1. Form Data:', formData);
@@ -340,19 +350,35 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
     console.log('4. Profiles By Site:', Array.from(profilesBySite.entries()));
     console.log('5. Effective Sets:', effectiveSets);
 
-    // Validation
+    // Comprehensive validation - check all required fields
+    const errors: string[] = [];
+
     if (!formData.ssid.trim()) {
-      toast.error('SSID is required');
-      return;
+      errors.push('SSID is required');
+    }
+
+    if (!formData.security) {
+      errors.push('Security type is required');
+    }
+
+    if (!formData.band) {
+      errors.push('Band is required');
     }
 
     if (formData.security !== 'open' && !formData.passphrase.trim()) {
-      toast.error('Passphrase is required for secured networks');
-      return;
+      errors.push('Passphrase is required for secured networks');
     }
 
     if (formData.selectedSites.length === 0) {
-      toast.error('Please select at least one site');
+      errors.push('At least one site must be selected');
+    }
+
+    // If there are validation errors, show them all
+    if (errors.length > 0) {
+      toast.error('Please fix the following errors:', {
+        description: errors.join('\n• '),
+        duration: 5000,
+      });
       return;
     }
 
@@ -433,9 +459,8 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
     }
   };
 
-  const isValid = formData.ssid.trim() &&
-    (formData.security === 'open' || formData.passphrase.trim()) &&
-    formData.selectedSites.length > 0;
+  // Use the comprehensive validation function
+  const isValid = isFormValid();
 
   return (
     <>
