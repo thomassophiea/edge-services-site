@@ -468,24 +468,31 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Network Configuration</CardTitle>
-                <CardDescription className="text-xs">Basic WLAN settings</CardDescription>
+                <CardDescription className="text-xs">
+                  Basic WLAN settings • <span className="text-red-500 font-medium">* Required fields</span>
+                </CardDescription>
               </CardHeader>
               <CardContent>
               <div className="space-y-4">
                 {/* SSID */}
                 <div className="space-y-2">
-                  <Label htmlFor="ssid">SSID *</Label>
+                  <Label htmlFor="ssid">
+                    SSID <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="ssid"
                     value={formData.ssid}
                     onChange={(e) => setFormData({ ...formData, ssid: e.target.value })}
-                    placeholder="MyNetwork"
+                    placeholder="MyNetwork (required)"
+                    className={!formData.ssid.trim() ? 'border-red-300 focus-visible:border-red-500' : ''}
                   />
                 </div>
 
                 {/* Security Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="security">Security *</Label>
+                  <Label htmlFor="security">
+                    Security <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.security}
                     onValueChange={(value: any) => setFormData({ ...formData, security: value })}
@@ -504,7 +511,9 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
 
                 {/* Band */}
                 <div className="space-y-2">
-                  <Label htmlFor="band">Band *</Label>
+                  <Label htmlFor="band">
+                    Band <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.band}
                     onValueChange={(value: any) => setFormData({ ...formData, band: value })}
@@ -523,13 +532,16 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                 {/* Passphrase (conditional) */}
                 {formData.security !== 'open' && (
                   <div className="space-y-2">
-                    <Label htmlFor="passphrase">Passphrase *</Label>
+                    <Label htmlFor="passphrase">
+                      Passphrase <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="passphrase"
                       type="password"
                       value={formData.passphrase}
                       onChange={(e) => setFormData({ ...formData, passphrase: e.target.value })}
-                      placeholder="Enter passphrase"
+                      placeholder="Enter passphrase (required)"
+                      className={!formData.passphrase.trim() ? 'border-red-300 focus-visible:border-red-500' : ''}
                     />
                   </div>
                 )}
@@ -635,8 +647,12 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-sm font-medium">Site Assignment *</CardTitle>
-                    <CardDescription className="text-xs mt-0.5">Select sites for deployment</CardDescription>
+                    <CardTitle className="text-sm font-medium">
+                      Site Assignment <span className="text-red-500">*</span>
+                    </CardTitle>
+                    <CardDescription className="text-xs mt-0.5">
+                      Select at least one site (required)
+                    </CardDescription>
                   </div>
                   {discoveringProfiles && (
                     <Badge variant="secondary" className="gap-1 text-xs">
