@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Loader2, CheckCircle, AlertCircle, Wifi, MapPin, Users, GripVertical } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Wifi, MapPin, Users, GripVertical, Settings, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -50,7 +50,11 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
     band: 'dual',
     enabled: true,
     selectedSites: [],
-    authenticatedUserDefaultRoleID: null
+    authenticatedUserDefaultRoleID: null,
+    // Advanced options defaults
+    hidden: false,
+    maxClients: undefined,
+    description: ''
   });
 
   // Sites data
@@ -83,6 +87,9 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Advanced options state
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Load sites and roles when dialog opens
   useEffect(() => {
@@ -391,7 +398,11 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
           band: formData.band,
           enabled: formData.enabled,
           sites: formData.selectedSites,
-          authenticatedUserDefaultRoleID: formData.authenticatedUserDefaultRoleID || undefined
+          authenticatedUserDefaultRoleID: formData.authenticatedUserDefaultRoleID || undefined,
+          // Advanced options
+          hidden: formData.hidden || undefined,
+          maxClients: formData.maxClients || undefined,
+          description: formData.description || undefined
         },
         siteAssignments
       );
@@ -451,7 +462,7 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+          <div className="flex-1 overflow-y-auto hide-scrollbar px-6 py-6 space-y-6">
             {/* WLAN Configuration Section */}
             <Card>
               <CardHeader className="pb-2">
@@ -560,6 +571,64 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
               </CardContent>
             </Card>
 
+            {/* Advanced Options Section */}
+            <Card>
+              <CardHeader className="pb-2 cursor-pointer" onClick={() => setShowAdvanced(!showAdvanced)}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <CardTitle className="text-sm font-medium">Advanced Options</CardTitle>
+                  </div>
+                  {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
+                <CardDescription className="text-xs mt-0.5">Optional advanced settings</CardDescription>
+              </CardHeader>
+              {showAdvanced && (
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Hide SSID */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="hideSSID" className="cursor-pointer">Hide SSID</Label>
+                      </div>
+                      <input
+                        id="hideSSID"
+                        type="checkbox"
+                        checked={formData.hidden || false}
+                        onChange={(e) => setFormData({ ...formData, hidden: e.target.checked })}
+                        className="h-4 w-4 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Max Clients */}
+                    <div className="space-y-2">
+                      <Label htmlFor="maxClients">Max Clients (Optional)</Label>
+                      <Input
+                        id="maxClients"
+                        type="number"
+                        value={formData.maxClients || ''}
+                        onChange={(e) => setFormData({ ...formData, maxClients: e.target.value ? parseInt(e.target.value) : undefined })}
+                        placeholder="Unlimited"
+                        min="1"
+                        max="1000"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description (Optional)</Label>
+                      <Input
+                        id="description"
+                        value={formData.description || ''}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Network description..."
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+
             {/* Site Selection Section */}
             <Card>
               <CardHeader className="pb-2">
@@ -597,7 +666,7 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-accent/50'
                         }`}
-                        onClick={() => handleSiteToggle(site.id)}
+                        onClick={() => toggleSite(site.id)}
                       >
                         <input
                           type="checkbox"

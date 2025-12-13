@@ -100,6 +100,11 @@ export interface WLANFormData {
   enabled: boolean;
   selectedSites: string[];
   authenticatedUserDefaultRoleID?: string | null;
+
+  // Advanced options (fields that exist in Service API)
+  hidden?: boolean;
+  maxClients?: number;
+  description?: string;
 }
 
 // ============================================
