@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle, AlertCircle, Wifi, MapPin, Users } from 'lucide-react';
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from './ui/sheet';
+import { useState, useEffect, useRef } from 'react';
+import { Loader2, CheckCircle, AlertCircle, Wifi, MapPin, Users, GripVertical } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -78,12 +78,18 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
   // Submission state
   const [submitting, setSubmitting] = useState(false);
 
+  // Draggable state
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const dialogRef = useRef<HTMLDivElement>(null);
+
   // Load sites and roles when dialog opens
   useEffect(() => {
     if (open) {
       loadSites();
       loadRoles();
-      // Reset form
+      // Reset form and position
       setFormData({
         ssid: '',
         security: 'wpa2-psk',
@@ -97,8 +103,44 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
       setSiteConfigs(new Map());
       setProfilesBySite(new Map());
       setEffectiveSets([]);
+      setPosition({ x: 0, y: 0 }); // Reset position when opening
     }
   }, [open]);
+
+  // Drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setPosition({
+          x: e.clientX - dragStart.x,
+          y: e.clientY - dragStart.y
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragStart]);
 
   // Discover profiles when sites change
   useEffect(() => {
@@ -385,17 +427,29 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col overflow-hidden">
-          <SheetHeader className="px-6 py-4 border-b">
-            <SheetTitle className="flex items-center gap-2">
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          ref={dialogRef}
+          className="max-w-3xl w-[90vw] max-h-[90vh] p-0 flex flex-col overflow-hidden pointer-events-auto"
+          style={{
+            position: 'fixed',
+            left: '50%',
+            top: '50%',
+            transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
+            cursor: isDragging ? 'grabbing' : 'auto'
+          }}
+          onMouseDown={handleMouseDown}
+        >
+          <DialogHeader className="px-6 py-4 border-b" data-drag-handle style={{ cursor: 'grab' }}>
+            <DialogTitle className="flex items-center gap-2">
+              <GripVertical className="h-5 w-5 text-muted-foreground" />
               <Wifi className="h-5 w-5" />
               Create Wireless Network
-            </SheetTitle>
-            <SheetDescription>
-              Configure a new WLAN with site-centric deployment
-            </SheetDescription>
-          </SheetHeader>
+            </DialogTitle>
+            <DialogDescription>
+              Configure a new WLAN with site-centric deployment (drag to move)
+            </DialogDescription>
+          </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {/* WLAN Configuration Section */}
@@ -596,7 +650,7 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
             )}
           </div>
 
-          <SheetFooter className="px-6 py-4 border-t mt-auto">
+          <DialogFooter className="px-6 py-4 border-t mt-auto">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
               Cancel
             </Button>
@@ -616,9 +670,9 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
                 </>
               )}
             </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Profile Picker Dialog */}
       {profilePickerSite && (
