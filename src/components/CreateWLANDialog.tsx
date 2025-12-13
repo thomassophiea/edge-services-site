@@ -46,7 +46,7 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
     ssid: '',
     security: 'wpa2-psk',
     passphrase: '',
-    vlan: null,
+    vlan: 1,
     band: 'dual',
     enabled: true,
     selectedSites: [],
@@ -548,13 +548,13 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
 
                 {/* VLAN */}
                 <div className="space-y-2">
-                  <Label htmlFor="vlan">VLAN ID (Optional)</Label>
+                  <Label htmlFor="vlan">VLAN ID (Default: 1)</Label>
                   <Input
                     id="vlan"
                     type="number"
                     value={formData.vlan || ''}
-                    onChange={(e) => setFormData({ ...formData, vlan: e.target.value ? parseInt(e.target.value) : null })}
-                    placeholder="100"
+                    onChange={(e) => setFormData({ ...formData, vlan: e.target.value ? parseInt(e.target.value) : 1 })}
+                    placeholder="1"
                     min="1"
                     max="4094"
                   />
@@ -562,7 +562,7 @@ export function CreateWLANDialog({ open, onOpenChange, onSuccess }: CreateWLANDi
 
                 {/* Role */}
                 <div className="space-y-2">
-                  <Label htmlFor="role">User Role</Label>
+                  <Label htmlFor="role">User Role (Default: accessing)</Label>
                   <Select
                     value={formData.authenticatedUserDefaultRoleID || 'none'}
                     onValueChange={(value) => setFormData({ ...formData, authenticatedUserDefaultRoleID: value === 'none' ? null : value })}
