@@ -288,21 +288,41 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
         const pskElement = serviceData.privacy?.WpaPskElement || serviceData.WpaPskElement;
         const enterpriseElement = serviceData.privacy?.WpaEnterpriseElement || serviceData.WpaEnterpriseElement;
 
+        // Detect security type from privacy elements
+        let detectedSecurityType = 'open';
+        let detectedEncryption = '';
+
+        if (pskElement) {
+          detectedSecurityType = 'wpa2-personal';
+          detectedEncryption = pskElement.mode === 'aesOnly' ? 'AES' :
+                              pskElement.mode === 'tkipOnly' ? 'TKIP' :
+                              pskElement.mode === 'mixed' ? 'AES/TKIP' : 'AES';
+        } else if (saeElement) {
+          detectedSecurityType = 'wpa3-personal';
+          detectedEncryption = 'AES';
+        } else if (enterpriseElement) {
+          const pmfRequired = enterpriseElement.pmfMode === 'required';
+          detectedSecurityType = pmfRequired ? 'wpa3-enterprise' : 'wpa2-enterprise';
+          detectedEncryption = enterpriseElement.mode === 'aesOnly' ? 'AES' :
+                              enterpriseElement.mode === 'tkipOnly' ? 'TKIP' :
+                              enterpriseElement.mode === 'mixed' ? 'AES/TKIP' : 'AES';
+        }
+
         // Map service data to comprehensive form data with ALL Campus Controller fields
         const mappedFormData = {
           // Basic Settings
           name: serviceData.serviceName || serviceData.name || serviceData.ssid || 'Unnamed Network',
-          ssid: serviceData.ssid || serviceData.name || 'none',
-          description: serviceData.description || 'none',
+          ssid: serviceData.ssid || serviceData.name || '',
+          description: serviceData.description || '',
           enabled: serviceData.enabled !== false && serviceData.status !== 'disabled',
 
           // Security Configuration
-          securityType: serviceData.security?.type || serviceData.securityType || 'open',
-          privacyType: serviceData.security?.privacyType || serviceData.privacyType || 'none',
-          authType: serviceData.security?.authType || serviceData.authType || 'none',
-          authMethod: serviceData.security?.authMethod || serviceData.authMethod || 'none',
-          encryption: serviceData.security?.encryption || serviceData.encryption || 'none',
-          passphrase: pskElement?.presharedKey || saeElement?.presharedKey || serviceData.security?.passphrase || serviceData.passphrase || 'none',
+          securityType: detectedSecurityType,
+          privacyType: serviceData.security?.privacyType || serviceData.privacyType || '',
+          authType: serviceData.security?.authType || serviceData.authType || '',
+          authMethod: serviceData.security?.authMethod || serviceData.authMethod || '',
+          encryption: detectedEncryption || serviceData.security?.encryption || serviceData.encryption || '',
+          passphrase: pskElement?.presharedKey || saeElement?.presharedKey || serviceData.security?.passphrase || serviceData.passphrase || '',
 
           // WPA3-SAE Configuration
           pmfMode: saeElement?.pmfMode || pskElement?.pmfMode || enterpriseElement?.pmfMode || 'disabled',
