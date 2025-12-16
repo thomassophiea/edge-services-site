@@ -35,13 +35,17 @@ export class WLANAssignmentService {
       // Step 1: Create the WLAN/Service
       console.log('[WLANAssignment] Step 1: Creating service...');
       const service = await apiService.createService({
-        name: serviceData.name,
+        serviceName: serviceData.serviceName || serviceData.name,
         ssid: serviceData.ssid,
         security: serviceData.security,
         passphrase: serviceData.passphrase,
         vlan: serviceData.vlan,
         band: serviceData.band,
         enabled: serviceData.enabled,
+        authenticatedUserDefaultRoleID: serviceData.authenticatedUserDefaultRoleID,
+        hidden: serviceData.hidden,
+        maxClients: serviceData.maxClients,
+        description: serviceData.description,
       });
 
       console.log('[WLANAssignment] Service created:', service.id);
@@ -367,13 +371,17 @@ export class WLANAssignmentService {
       // Step 4: Create the WLAN/Service
       console.log('[WLANAssignment] Step 4: Creating service...');
       const service = await apiService.createService({
-        name: serviceData.name,
+        serviceName: serviceData.serviceName || serviceData.name,
         ssid: serviceData.ssid,
         security: serviceData.security,
         passphrase: serviceData.passphrase,
         vlan: serviceData.vlan,
         band: serviceData.band,
         enabled: serviceData.enabled,
+        authenticatedUserDefaultRoleID: serviceData.authenticatedUserDefaultRoleID,
+        hidden: serviceData.hidden,
+        maxClients: serviceData.maxClients,
+        description: serviceData.description,
       });
 
       const wlanId = service.id;

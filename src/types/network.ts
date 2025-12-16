@@ -63,7 +63,8 @@ export interface Profile {
 }
 
 export interface CreateServiceRequest {
-  name: string;
+  name?: string; // Deprecated - use serviceName instead
+  serviceName?: string; // Service identifier (required by API)
   ssid: string;
   security: string;
   passphrase?: string;
@@ -72,6 +73,9 @@ export interface CreateServiceRequest {
   enabled: boolean;
   sites: string[]; // Sites to assign to
   description?: string;
+  authenticatedUserDefaultRoleID?: string;
+  hidden?: boolean;
+  maxClients?: number;
 }
 
 export interface AutoAssignmentResponse {
