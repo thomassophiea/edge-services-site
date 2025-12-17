@@ -1,9 +1,9 @@
-import { 
-  Users, 
-  Wifi, 
-  MapPin, 
-  AlertTriangle, 
-  Settings, 
+import {
+  Users,
+  Wifi,
+  MapPin,
+  AlertTriangle,
+  Settings,
   TrendingUp,
   Compass,
   LogOut,
@@ -23,7 +23,8 @@ import {
   Database,
   GitBranch,
   LayoutDashboard,
-  Wrench
+  Wrench,
+  Sunset
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import extremeNetworksLogo from 'figma:asset/cc372b1d703a0b056a9f8c590da6c8e1cb4947fd.png';
@@ -37,7 +38,7 @@ interface SidebarProps {
   adminRole: string | null;
   currentPage: string;
   onPageChange: (page: string) => void;
-  theme?: 'light' | 'dark' | 'system';
+  theme?: 'light' | 'dark' | 'synthwave' | 'system';
   onThemeToggle?: () => void;
 }
 
@@ -229,7 +230,8 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
             onClick={onThemeToggle}
             className={cn(
               "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent",
-              isCollapsed ? "px-2" : "px-3"
+              isCollapsed ? "px-2" : "px-3",
+              theme === 'synthwave' && "bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/50"
             )}
             title={`Switch theme (current: ${theme === 'system' ? 'auto' : theme})`}
           >
@@ -237,12 +239,17 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
               <Monitor className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
             ) : theme === 'dark' ? (
               <Sun className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+            ) : theme === 'synthwave' ? (
+              <Sunset className={cn("h-4 w-4 text-pink-400 animate-pulse", !isCollapsed && "mr-2")} />
             ) : (
               <Moon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
             )}
             {!isCollapsed && (
-              <span>
-                {theme === 'system' ? 'Auto Theme' : theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              <span className={theme === 'synthwave' ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400 font-bold' : ''}>
+                {theme === 'system' ? 'Auto Theme' :
+                 theme === 'dark' ? 'Light Mode' :
+                 theme === 'synthwave' ? '80s SYNTHWAVE 🌆' :
+                 'Dark Mode'}
               </span>
             )}
           </Button>

@@ -4,14 +4,14 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
-import { Loader2, Sun, Moon, Monitor } from 'lucide-react';
+import { Loader2, Sun, Moon, Monitor, Sunset } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import extremeNetworksLogo from 'figma:asset/f6780e138108fdbc214f37376d5cea1e3356ac35.png';
 import { apiService } from '../services/api';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
-  theme?: 'light' | 'dark' | 'system';
+  theme?: 'light' | 'dark' | 'synthwave' | 'system';
   onThemeToggle?: () => void;
 }
 
@@ -59,18 +59,23 @@ export function LoginForm({ onLoginSuccess, theme = 'system', onThemeToggle }: L
               variant="outline"
               size="sm"
               onClick={onThemeToggle}
-              className="flex items-center space-x-2"
+              className={`flex items-center space-x-2 ${theme === 'synthwave' ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500' : ''}`}
               title={`Switch theme (current: ${theme === 'system' ? 'auto' : theme})`}
             >
               {theme === 'system' ? (
                 <Monitor className="h-4 w-4" />
               ) : theme === 'dark' ? (
                 <Sun className="h-4 w-4" />
+              ) : theme === 'synthwave' ? (
+                <Sunset className="h-4 w-4 text-pink-400 animate-pulse" />
               ) : (
                 <Moon className="h-4 w-4" />
               )}
-              <span>
-                {theme === 'system' ? 'Auto' : theme === 'dark' ? 'Light' : 'Dark'}
+              <span className={theme === 'synthwave' ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400 font-bold' : ''}>
+                {theme === 'system' ? 'Auto' :
+                 theme === 'dark' ? 'Light' :
+                 theme === 'synthwave' ? '80s' :
+                 'Dark'}
               </span>
             </Button>
           </div>
