@@ -294,18 +294,18 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
 
         if (pskElement) {
           detectedSecurityType = 'wpa2-personal';
-          detectedEncryption = pskElement.mode === 'aesOnly' ? 'AES' :
-                              pskElement.mode === 'tkipOnly' ? 'TKIP' :
-                              pskElement.mode === 'mixed' ? 'AES/TKIP' : 'AES';
+          detectedEncryption = pskElement.mode === 'aesOnly' ? 'aes' :
+                              pskElement.mode === 'tkipOnly' ? 'tkip' :
+                              pskElement.mode === 'mixed' ? 'tkip-aes' : 'aes';
         } else if (saeElement) {
           detectedSecurityType = 'wpa3-personal';
-          detectedEncryption = 'AES';
+          detectedEncryption = 'aes';
         } else if (enterpriseElement) {
           const pmfRequired = enterpriseElement.pmfMode === 'required';
           detectedSecurityType = pmfRequired ? 'wpa3-enterprise' : 'wpa2-enterprise';
-          detectedEncryption = enterpriseElement.mode === 'aesOnly' ? 'AES' :
-                              enterpriseElement.mode === 'tkipOnly' ? 'TKIP' :
-                              enterpriseElement.mode === 'mixed' ? 'AES/TKIP' : 'AES';
+          detectedEncryption = enterpriseElement.mode === 'aesOnly' ? 'aes' :
+                              enterpriseElement.mode === 'tkipOnly' ? 'tkip' :
+                              enterpriseElement.mode === 'mixed' ? 'tkip-aes' : 'aes';
         }
 
         // Map service data to comprehensive form data with ALL Campus Controller fields
