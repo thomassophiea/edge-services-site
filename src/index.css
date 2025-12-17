@@ -5640,7 +5640,10 @@ html[data-theme="light"], html.light {
 
 /* Sheet/Slide-out Panel Styling for Synthwave */
 .synthwave [data-slot="sheet-content"].bg-background,
-.synthwave [data-slot="sheet-content"] {
+.synthwave [data-slot="sheet-content"],
+.synthwave [role="dialog"][data-slot="sheet-content"],
+.synthwave div[data-slot="sheet-content"],
+.synthwave [data-state="open"] [data-slot="sheet-content"] {
   background: rgba(11, 16, 48, 0.98) !important;
   background-color: rgba(11, 16, 48, 0.98) !important;
   backdrop-filter: blur(10px) !important;
@@ -5652,31 +5655,47 @@ html[data-theme="light"], html.light {
 
 /* Sheet Overlay - Multiple selectors to ensure it works */
 .synthwave [data-slot="sheet-overlay"],
-.synthwave [data-radix-dialog-overlay] {
+.synthwave [data-radix-dialog-overlay],
+.synthwave div[data-slot="sheet-overlay"],
+.synthwave [data-state="open"][data-slot="sheet-overlay"],
+.synthwave [data-state="open"] + [data-slot="sheet-overlay"] {
   background: rgba(7, 10, 26, 0.85) !important;
   background-color: rgba(7, 10, 26, 0.85) !important;
   backdrop-filter: blur(4px) !important;
 }
 
 /* Override bg-black/50 from overlay */
-.synthwave [data-slot="sheet-overlay"].bg-black\/50 {
+.synthwave [data-slot="sheet-overlay"].bg-black\/50,
+.synthwave div[class*="bg-black"] {
   background: rgba(7, 10, 26, 0.85) !important;
+  background-color: rgba(7, 10, 26, 0.85) !important;
 }
 
 /* Sheet Header */
-.synthwave [data-slot="sheet-header"] {
+.synthwave [data-slot="sheet-header"],
+.synthwave div[data-slot="sheet-header"] {
   background: rgba(16, 26, 70, 0.60) !important;
   border-bottom: 1px solid rgba(0, 229, 255, 0.25) !important;
 }
 
 /* Sheet Content Area - all text bright */
 .synthwave [data-slot="sheet-content"],
-.synthwave [data-slot="sheet-content"] * {
+.synthwave [data-slot="sheet-content"] *,
+.synthwave [data-slot="sheet-content"] p,
+.synthwave [data-slot="sheet-content"] span,
+.synthwave [data-slot="sheet-content"] div,
+.synthwave [data-slot="sheet-content"] h1,
+.synthwave [data-slot="sheet-content"] h2,
+.synthwave [data-slot="sheet-content"] h3,
+.synthwave [data-slot="sheet-content"] label,
+.synthwave [data-slot="sheet-content"] td,
+.synthwave [data-slot="sheet-content"] th {
   color: #F2F6FF !important;
 }
 
 /* Ensure all child divs in sheet have proper background */
-.synthwave [data-slot="sheet-content"] > * {
+.synthwave [data-slot="sheet-content"] > *,
+.synthwave [data-slot="sheet-content"] div {
   background-color: transparent !important;
 }
 
@@ -5923,7 +5942,10 @@ html[data-theme="light"], html.light {
 
 /* Sheet/Slide-out Panel Styling for Pirate */
 .pirate [data-slot="sheet-content"].bg-background,
-.pirate [data-slot="sheet-content"] {
+.pirate [data-slot="sheet-content"],
+.pirate [role="dialog"][data-slot="sheet-content"],
+.pirate div[data-slot="sheet-content"],
+.pirate [data-state="open"] [data-slot="sheet-content"] {
   background: rgba(43, 24, 16, 0.98) !important;
   background-color: rgba(43, 24, 16, 0.98) !important;
   backdrop-filter: blur(10px) !important;
@@ -5935,19 +5957,25 @@ html[data-theme="light"], html.light {
 
 /* Sheet Overlay */
 .pirate [data-slot="sheet-overlay"],
-.pirate [data-radix-dialog-overlay] {
+.pirate [data-radix-dialog-overlay],
+.pirate div[data-slot="sheet-overlay"],
+.pirate [data-state="open"][data-slot="sheet-overlay"],
+.pirate [data-state="open"] + [data-slot="sheet-overlay"] {
   background: rgba(13, 6, 4, 0.88) !important;
   background-color: rgba(13, 6, 4, 0.88) !important;
   backdrop-filter: blur(4px) !important;
 }
 
 /* Override bg-black/50 from overlay */
-.pirate [data-slot="sheet-overlay"].bg-black\/50 {
+.pirate [data-slot="sheet-overlay"].bg-black\/50,
+.pirate div[class*="bg-black"] {
   background: rgba(13, 6, 4, 0.88) !important;
+  background-color: rgba(13, 6, 4, 0.88) !important;
 }
 
 /* Sheet Header */
-.pirate [data-slot="sheet-header"] {
+.pirate [data-slot="sheet-header"],
+.pirate div[data-slot="sheet-header"] {
   background: rgba(26, 15, 10, 0.70) !important;
   border-bottom: 2px solid rgba(184, 134, 11, 0.35) !important;
 }
@@ -5958,6 +5986,9 @@ html[data-theme="light"], html.light {
 .pirate [data-slot="sheet-content"] p,
 .pirate [data-slot="sheet-content"] span,
 .pirate [data-slot="sheet-content"] div,
+.pirate [data-slot="sheet-content"] h1,
+.pirate [data-slot="sheet-content"] h2,
+.pirate [data-slot="sheet-content"] h3,
 .pirate [data-slot="sheet-content"] label,
 .pirate [data-slot="sheet-content"] td,
 .pirate [data-slot="sheet-content"] th {
@@ -5965,7 +5996,8 @@ html[data-theme="light"], html.light {
 }
 
 /* Sheet child elements transparent background */
-.pirate [data-slot="sheet-content"] > *:not(button) {
+.pirate [data-slot="sheet-content"] > *:not(button),
+.pirate [data-slot="sheet-content"] div {
   background-color: transparent !important;
 }
 
@@ -6228,7 +6260,10 @@ html[data-theme="light"], html.light {
 
 /* Sheet/Slide-out Panel Styling for MI5 */
 .mi5 [data-slot="sheet-content"].bg-background,
-.mi5 [data-slot="sheet-content"] {
+.mi5 [data-slot="sheet-content"],
+.mi5 [role="dialog"][data-slot="sheet-content"],
+.mi5 div[data-slot="sheet-content"],
+.mi5 [data-state="open"] [data-slot="sheet-content"] {
   background: rgba(26, 26, 26, 0.98) !important;
   background-color: rgba(26, 26, 26, 0.98) !important;
   backdrop-filter: blur(10px) !important;
@@ -6240,19 +6275,25 @@ html[data-theme="light"], html.light {
 
 /* Sheet Overlay */
 .mi5 [data-slot="sheet-overlay"],
-.mi5 [data-radix-dialog-overlay] {
+.mi5 [data-radix-dialog-overlay],
+.mi5 div[data-slot="sheet-overlay"],
+.mi5 [data-state="open"][data-slot="sheet-overlay"],
+.mi5 [data-state="open"] + [data-slot="sheet-overlay"] {
   background: rgba(10, 10, 10, 0.90) !important;
   background-color: rgba(10, 10, 10, 0.90) !important;
   backdrop-filter: blur(4px) !important;
 }
 
 /* Override bg-black/50 from overlay */
-.mi5 [data-slot="sheet-overlay"].bg-black\/50 {
+.mi5 [data-slot="sheet-overlay"].bg-black\/50,
+.mi5 div[class*="bg-black"] {
   background: rgba(10, 10, 10, 0.90) !important;
+  background-color: rgba(10, 10, 10, 0.90) !important;
 }
 
 /* Sheet Header */
-.mi5 [data-slot="sheet-header"] {
+.mi5 [data-slot="sheet-header"],
+.mi5 div[data-slot="sheet-header"] {
   background: rgba(10, 10, 10, 0.80) !important;
   border-bottom: 1px solid rgba(211, 0, 0, 0.35) !important;
 }
@@ -6263,6 +6304,9 @@ html[data-theme="light"], html.light {
 .mi5 [data-slot="sheet-content"] p,
 .mi5 [data-slot="sheet-content"] span,
 .mi5 [data-slot="sheet-content"] div,
+.mi5 [data-slot="sheet-content"] h1,
+.mi5 [data-slot="sheet-content"] h2,
+.mi5 [data-slot="sheet-content"] h3,
 .mi5 [data-slot="sheet-content"] label,
 .mi5 [data-slot="sheet-content"] td,
 .mi5 [data-slot="sheet-content"] th {
@@ -6270,7 +6314,8 @@ html[data-theme="light"], html.light {
 }
 
 /* Sheet child elements transparent background */
-.mi5 [data-slot="sheet-content"] > *:not(button) {
+.mi5 [data-slot="sheet-content"] > *:not(button),
+.mi5 [data-slot="sheet-content"] div {
   background-color: transparent !important;
 }
 
