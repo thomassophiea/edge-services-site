@@ -340,9 +340,9 @@ export function AdministratorsManagement() {
               </Button>
             </div>
 
-            <Alert className="border-2">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
+            <Alert className="border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800 dark:text-yellow-200">
                 Administrators management API endpoints are not available on this Extreme Platform ONE version. This feature requires Extreme Platform ONE API v1/administrators support.
               </AlertDescription>
             </Alert>
