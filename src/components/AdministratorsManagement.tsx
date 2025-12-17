@@ -16,11 +16,6 @@ import {
   Edit,
   Trash2,
   Shield,
-  Key,
-  Mail,
-  Clock,
-  CheckCircle,
-  XCircle,
   AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -611,10 +606,7 @@ export function AdministratorsManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>Username</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>2FA</TableHead>
-                <TableHead>Last Login</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -628,30 +620,7 @@ export function AdministratorsManagement() {
                       {admin.username}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      {admin.email}
-                    </div>
-                  </TableCell>
                   <TableCell>{getRoleBadge(admin.role)}</TableCell>
-                  <TableCell>
-                    {admin.twoFactorEnabled ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-gray-400" />
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {admin.lastLogin ? (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        {new Date(admin.lastLogin).toLocaleString()}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">Never</span>
-                    )}
-                  </TableCell>
                   <TableCell>
                     <Switch
                       checked={admin.enabled}
