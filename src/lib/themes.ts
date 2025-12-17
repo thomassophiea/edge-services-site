@@ -1,9 +1,9 @@
 /**
  * Theme Configuration
- * Supports: Default, Dark, Miami Vice (80s neon), and Pirate themes
+ * Supports: Default, Dark, Miami Vice (80s neon), Pirate, and MI5 themes
  */
 
-export type ThemeMode = 'default' | 'dark' | 'synthwave' | 'pirate';
+export type ThemeMode = 'default' | 'dark' | 'synthwave' | 'pirate' | 'mi5';
 
 export interface Theme {
   name: string;
@@ -152,6 +152,40 @@ export const themes: Record<ThemeMode, Theme> = {
       input: '18 45% 13%', // #2B1810 (aged wood input bg)
       ring: '45 65% 52%' // #D4AF37 (gold focus ring)
     }
+  },
+  mi5: {
+    name: 'mi5',
+    displayName: 'MI5',
+    emoji: '🕵️',
+    colors: {
+      // Mission Impossible iconic red - #D30000
+      primary: '0 100% 41%', // #D30000 (MI red)
+      primaryForeground: '0 0% 100%', // #FFFFFF (white text on red)
+      // Dark red secondary - #8B0000
+      secondary: '0 100% 27%', // #8B0000 (dark red)
+      secondaryForeground: '0 0% 91%', // #E8E8E8 (light gray)
+      // Very dark background - #0A0A0A
+      background: '0 0% 4%', // #0A0A0A (near black)
+      foreground: '0 0% 91%', // #E8E8E8 (light gray)
+      // Dark card surfaces - #1A1A1A
+      card: '0 0% 10%', // #1A1A1A (dark gray)
+      cardForeground: '0 0% 91%', // #E8E8E8
+      popover: '0 0% 10%', // #1A1A1A
+      popoverForeground: '0 0% 91%', // #E8E8E8
+      // Muted dark gray
+      muted: '0 0% 15%', // #262626
+      mutedForeground: '0 0% 70%', // #B3B3B3
+      // Steel blue accent - #4A90A4
+      accent: '196 38% 47%', // #4A90A4 (steel blue)
+      accentForeground: '0 0% 100%', // #FFFFFF
+      // Bright red destructive - #FF0000
+      destructive: '0 100% 50%', // #FF0000 (bright red)
+      destructiveForeground: '0 0% 100%', // #FFFFFF
+      // Red borders with opacity
+      border: '0 100% 41%', // #D30000 (MI red)
+      input: '0 0% 10%', // #1A1A1A (dark input bg)
+      ring: '0 100% 41%' // #D30000 (red focus ring)
+    }
   }
 };
 
@@ -169,7 +203,7 @@ export function applyTheme(theme: ThemeMode) {
   localStorage.setItem('theme', theme);
 
   // Add theme class for additional styling
-  root.classList.remove('theme-default', 'theme-dark', 'theme-synthwave', 'theme-pirate');
+  root.classList.remove('theme-default', 'theme-dark', 'theme-synthwave', 'theme-pirate', 'theme-mi5');
   root.classList.add(`theme-${theme}`);
 }
 

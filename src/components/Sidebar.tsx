@@ -31,7 +31,8 @@ import {
   Scroll,
   Map,
   Swords,
-  Flag
+  Flag,
+  Eye
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import extremeNetworksLogo from 'figma:asset/cc372b1d703a0b056a9f8c590da6c8e1cb4947fd.png';
@@ -45,13 +46,13 @@ interface SidebarProps {
   adminRole: string | null;
   currentPage: string;
   onPageChange: (page: string) => void;
-  theme?: 'light' | 'dark' | 'synthwave' | 'pirate' | 'system';
+  theme?: 'light' | 'dark' | 'synthwave' | 'pirate' | 'mi5' | 'system';
   onThemeToggle?: () => void;
 }
 
 // Navigation items with pirate-themed icons and labels
 const navigationItems = [
-  { id: 'service-levels', label: 'Service Levels', pirateLabel: "Ship's Status", icon: Anchor, pirateIcon: Anchor },
+  { id: 'service-levels', label: 'Service Levels', pirateLabel: "Ship's Status", icon: TrendingUp, pirateIcon: Anchor },
   { id: 'connected-clients', label: 'Connected Clients', pirateLabel: "Crew Aboard", icon: Users, pirateIcon: Users },
   { id: 'access-points', label: 'Access Points', pirateLabel: "Signal Beacons", icon: Wifi, pirateIcon: Radio },
   { id: 'report-widgets', label: 'Report Widgets', pirateLabel: "Treasure Maps", icon: BarChart3, pirateIcon: Scroll },
@@ -85,16 +86,8 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center space-x-2">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary p-1.5 rounded">
-                  <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center">
-                    <span className="text-primary font-bold text-xs">E</span>
-                  </div>
-                </div>
-                <div className="text-foreground">
-
-                  <span className="text-muted-foreground text-xs">Platform ONE | AURA</span>
-                </div>
+              <div className="text-foreground">
+                <span className="text-muted-foreground text-xs">Platform ONE | AURA</span>
               </div>
             </div>
           )}
@@ -252,18 +245,22 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
               <Palette className={cn("h-4 w-4 text-pink-400", !isCollapsed && "mr-2")} />
             ) : theme === 'pirate' ? (
               <Skull className={cn("h-4 w-4 text-yellow-600", !isCollapsed && "mr-2")} />
+            ) : theme === 'mi5' ? (
+              <Eye className={cn("h-4 w-4 text-red-600", !isCollapsed && "mr-2")} />
             ) : (
               <Monitor className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
             )}
             {!isCollapsed && (
               <span className={
                 theme === 'synthwave' ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400 font-bold' :
-                theme === 'pirate' ? 'text-yellow-600 font-bold' : ''
+                theme === 'pirate' ? 'text-yellow-600 font-bold' :
+                theme === 'mi5' ? 'text-red-600 font-bold' : ''
               }>
                 {theme === 'light' ? 'Light' :
                  theme === 'dark' ? 'Dark' :
                  theme === 'synthwave' ? 'Miami Vice' :
                  theme === 'pirate' ? 'Pirate' :
+                 theme === 'mi5' ? 'MI5' :
                  'Auto'}
               </span>
             )}
