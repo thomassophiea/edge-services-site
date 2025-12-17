@@ -33,6 +33,7 @@ import { NotificationsMenu } from './components/NotificationsMenu';
 import { DevModePanel } from './components/DevModePanel';
 import { VersionDisplay } from './components/VersionDisplay';
 import { toast } from 'sonner';
+import { applyTheme as applyThemeColors } from './lib/themes';
 
 const pageInfo = {
   'service-levels': { title: 'Service Levels', description: 'Monitor network SLAs and performance metrics' },
@@ -537,6 +538,9 @@ export default function App() {
   // Helper function to apply theme to document
   const applyTheme = (newTheme: 'light' | 'dark' | 'synthwave') => {
     const root = document.documentElement;
+
+    // Apply color variables from themes.ts
+    applyThemeColors(newTheme === 'light' ? 'default' : newTheme);
 
     // Remove existing theme classes
     root.classList.remove('light', 'dark', 'synthwave');
