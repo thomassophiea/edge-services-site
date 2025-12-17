@@ -5637,3 +5637,30 @@ html[data-theme="light"], html.light {
 .synthwave .dashboard-widget {
   background: rgba(11, 16, 48, 0.98) !important;
 }
+
+/* Sheet/Slide-out Panel Styling for Synthwave */
+.synthwave [data-slot="sheet-content"] {
+  background: rgba(11, 16, 48, 0.98) !important;
+  backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(0, 229, 255, 0.30) !important;
+  box-shadow: 
+    -4px 0 20px rgba(255, 43, 214, 0.25),
+    0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Sheet Overlay */
+.synthwave [data-radix-dialog-overlay] {
+  background: rgba(7, 10, 26, 0.85) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* Sheet Header */
+.synthwave [data-slot="sheet-content"] [class*="SheetHeader"] {
+  background: rgba(16, 26, 70, 0.60);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.25) !important;
+}
+
+/* Sheet Content Area */
+.synthwave [data-slot="sheet-content"] > div {
+  color: #F2F6FF !important;
+}
