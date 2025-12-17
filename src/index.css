@@ -5704,36 +5704,15 @@ html[data-theme="light"], html.light {
   background-image:
     linear-gradient(
       to bottom,
-      rgba(26, 15, 10, 0.90) 0%,
+      rgba(26, 15, 10, 0.88) 0%,
       rgba(26, 15, 10, 0.85) 50%,
-      rgba(13, 6, 4, 0.92) 100%
+      rgba(13, 6, 4, 0.90) 100%
     ),
-    /* Wood grain effect */
-    repeating-linear-gradient(
-      90deg,
-      rgba(101, 67, 33, 0.1) 0px,
-      rgba(101, 67, 33, 0.1) 3px,
-      transparent 3px,
-      transparent 8px
-    ),
-    /* Horizontal planks */
-    repeating-linear-gradient(
-      0deg,
-      rgba(43, 24, 16, 0.3) 0px,
-      rgba(43, 24, 16, 0.3) 60px,
-      rgba(26, 15, 10, 0.5) 60px,
-      rgba(26, 15, 10, 0.5) 62px
-    ),
-    /* Deep ocean gradient */
-    linear-gradient(
-      180deg,
-      #0a0503 0%,
-      #1a0f0a 40%,
-      #0d1a1a 100%
-    );
+    url('https://imgs.search.brave.com/q7xqJ2sLEpxuZINpq53jsysNaj6PoAH-7OkGR1mAMB4/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/anNkZWxpdnIubmV0/L2doL2hvbWFyci1s/YWJzL2Rhc2hib2Fy/ZC1pY29ucy9wbmcv/dGhlLXBpcmF0ZS1i/YXkucG5n');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
   pointer-events: none;
   z-index: 0;
   opacity: 1;
@@ -5971,6 +5950,23 @@ html[data-theme="light"], html.light {
 .pirate [data-slot="sheet-header"] {
   background: rgba(26, 15, 10, 0.70) !important;
   border-bottom: 2px solid rgba(184, 134, 11, 0.35) !important;
+}
+
+/* All text inside sheets should be visible */
+.pirate [data-slot="sheet-content"] *,
+.pirate [data-slot="sheet-header"] *,
+.pirate [data-slot="sheet-content"] p,
+.pirate [data-slot="sheet-content"] span,
+.pirate [data-slot="sheet-content"] div,
+.pirate [data-slot="sheet-content"] label,
+.pirate [data-slot="sheet-content"] td,
+.pirate [data-slot="sheet-content"] th {
+  color: #F5E6D3 !important;
+}
+
+/* Sheet child elements transparent background */
+.pirate [data-slot="sheet-content"] > *:not(button) {
+  background-color: transparent !important;
 }
 
 /* Widget backgrounds - Treasure chests */

@@ -25,7 +25,13 @@ import {
   LayoutDashboard,
   Wrench,
   Palette,
-  Skull
+  Skull,
+  Anchor,
+  Radio,
+  Scroll,
+  Map,
+  Swords,
+  Flag
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import extremeNetworksLogo from 'figma:asset/cc372b1d703a0b056a9f8c590da6c8e1cb4947fd.png';
@@ -43,19 +49,21 @@ interface SidebarProps {
   onThemeToggle?: () => void;
 }
 
+// Navigation items with pirate-themed icons and labels
 const navigationItems = [
-  { id: 'service-levels', label: 'Service Levels', icon: TrendingUp },
-  { id: 'connected-clients', label: 'Connected Clients', icon: Users },
-  { id: 'access-points', label: 'Access Points', icon: Wifi },
-  { id: 'report-widgets', label: 'Report Widgets', icon: BarChart3 },
+  { id: 'service-levels', label: 'Service Levels', pirateLabel: "Ship's Status", icon: Anchor, pirateIcon: Anchor },
+  { id: 'connected-clients', label: 'Connected Clients', pirateLabel: "Crew Aboard", icon: Users, pirateIcon: Users },
+  { id: 'access-points', label: 'Access Points', pirateLabel: "Signal Beacons", icon: Wifi, pirateIcon: Radio },
+  { id: 'report-widgets', label: 'Report Widgets', pirateLabel: "Treasure Maps", icon: BarChart3, pirateIcon: Scroll },
 ];
 
+// Configure items with pirate-themed icons and labels
 const configureItems = [
-  { id: 'configure-sites', label: 'Sites', icon: MapPin },
-  { id: 'configure-networks', label: 'Networks', icon: Network },
-  { id: 'configure-policy', label: 'Policy', icon: Shield },
-  { id: 'configure-aaa-policies', label: 'AAA Policies', icon: UserCheck },
-  { id: 'configure-guest', label: 'Guest', icon: UserPlus },
+  { id: 'configure-sites', label: 'Sites', pirateLabel: "Islands", icon: MapPin, pirateIcon: Map },
+  { id: 'configure-networks', label: 'Networks', pirateLabel: "Sea Routes", icon: Network, pirateIcon: Compass },
+  { id: 'configure-policy', label: 'Policy', pirateLabel: "Ship's Code", icon: Shield, pirateIcon: Shield },
+  { id: 'configure-aaa-policies', label: 'AAA Policies', pirateLabel: "Sword Guard", icon: UserCheck, pirateIcon: Swords },
+  { id: 'configure-guest', label: 'Guest', pirateLabel: "Welcome Mateys", icon: UserPlus, pirateIcon: Flag },
 ];
 
 export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme = 'system', onThemeToggle }: SidebarProps) {
@@ -104,7 +112,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1">
         {navigationItems.map((item) => {
-          const Icon = item.icon;
+          const Icon = theme === 'pirate' ? item.pirateIcon : item.icon;
           return (
             <Button
               key={item.id}
@@ -119,7 +127,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
               onClick={() => onPageChange(item.id)}
             >
               <Icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-              {!isCollapsed && <span>{item.label}</span>}
+              {!isCollapsed && <span>{theme === 'pirate' ? item.pirateLabel : item.label}</span>}
             </Button>
           );
         })}
@@ -144,7 +152,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
             <Cog className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
             {!isCollapsed && (
               <>
-                <span className="flex-1 text-left">Configure</span>
+                <span className="flex-1 text-left">{theme === 'pirate' ? "Ship's Riggin'" : "Configure"}</span>
                 {isConfigureExpanded ? (
                   <ChevronDown className="h-4 w-4" />
                 ) : (
@@ -158,7 +166,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
           {!isCollapsed && isConfigureExpanded && (
             <div className="ml-6 space-y-1">
               {configureItems.map((item) => {
-                const Icon = item.icon;
+                const Icon = theme === 'pirate' ? item.pirateIcon : item.icon;
                 return (
                   <Button
                     key={item.id}
@@ -173,7 +181,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
                     onClick={() => onPageChange(item.id)}
                   >
                     <Icon className="h-3 w-3 mr-2" />
-                    <span>{item.label}</span>
+                    <span>{theme === 'pirate' ? item.pirateLabel : item.label}</span>
                   </Button>
                 );
               })}
@@ -210,7 +218,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
           onClick={() => onPageChange('administration')}
         >
           <Settings className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-          {!isCollapsed && <span>Administration</span>}
+          {!isCollapsed && <span>{theme === 'pirate' ? "Captain's Quarters" : "Administration"}</span>}
         </Button>
       </nav>
 
