@@ -36,22 +36,22 @@ export function SynthwaveMusicPlayer({ isVisible, onClose }: SynthwaveMusicPlaye
   const [isMinimized, setIsMinimized] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Placeholder tracks - user can add their own MP3 files to public folder
+  // Tracks - default starts with "Turn Off The Lights"
   const [tracks] = useState<Track[]>([
+    {
+      title: 'Turn Off The Lights',
+      artist: 'Synthwave Collection',
+      url: '/music/turn-off-the-lights.mp3'
+    },
     {
       title: 'Neon Nights',
       artist: 'Synthwave Dreams',
-      url: '/music/track1.mp3'
+      url: '/music/neon-nights.mp3'
     },
     {
       title: 'Cyber Highway',
       artist: 'Retro Future',
-      url: '/music/track2.mp3'
-    },
-    {
-      title: 'Sunset Drive',
-      artist: 'Wave Rider',
-      url: '/music/track3.mp3'
+      url: '/music/cyber-highway.mp3'
     }
   ]);
 

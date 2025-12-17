@@ -20,6 +20,7 @@ import { AccessPointDetail } from './components/AccessPointDetail';
 import { ClientDetail } from './components/ClientDetail';
 import { SiteDetail } from './components/SiteDetail';
 import { NetworkChatbot } from './components/NetworkChatbot';
+import { SynthwaveMusicPlayer } from './components/SynthwaveMusicPlayer';
 import { PlaceholderPage } from './components/PlaceholderPage';
 import { apiService, ApiCallLog } from './services/api';
 import { sleDataCollectionService } from './services/sleDataCollection';
@@ -879,6 +880,14 @@ export default function App() {
         isOpen={isChatbotOpen}
         onToggle={() => setIsChatbotOpen(!isChatbotOpen)}
       />
+
+      {/* Synthwave Music Player - Only in Synthwave Mode */}
+      {theme === 'synthwave' && (
+        <SynthwaveMusicPlayer
+          isVisible={true}
+          onClose={() => {/* Music player always visible in synthwave mode */}}
+        />
+      )}
 
       {/* Developer Mode Panel */}
       <DevModePanel
