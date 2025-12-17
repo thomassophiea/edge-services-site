@@ -24,7 +24,7 @@ import {
   GitBranch,
   LayoutDashboard,
   Wrench,
-  Sunset
+  Palette
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import extremeNetworksLogo from 'figma:asset/cc372b1d703a0b056a9f8c590da6c8e1cb4947fd.png';
@@ -240,15 +240,15 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
             ) : theme === 'dark' ? (
               <Moon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
             ) : theme === 'synthwave' ? (
-              <Sunset className={cn("h-4 w-4 text-pink-400 animate-pulse", !isCollapsed && "mr-2")} />
+              <Palette className={cn("h-4 w-4 text-pink-400", !isCollapsed && "mr-2")} />
             ) : (
               <Monitor className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
             )}
             {!isCollapsed && (
-              <span className={theme === 'synthwave' ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400 font-bold animate-pulse' : ''}>
+              <span className={theme === 'synthwave' ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400 font-bold' : ''}>
                 {theme === 'light' ? 'Light' :
                  theme === 'dark' ? 'Dark' :
-                 theme === 'synthwave' ? '80s SYNTHWAVE 🌆' :
+                 theme === 'synthwave' ? 'Synthwave' :
                  'Auto'}
               </span>
             )}

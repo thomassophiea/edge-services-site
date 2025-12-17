@@ -5285,12 +5285,13 @@ html[data-theme="light"], html.light {
               box-shadow 140ms ease-out;
 }
 
-/* Radial Background Gradient - App Shell */
+/* 80s Retro Background - App Shell */
 .synthwave {
   background: #070A1A;
   position: relative;
 }
 
+/* 80s Retro Scene with Sun, Grid, and Mountains */
 .synthwave::before {
   content: '';
   position: fixed;
@@ -5298,15 +5299,82 @@ html[data-theme="light"], html.light {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(255, 43, 214, 0.18) 0%,
-    rgba(0, 229, 255, 0.14) 35%,
-    rgba(138, 43, 255, 0.10) 60%,
-    rgba(7, 10, 26, 1) 100%
-  );
+  background:
+    /* Sky gradient - purple to pink */
+    linear-gradient(
+      180deg,
+      #1a0033 0%,
+      #2d1548 15%,
+      #4a2472 30%,
+      #7b3fa3 45%,
+      #ff006e 70%,
+      #ff4d94 85%,
+      #ffa5c8 100%
+    ),
+    /* Retro sun with stripes */
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 8px,
+      rgba(255, 215, 0, 0.15) 8px,
+      rgba(255, 215, 0, 0.15) 12px
+    ),
+    radial-gradient(
+      circle at 50% 35%,
+      #ffd700 0%,
+      #ff6b35 40%,
+      #ff006e 60%,
+      transparent 65%
+    ),
+    /* Mountain silhouettes */
+    linear-gradient(
+      135deg,
+      transparent 45%,
+      #1a0033 45%,
+      #1a0033 55%,
+      transparent 55%
+    ),
+    linear-gradient(
+      45deg,
+      transparent 40%,
+      #0d001a 40%,
+      #0d001a 60%,
+      transparent 60%
+    );
+  background-size:
+    100% 100%,
+    100% 200px,
+    600px 600px,
+    300px 300px,
+    400px 400px;
+  background-position:
+    center center,
+    center 30%,
+    center 30%,
+    0 100%,
+    100% 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Perspective grid overlay */
+.synthwave body::before {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 43, 214, 0.3) 1px, transparent 1px);
+  background-size: 50px 50px;
+  transform: perspective(400px) rotateX(60deg);
+  transform-origin: bottom;
   pointer-events: none;
   z-index: -1;
+  opacity: 0.5;
 }
 
 /* Subtle Noise Texture (0.035 opacity) */
