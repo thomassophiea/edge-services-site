@@ -62,20 +62,57 @@ export function AdministratorsManagement() {
   const loadAdministrators = async () => {
     setLoading(true);
     try {
+      console.log('[AdministratorsManagement] Fetching administrators from /v1/administrators...');
+
       const response = await apiService.makeAuthenticatedRequest('/v1/administrators', {
         method: 'GET'
       });
 
+      console.log('[AdministratorsManagement] Response status:', response.status);
+      console.log('[AdministratorsManagement] Response ok:', response.ok);
+
       if (response.ok) {
         const data = await response.json();
-        setAdministrators(Array.isArray(data) ? data : [data]);
+        console.log('[AdministratorsManagement] Raw API response:', data);
+        console.log('[AdministratorsManagement] Response type:', typeof data, 'isArray:', Array.isArray(data));
+
+        // Parse administrators data with flexible schema detection
+        let adminList: Administrator[] = [];
+
+        if (Array.isArray(data)) {
+          adminList = data;
+        } else if (data && typeof data === 'object') {
+          // Check for nested arrays in common property names
+          const possibleKeys = ['administrators', 'admins', 'users', 'data', 'items', 'results'];
+          for (const key of possibleKeys) {
+            if (data[key] && Array.isArray(data[key])) {
+              console.log('[AdministratorsManagement] Found administrators array at key:', key);
+              adminList = data[key];
+              break;
+            }
+          }
+
+          if (adminList.length === 0) {
+            console.log('[AdministratorsManagement] No admins found. Available keys:', Object.keys(data));
+          }
+        }
+
+        console.log('[AdministratorsManagement] Parsed administrators count:', adminList.length);
+        if (adminList.length > 0) {
+          console.log('[AdministratorsManagement] Sample admin:', adminList[0]);
+        }
+
+        setAdministrators(adminList);
         setApiNotAvailable(false);
       } else if (response.status === 404) {
         setApiNotAvailable(true);
-        console.warn('Administrators API endpoint not available on Extreme Platform ONE');
+        console.warn('[AdministratorsManagement] Administrators API endpoint not available (404)');
+      } else {
+        console.warn('[AdministratorsManagement] Unexpected response status:', response.status);
+        setApiNotAvailable(true);
       }
     } catch (error) {
-      console.error('Failed to load administrators:', error);
+      console.error('[AdministratorsManagement] Failed to load administrators:', error);
       setApiNotAvailable(true);
     } finally {
       setLoading(false);
