@@ -5415,3 +5415,233 @@ html[data-theme="light"], html.light {
       0 0 40px rgba(0, 217, 255, 0.2);
   }
 }
+
+/* ========================================
+   SYNTHWAVE WIDGET BACKGROUNDS - CREATIVE!
+   ======================================== */
+
+/* Retro Sun Widget Background */
+.synthwave [class*="Card"]:nth-child(1) {
+  background: linear-gradient(
+    180deg,
+    #1a0033 0%,
+    #2d1b4e 30%,
+    #4a2472 50%,
+    #ff006e 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.synthwave [class*="Card"]:nth-child(1)::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 8px,
+      rgba(255, 0, 110, 0.3) 8px,
+      rgba(255, 0, 110, 0.3) 12px
+    ),
+    radial-gradient(circle, #ffd700 0%, #ff6b35 50%, #ff006e 100%);
+  border-radius: 50%;
+  opacity: 0.2;
+  z-index: 0;
+  animation: retro-sun-pulse 4s ease-in-out infinite;
+}
+
+@keyframes retro-sun-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.3;
+  }
+}
+
+/* Mountain Silhouette Widget Background */
+.synthwave [class*="Card"]:nth-child(2) {
+  background: linear-gradient(
+    180deg,
+    #0a0015 0%,
+    #1f0a3c 40%,
+    #ff006e 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.synthwave [class*="Card"]:nth-child(2)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: 
+    linear-gradient(135deg, transparent 45%, #2d1b4e 45%, #2d1b4e 55%, transparent 55%),
+    linear-gradient(45deg, transparent 40%, #1a0033 40%, #1a0033 60%, transparent 60%);
+  background-size: 150px 150px, 200px 200px;
+  background-position: 0 100%, 100px 100%;
+  opacity: 0.4;
+  z-index: 0;
+}
+
+/* Neon Grid Perspective Widget */
+.synthwave [class*="Card"]:nth-child(3) {
+  background: 
+    linear-gradient(180deg, #0d001a 0%, #1a0033 50%, #2d004d 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.synthwave [class*="Card"]:nth-child(3)::before {
+  content: '';
+  position: absolute;
+  bottom: -50%;
+  left: -20%;
+  width: 140%;
+  height: 100%;
+  background-image:
+    linear-gradient(rgba(0, 217, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 0, 110, 0.3) 1px, transparent 1px);
+  background-size: 40px 40px;
+  transform: perspective(300px) rotateX(60deg);
+  opacity: 0.4;
+  z-index: 0;
+}
+
+/* Sunset Stripes Widget */
+.synthwave [class*="Card"]:nth-child(4) {
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      #ffd700 0px,
+      #ff6b35 20px,
+      #ff006e 40px,
+      #b026ff 60px,
+      #4a0e78 80px,
+      #1a0033 100px
+    );
+  position: relative;
+  overflow: hidden;
+}
+
+.synthwave [class*="Card"]:nth-child(4)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 0;
+}
+
+/* Cyber City Skyline Widget */
+.synthwave [class*="Card"]:nth-child(5) {
+  background: linear-gradient(
+    180deg,
+    #0a0015 0%,
+    #2d004d 60%,
+    #ff006e 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.synthwave [class*="Card"]:nth-child(5)::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  background: 
+    linear-gradient(90deg, 
+      transparent 0%, transparent 10%,
+      #1a0033 10%, #1a0033 15%,
+      transparent 15%, transparent 20%,
+      #2d1b4e 20%, #2d1b4e 30%,
+      transparent 30%, transparent 35%,
+      #1a0033 35%, #1a0033 40%,
+      transparent 40%, transparent 50%,
+      #2d1b4e 50%, #2d1b4e 55%,
+      transparent 55%, transparent 65%,
+      #1a0033 65%, #1a0033 75%,
+      transparent 75%, transparent 80%,
+      #2d1b4e 80%, #2d1b4e 90%,
+      transparent 90%
+    );
+  opacity: 0.5;
+  z-index: 0;
+}
+
+/* Ensure card content stays on top of backgrounds */
+.synthwave [class*="Card"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Special background for Service Level cards */
+.synthwave [class*="ServiceLevel"] [class*="Card"],
+.synthwave .service-card {
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 0, 110, 0.1) 0%,
+      rgba(138, 43, 226, 0.2) 50%,
+      rgba(0, 217, 255, 0.1) 100%
+    );
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 0, 110, 0.3);
+  box-shadow: 
+    0 0 20px rgba(255, 0, 110, 0.3),
+    0 0 40px rgba(138, 43, 226, 0.2),
+    inset 0 0 60px rgba(0, 217, 255, 0.1);
+}
+
+/* Dashboard Widget Backgrounds - Alternate Patterns */
+.synthwave .dashboard-widget:nth-child(odd) {
+  background: 
+    radial-gradient(
+      ellipse at top,
+      rgba(255, 215, 0, 0.1) 0%,
+      rgba(255, 0, 110, 0.15) 50%,
+      rgba(138, 43, 226, 0.1) 100%
+    ),
+    linear-gradient(180deg, #0d001a 0%, #1a0033 100%);
+}
+
+.synthwave .dashboard-widget:nth-child(even) {
+  background: 
+    radial-gradient(
+      ellipse at bottom,
+      rgba(0, 217, 255, 0.15) 0%,
+      rgba(255, 0, 110, 0.1) 50%,
+      rgba(138, 43, 226, 0.1) 100%
+    ),
+    linear-gradient(180deg, #1a0033 0%, #0d001a 100%);
+}
+
+/* Animated gradient shift for extra flair */
+@keyframes synthwave-bg-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.synthwave [class*="Card"]:hover {
+  animation: synthwave-bg-shift 3s ease infinite;
+  background-size: 200% 200%;
+}
