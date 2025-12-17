@@ -179,9 +179,44 @@ export function ApplicationWidgets({ selectedService, timeRange = '24h' }: Appli
     );
   }
 
-  // If no applications found, don't show anything (fail silently for analytics)
-  if (applications.length === 0) {
-    return null;
+  // If no applications found, show a placeholder
+  if (applications.length === 0 && !loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Application Analytics
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Top applications by network traffic
+            </p>
+          </div>
+          <Button
+            onClick={() => loadApplications(true)}
+            variant="outline"
+            size="sm"
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Application Data Available</h3>
+            <p className="text-sm text-muted-foreground">
+              Application analytics will appear here when data is available from the Campus Controller.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Endpoint: /v1/applications
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
