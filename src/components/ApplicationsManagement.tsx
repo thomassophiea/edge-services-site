@@ -332,6 +332,58 @@ export function ApplicationsManagement() {
     );
   }
 
+  if (apiNotAvailable) {
+    return (
+      <div className="space-y-6 p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Applications Management
+            </CardTitle>
+            <CardDescription>
+              Manage API applications and OAuth clients
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-end">
+              <Button
+                variant="default"
+                size="sm"
+                disabled={true}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Application
+              </Button>
+            </div>
+
+            <Alert className="border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+                OAuth applications management API endpoints are not available on this Extreme Platform ONE version. This feature requires Extreme Platform ONE API v1/oauth/applications support.
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex gap-2 pt-2 border-t">
+              <Button variant="ghost" size="sm" disabled className="text-muted-foreground">
+                OAuth Apps
+              </Button>
+              <Button variant="ghost" size="sm" disabled className="text-muted-foreground">
+                API Keys
+              </Button>
+              <Button variant="ghost" size="sm" disabled className="text-muted-foreground">
+                Webhooks
+              </Button>
+              <Button variant="ghost" size="sm" disabled className="text-muted-foreground">
+                Integrations
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
@@ -445,15 +497,6 @@ export function ApplicationsManagement() {
           </DialogContent>
         </Dialog>
       </div>
-
-      {apiNotAvailable && (
-        <Alert className="border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-            OAuth applications management API endpoints are not available on this Extreme Platform ONE version. This feature requires Extreme Platform ONE API v1/oauth/applications support.
-          </AlertDescription>
-        </Alert>
-      )}
 
       <Card>
         <CardHeader>
