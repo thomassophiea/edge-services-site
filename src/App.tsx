@@ -581,12 +581,12 @@ export default function App() {
     // Show a toast notification
     const themeLabel =
       newTheme === 'system' ? 'System (Auto)' :
-      newTheme === 'synthwave' ? 'Synthwave (80s Retro)' :
+      newTheme === 'synthwave' ? 'Miami Vice' :
       newTheme.charAt(0).toUpperCase() + newTheme.slice(1);
 
     const themeDescription =
       newTheme === 'system' ? 'The interface will now follow your system preference.' :
-      newTheme === 'synthwave' ? 'Get ready for some neon vibes! 🌆✨' :
+      newTheme === 'synthwave' ? 'Welcome to Miami! 🌴✨' :
       `The interface is now using ${newTheme} theme.`;
 
     toast.success(`Switched to ${themeLabel} mode`, {
@@ -885,11 +885,11 @@ export default function App() {
         onToggle={() => setIsChatbotOpen(!isChatbotOpen)}
       />
 
-      {/* Synthwave Music Player - Only in Synthwave Mode */}
+      {/* Miami Vice Music Player - Only in Miami Vice Mode */}
       {theme === 'synthwave' && (
         <SynthwaveMusicPlayer
           isVisible={true}
-          onClose={() => {/* Music player always visible in synthwave mode */}}
+          onClose={() => {/* Music player always visible in Miami Vice mode */}}
         />
       )}
 

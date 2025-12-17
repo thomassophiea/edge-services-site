@@ -248,7 +248,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
               <span className={theme === 'synthwave' ? 'text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400 font-bold' : ''}>
                 {theme === 'light' ? 'Light' :
                  theme === 'dark' ? 'Dark' :
-                 theme === 'synthwave' ? 'Synthwave' :
+                 theme === 'synthwave' ? 'Miami Vice' :
                  'Auto'}
               </span>
             )}

@@ -163,7 +163,7 @@ export function SynthwaveMusicPlayer({ isVisible, onClose }: SynthwaveMusicPlaye
             <div className="flex items-center gap-2">
               <Music className="h-5 w-5 text-pink-400" />
               <h3 className="font-bold text-cyan-400 text-shadow-[0_0_10px_rgba(0,217,255,0.8)]">
-                SYNTHWAVE PLAYER
+                MIAMI VICE PLAYER
               </h3>
             </div>
             <div className="flex gap-1">

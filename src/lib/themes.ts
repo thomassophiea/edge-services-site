@@ -87,8 +87,8 @@ export const themes: Record<ThemeMode, Theme> = {
   },
   synthwave: {
     name: 'synthwave',
-    displayName: 'Synthwave',
-    emoji: '🌆',
+    displayName: 'Miami Vice',
+    emoji: '🌴',
     colors: {
       // Miami Vice inspired - #FF2BD6 (primary pink neon)
       primary: '316 100% 58%', // #FF2BD6
