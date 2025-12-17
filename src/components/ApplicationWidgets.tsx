@@ -62,9 +62,18 @@ export function ApplicationWidgets({ selectedService, timeRange = '24h' }: Appli
 
       const data = await response.json();
       console.log('[ApplicationWidgets] Raw API response:', data);
+      console.log('[ApplicationWidgets] Response type:', typeof data, 'isArray:', Array.isArray(data));
+
+      if (data && typeof data === 'object') {
+        console.log('[ApplicationWidgets] Response keys:', Object.keys(data));
+      }
 
       // Parse application data with flexible schema detection
       const parsedApps = parseApplicationData(data);
+      console.log('[ApplicationWidgets] Parsed applications count:', parsedApps.length);
+      if (parsedApps.length > 0) {
+        console.log('[ApplicationWidgets] Sample app:', parsedApps[0]);
+      }
 
       // Filter by selected service if provided
       let filteredApps = parsedApps;
@@ -108,42 +117,63 @@ export function ApplicationWidgets({ selectedService, timeRange = '24h' }: Appli
   const parseApplicationData = (data: any): Application[] => {
     const apps: Application[] = [];
 
+    console.log('[ApplicationWidgets] parseApplicationData called with:', typeof data, Array.isArray(data));
+
     // Strategy 1: Direct array
     if (Array.isArray(data)) {
-      data.forEach((app: any) => {
+      console.log('[ApplicationWidgets] Data is array, length:', data.length);
+      data.forEach((app: any, index: number) => {
+        if (index < 3) {
+          console.log('[ApplicationWidgets] Sample item', index, ':', app);
+        }
         apps.push({
-          name: app.name || app.applicationName || app.application || app.app || 'Unknown',
-          bytes: app.bytes || app.totalBytes || app.byteCount || 0,
-          flows: app.flows || app.sessionCount || app.sessions || app.flowCount || 0,
-          packets: app.packets || app.packetCount || undefined,
-          site: app.site || app.siteName || app.location || undefined,
-          category: app.category || app.type || undefined,
-          protocol: app.protocol || undefined
+          name: app.name || app.applicationName || app.application || app.app || app.appName || `Unknown-${index}`,
+          bytes: app.bytes || app.totalBytes || app.byteCount || app.traffic || app.dataVolume || 0,
+          flows: app.flows || app.sessionCount || app.sessions || app.flowCount || app.connections || 0,
+          packets: app.packets || app.packetCount || app.packetsCount || undefined,
+          site: app.site || app.siteName || app.location || app.siteId || undefined,
+          category: app.category || app.type || app.appCategory || app.classification || undefined,
+          protocol: app.protocol || app.protocolType || undefined
         });
       });
     }
     // Strategy 2: Object with applications array
     else if (data && typeof data === 'object') {
-      const possibleKeys = ['applications', 'apps', 'data', 'items', 'results'];
+      const possibleKeys = ['applications', 'apps', 'data', 'items', 'results', 'topApps', 'topApplications'];
+
+      console.log('[ApplicationWidgets] Checking for nested arrays in keys:', possibleKeys);
 
       for (const key of possibleKeys) {
         if (data[key] && Array.isArray(data[key])) {
-          data[key].forEach((app: any) => {
+          console.log('[ApplicationWidgets] Found array at key:', key, 'length:', data[key].length);
+          data[key].forEach((app: any, index: number) => {
+            if (index < 3) {
+              console.log('[ApplicationWidgets] Sample item from', key, index, ':', app);
+            }
             apps.push({
-              name: app.name || app.applicationName || app.application || app.app || 'Unknown',
-              bytes: app.bytes || app.totalBytes || app.byteCount || 0,
-              flows: app.flows || app.sessionCount || app.sessions || app.flowCount || 0,
-              packets: app.packets || app.packetCount || undefined,
-              site: app.site || app.siteName || app.location || undefined,
-              category: app.category || app.type || undefined,
-              protocol: app.protocol || undefined
+              name: app.name || app.applicationName || app.application || app.app || app.appName || `Unknown-${index}`,
+              bytes: app.bytes || app.totalBytes || app.byteCount || app.traffic || app.dataVolume || 0,
+              flows: app.flows || app.sessionCount || app.sessions || app.flowCount || app.connections || 0,
+              packets: app.packets || app.packetCount || app.packetsCount || undefined,
+              site: app.site || app.siteName || app.location || app.siteId || undefined,
+              category: app.category || app.type || app.appCategory || app.classification || undefined,
+              protocol: app.protocol || app.protocolType || undefined
             });
           });
           break;
         }
       }
+
+      if (apps.length === 0) {
+        console.log('[ApplicationWidgets] No apps found. Available top-level keys:', Object.keys(data));
+        // Log first few keys and their types for debugging
+        Object.keys(data).slice(0, 5).forEach(key => {
+          console.log(`  - ${key}:`, typeof data[key], Array.isArray(data[key]) ? `[Array, length: ${data[key].length}]` : '');
+        });
+      }
     }
 
+    console.log('[ApplicationWidgets] Parsed', apps.length, 'applications');
     return apps;
   };
 
