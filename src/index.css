@@ -5318,8 +5318,8 @@ html[data-theme="light"], html.light {
   opacity: 1;
 }
 
-/* Ensure content appears above background (but exclude Radix portals) */
-.synthwave > *:not([data-radix-portal]):not([data-radix-popper-content-wrapper]) {
+/* Content layering - only target the root container */
+.synthwave #root {
   position: relative;
   z-index: 1;
 }
@@ -5737,8 +5737,8 @@ html[data-theme="light"], html.light {
   opacity: 1;
 }
 
-/* Ensure content appears above background (but exclude Radix portals) */
-.pirate > *:not([data-radix-portal]):not([data-radix-popper-content-wrapper]) {
+/* Content layering - only target the root container */
+.pirate #root {
   position: relative;
   z-index: 1;
 }
@@ -6055,8 +6055,8 @@ html[data-theme="light"], html.light {
   opacity: 1;
 }
 
-/* Ensure content appears above background (but exclude Radix portals) */
-.mi5 > *:not([data-radix-portal]):not([data-radix-popper-content-wrapper]) {
+/* Content layering - only target the root container */
+.mi5 #root {
   position: relative;
   z-index: 1;
 }
