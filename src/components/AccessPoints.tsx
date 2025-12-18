@@ -168,6 +168,22 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       const accessPointsArray = Array.isArray(apsData) ? apsData : [];
       console.log(`Loaded ${accessPointsArray.length} access points for site ${selectedSite || 'all'}`);
 
+      // Debug: Show all AP data with status
+      console.table(accessPointsArray.map(ap => ({
+        serialNumber: ap.serialNumber,
+        displayName: ap.displayName || ap.apName || 'N/A',
+        status: ap.status,
+        model: ap.model || ap.hardwareType,
+        ipAddress: ap.ipAddress,
+        site: ap.hostSite || ap.site
+      })));
+
+      // Special debug for AP5020
+      const ap5020 = accessPointsArray.find(ap => ap.serialNumber === 'CV012408S-C0102');
+      if (ap5020) {
+        console.log('🔍 AP5020 (CV012408S-C0102) full data:', ap5020);
+      }
+
       setAccessPoints(accessPointsArray);
 
       // Load client counts for filtered APs
