@@ -525,21 +525,21 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
               <Table className="text-[11px]">
                 <TableHeader>
                   <TableRow className="h-8">
-                    <TableHead className="w-12 p-2 text-[10px]">
+                    <TableHead className="w-10 p-1 text-[10px]">
                       <Checkbox
                         checked={selectedStations.size === filteredStations.length && filteredStations.length > 0}
                         onCheckedChange={handleSelectAll}
                         className="h-3 w-3"
                       />
                     </TableHead>
-                    <TableHead className="w-20 p-2 text-[10px]">Status / Last Seen</TableHead>
-                    <TableHead className="w-28 p-2 text-[10px]">Client Info</TableHead>
-                    <TableHead className="w-32 p-2 text-[10px]">Device Info</TableHead>
-                    <TableHead className="w-28 p-2 text-[10px]">User & Network</TableHead>
-                    <TableHead className="w-28 p-2 text-[10px]">Access Point</TableHead>
-                    <TableHead className="w-20 p-2 text-[10px]">Band</TableHead>
-                    <TableHead className="w-24 p-2 text-[10px]">Signal Strength</TableHead>
-                    <TableHead className="w-32 p-2 text-[10px]">Traffic Statistics</TableHead>
+                    <TableHead className="w-16 p-1 text-[10px]">Status / Last Seen</TableHead>
+                    <TableHead className="w-24 p-1 text-[10px]">Client Info</TableHead>
+                    <TableHead className="w-24 p-1 text-[10px]">Device Info</TableHead>
+                    <TableHead className="w-20 p-1 text-[10px]">User & Network</TableHead>
+                    <TableHead className="w-20 p-1 text-[10px]">Access Point</TableHead>
+                    <TableHead className="w-14 p-1 text-[10px]">Band</TableHead>
+                    <TableHead className="w-20 p-1 text-[10px]">Signal</TableHead>
+                    <TableHead className="w-20 p-1 text-[10px]">Traffic</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

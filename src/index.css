@@ -5318,8 +5318,8 @@ html[data-theme="light"], html.light {
   opacity: 1;
 }
 
-/* Ensure content appears above background */
-.synthwave > * {
+/* Ensure content appears above background (but exclude Radix portals) */
+.synthwave > *:not([data-radix-portal]):not([data-radix-popper-content-wrapper]) {
   position: relative;
   z-index: 1;
 }
@@ -5737,8 +5737,8 @@ html[data-theme="light"], html.light {
   opacity: 1;
 }
 
-/* Ensure content appears above background */
-.pirate > * {
+/* Ensure content appears above background (but exclude Radix portals) */
+.pirate > *:not([data-radix-portal]):not([data-radix-popper-content-wrapper]) {
   position: relative;
   z-index: 1;
 }
@@ -6055,8 +6055,8 @@ html[data-theme="light"], html.light {
   opacity: 1;
 }
 
-/* Ensure content appears above background */
-.mi5 > * {
+/* Ensure content appears above background (but exclude Radix portals) */
+.mi5 > *:not([data-radix-portal]):not([data-radix-popper-content-wrapper]) {
   position: relative;
   z-index: 1;
 }
@@ -6375,10 +6375,35 @@ html[data-theme="light"], html.light {
   pointer-events: auto !important;
 }
 
-/* Ensure sheet triggers are always clickable */
-.synthwave button[data-state],
-.pirate button[data-state],
-.mi5 button[data-state] {
+/* Ensure sheet triggers and clickable elements are always interactive */
+.synthwave button,
+.pirate button,
+.mi5 button,
+.synthwave [role="button"],
+.pirate [role="button"],
+.mi5 [role="button"],
+.synthwave .cursor-pointer,
+.pirate .cursor-pointer,
+.mi5 .cursor-pointer,
+.synthwave tr[class*="cursor"],
+.pirate tr[class*="cursor"],
+.mi5 tr[class*="cursor"] {
   pointer-events: auto !important;
   cursor: pointer !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Ensure table rows are clickable */
+.synthwave tbody tr,
+.pirate tbody tr,
+.mi5 tbody tr {
+  pointer-events: auto !important;
+}
+
+/* Ensure Radix UI triggers work */
+.synthwave [data-radix-collection-item],
+.pirate [data-radix-collection-item],
+.mi5 [data-radix-collection-item] {
+  pointer-events: auto !important;
 }

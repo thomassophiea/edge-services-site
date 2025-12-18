@@ -50,21 +50,21 @@ interface SidebarProps {
   onThemeToggle?: () => void;
 }
 
-// Navigation items with pirate-themed icons and labels
+// Navigation items with pirate and MI5-themed icons and labels
 const navigationItems = [
-  { id: 'service-levels', label: 'Service Levels', pirateLabel: "Ship's Status", icon: TrendingUp, pirateIcon: Anchor },
-  { id: 'connected-clients', label: 'Connected Clients', pirateLabel: "Crew Aboard", icon: Users, pirateIcon: Users },
-  { id: 'access-points', label: 'Access Points', pirateLabel: "Signal Beacons", icon: Wifi, pirateIcon: Radio },
-  { id: 'report-widgets', label: 'Report Widgets', pirateLabel: "Treasure Maps", icon: BarChart3, pirateIcon: Scroll },
+  { id: 'service-levels', label: 'Service Levels', pirateLabel: "Ship's Status", mi5Label: "Operations Status", icon: TrendingUp, pirateIcon: Anchor },
+  { id: 'connected-clients', label: 'Connected Clients', pirateLabel: "Crew Aboard", mi5Label: "Field Agents", icon: Users, pirateIcon: Users },
+  { id: 'access-points', label: 'Access Points', pirateLabel: "Signal Beacons", mi5Label: "Assets", icon: Wifi, pirateIcon: Radio },
+  { id: 'report-widgets', label: 'Report Widgets', pirateLabel: "Treasure Maps", mi5Label: "Q Division", icon: BarChart3, pirateIcon: Scroll },
 ];
 
-// Configure items with pirate-themed icons and labels
+// Configure items with pirate and MI5-themed icons and labels
 const configureItems = [
-  { id: 'configure-sites', label: 'Sites', pirateLabel: "Islands", icon: MapPin, pirateIcon: Map },
-  { id: 'configure-networks', label: 'Networks', pirateLabel: "Sea Routes", icon: Network, pirateIcon: Compass },
-  { id: 'configure-policy', label: 'Policy', pirateLabel: "Ship's Code", icon: Shield, pirateIcon: Shield },
-  { id: 'configure-aaa-policies', label: 'AAA Policies', pirateLabel: "Sword Guard", icon: UserCheck, pirateIcon: Swords },
-  { id: 'configure-guest', label: 'Guest', pirateLabel: "Welcome Mateys", icon: UserPlus, pirateIcon: Flag },
+  { id: 'configure-sites', label: 'Sites', pirateLabel: "Islands", mi5Label: "Safe Houses", icon: MapPin, pirateIcon: Map },
+  { id: 'configure-networks', label: 'Networks', pirateLabel: "Sea Routes", mi5Label: "Secure Channels", icon: Network, pirateIcon: Compass },
+  { id: 'configure-policy', label: 'Policy', pirateLabel: "Ship's Code", mi5Label: "Protocols", icon: Shield, pirateIcon: Shield },
+  { id: 'configure-aaa-policies', label: 'AAA Policies', pirateLabel: "Sword Guard", mi5Label: "Clearance Levels", icon: UserCheck, pirateIcon: Swords },
+  { id: 'configure-guest', label: 'Guest', pirateLabel: "Welcome Mateys", mi5Label: "Recruits", icon: UserPlus, pirateIcon: Flag },
 ];
 
 export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme = 'system', onThemeToggle }: SidebarProps) {
@@ -87,7 +87,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
           {!isCollapsed && (
             <div className="flex items-center space-x-2">
               <div className="text-foreground">
-                <span className="text-muted-foreground text-xs">Platform ONE | AURA</span>
+                <span className="text-muted-foreground text-xs">Extreme Platform ONE | AURA</span>
               </div>
             </div>
           )}
@@ -120,7 +120,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
               onClick={() => onPageChange(item.id)}
             >
               <Icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-              {!isCollapsed && <span>{theme === 'pirate' ? item.pirateLabel : item.label}</span>}
+              {!isCollapsed && <span>{theme === 'pirate' ? item.pirateLabel : theme === 'mi5' ? item.mi5Label : item.label}</span>}
             </Button>
           );
         })}
@@ -145,7 +145,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
             <Cog className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
             {!isCollapsed && (
               <>
-                <span className="flex-1 text-left">{theme === 'pirate' ? "Ship's Riggin'" : "Configure"}</span>
+                <span className="flex-1 text-left">{theme === 'pirate' ? "Ship's Riggin'" : theme === 'mi5' ? "Mission Control" : "Configure"}</span>
                 {isConfigureExpanded ? (
                   <ChevronDown className="h-4 w-4" />
                 ) : (
@@ -174,7 +174,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
                     onClick={() => onPageChange(item.id)}
                   >
                     <Icon className="h-3 w-3 mr-2" />
-                    <span>{theme === 'pirate' ? item.pirateLabel : item.label}</span>
+                    <span>{theme === 'pirate' ? item.pirateLabel : theme === 'mi5' ? item.mi5Label : item.label}</span>
                   </Button>
                 );
               })}
@@ -211,7 +211,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
           onClick={() => onPageChange('administration')}
         >
           <Settings className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-          {!isCollapsed && <span>{theme === 'pirate' ? "Captain's Quarters" : "Administration"}</span>}
+          {!isCollapsed && <span>{theme === 'pirate' ? "Captain's Quarters" : theme === 'mi5' ? "HQ" : "Administration"}</span>}
         </Button>
       </nav>
 
