@@ -9,13 +9,66 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Checkbox } from './ui/checkbox';
-import { AlertCircle, Users, Search, RefreshCw, Filter, Wifi, Activity, Timer, Signal, Download, Upload, Shield, Router, MapPin, User, Clock, Star, Trash2, UserX, RotateCcw, UserPlus, UserMinus, ShieldCheck, ShieldX, Info, Radio, WifiOff, SignalHigh, SignalMedium, SignalLow, SignalZero, Cable, Shuffle } from 'lucide-react';
+import { AlertCircle, Users, Search, RefreshCw, Filter, Wifi, Activity, Timer, Signal, Download, Upload, Shield, Router, MapPin, User, Clock, Star, Trash2, UserX, RotateCcw, UserPlus, UserMinus, ShieldCheck, ShieldX, Info, Radio, WifiOff, SignalHigh, SignalMedium, SignalLow, SignalZero, Cable, Shuffle, Columns } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Alert, AlertDescription } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
 import { apiService, Station } from '../services/api';
 import { identifyClient, lookupVendor, suggestDeviceType } from '../services/ouiLookup';
 import { toast } from 'sonner';
+
+// Define available columns with friendly labels
+interface ColumnConfig {
+  key: string;
+  label: string;
+  defaultVisible: boolean;
+  category: 'basic' | 'network' | 'connection' | 'performance' | 'advanced';
+}
+
+const AVAILABLE_COLUMNS: ColumnConfig[] = [
+  // Basic columns (default visible)
+  { key: 'status', label: 'Status / Last Seen', defaultVisible: true, category: 'basic' },
+  { key: 'clientInfo', label: 'Client Info', defaultVisible: true, category: 'basic' },
+  { key: 'deviceInfo', label: 'Device Info', defaultVisible: true, category: 'basic' },
+
+  // Network columns
+  { key: 'userNetwork', label: 'User & Network', defaultVisible: true, category: 'network' },
+  { key: 'accessPoint', label: 'Access Point', defaultVisible: true, category: 'network' },
+  { key: 'siteName', label: 'Site Name', defaultVisible: false, category: 'network' },
+  { key: 'network', label: 'Network', defaultVisible: false, category: 'network' },
+  { key: 'role', label: 'Role', defaultVisible: false, category: 'network' },
+  { key: 'username', label: 'Username', defaultVisible: false, category: 'network' },
+
+  // Connection columns
+  { key: 'band', label: 'Band', defaultVisible: true, category: 'connection' },
+  { key: 'signal', label: 'Signal', defaultVisible: true, category: 'connection' },
+  { key: 'rssi', label: 'RSS (dBm)', defaultVisible: false, category: 'connection' },
+  { key: 'channel', label: 'Channel', defaultVisible: false, category: 'connection' },
+  { key: 'protocol', label: 'Protocol', defaultVisible: false, category: 'connection' },
+  { key: 'rxRate', label: 'Rx Rate', defaultVisible: false, category: 'connection' },
+  { key: 'txRate', label: 'Tx Rate', defaultVisible: false, category: 'connection' },
+  { key: 'spatialStreams', label: 'Spatial Streams', defaultVisible: false, category: 'connection' },
+  { key: 'capabilities', label: 'Capabilities', defaultVisible: false, category: 'connection' },
+
+  // Performance columns
+  { key: 'traffic', label: 'Traffic', defaultVisible: true, category: 'performance' },
+  { key: 'inBytes', label: 'In Bytes', defaultVisible: false, category: 'performance' },
+  { key: 'outBytes', label: 'Out Bytes', defaultVisible: false, category: 'performance' },
+  { key: 'inPackets', label: 'In Packets', defaultVisible: false, category: 'performance' },
+  { key: 'outPackets', label: 'Out Packets', defaultVisible: false, category: 'performance' },
+  { key: 'dlLostRetriesPackets', label: 'Dl Lost Retries Packets', defaultVisible: false, category: 'performance' },
+
+  // Advanced columns
+  { key: 'macAddress', label: 'MAC Address', defaultVisible: false, category: 'advanced' },
+  { key: 'ipAddress', label: 'IP Address', defaultVisible: false, category: 'advanced' },
+  { key: 'ipv6Address', label: 'IPv6 Address', defaultVisible: false, category: 'advanced' },
+  { key: 'hostname', label: 'Hostname', defaultVisible: false, category: 'advanced' },
+  { key: 'deviceType', label: 'Device Type', defaultVisible: false, category: 'advanced' },
+  { key: 'manufacturer', label: 'Manufacturer', defaultVisible: false, category: 'advanced' },
+  { key: 'apName', label: 'AP Name', defaultVisible: false, category: 'advanced' },
+  { key: 'apSerial', label: 'AP Serial', defaultVisible: false, category: 'advanced' },
+  { key: 'lastSeen', label: 'Last Seen', defaultVisible: false, category: 'advanced' },
+];
 
 interface ConnectedClientsProps {
   onShowDetail?: (macAddress: string, hostName?: string) => void;
@@ -42,10 +95,43 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [stationTrafficData, setStationTrafficData] = useState<Map<string, any>>(new Map());
   const [isLoadingTraffic, setIsLoadingTraffic] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    // Load from localStorage or use defaults
+    const saved = localStorage.getItem('clientVisibleColumns');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved columns:', e);
+      }
+    }
+    return AVAILABLE_COLUMNS.filter(col => col.defaultVisible).map(col => col.key);
+  });
+  const [isColumnDialogOpen, setIsColumnDialogOpen] = useState(false);
 
   useEffect(() => {
     loadStations();
   }, []);
+
+  // Save visible columns to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('clientVisibleColumns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns(prev => {
+      if (prev.includes(columnKey)) {
+        return prev.filter(k => k !== columnKey);
+      } else {
+        return [...prev, columnKey];
+      }
+    });
+  };
+
+  const resetColumns = () => {
+    const defaults = AVAILABLE_COLUMNS.filter(col => col.defaultVisible).map(col => col.key);
+    setVisibleColumns(defaults);
+  };
 
   const loadStations = async () => {
     // Check authentication before loading
@@ -326,6 +412,228 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
     }
   };
 
+  // Helper function to render column content based on column key
+  const renderColumnContent = (columnKey: string, station: Station) => {
+    switch (columnKey) {
+      case 'status':
+        return (
+          <div className="p-1">
+            {station.status ? (
+              <Badge variant={getStatusBadgeVariant(station.status)} className="text-[9px] px-1 py-0 h-3 min-h-0">
+                {station.status}
+              </Badge>
+            ) : (
+              '-'
+            )}
+            <div className="text-[8px] text-muted-foreground leading-none truncate max-w-14">
+              {station.lastSeen || 'N/A'}
+            </div>
+          </div>
+        );
+
+      case 'clientInfo':
+        return (
+          <div className="p-1">
+            <div className="font-mono text-[12px] leading-none mb-0.5">{station.macAddress}</div>
+            <div className="font-mono text-[12px] text-muted-foreground leading-none mb-0.5">
+              {station.ipAddress || 'No IP'}
+            </div>
+            {station.hostName && (
+              <div className="text-[8px] text-muted-foreground truncate leading-none">
+                {station.hostName}
+              </div>
+            )}
+          </div>
+        );
+
+      case 'deviceInfo':
+        return (
+          <div className="p-0.5 w-16">
+            <div className="space-y-0.5 max-w-16">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-0.5">
+                    <MapPin className="h-2 w-2 text-muted-foreground flex-shrink-0" />
+                    <span className="text-[9px] truncate leading-none">{station.siteName || '-'}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{station.siteName || '-'}</p>
+                </TooltipContent>
+              </Tooltip>
+              {station.deviceType && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-[8px] h-2.5 px-1 py-0 max-w-14">
+                      <span className="truncate">{station.deviceType}</span>
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{station.deviceType}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {station.manufacturer && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="text-[10px] text-muted-foreground leading-none truncate max-w-14">
+                      {station.manufacturer}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{station.manufacturer}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </div>
+        );
+
+      case 'userNetwork':
+        return (
+          <div className="p-1">
+            {station.role && (
+              <div className="text-[13px] text-muted-foreground leading-none mb-0.5">{station.role}</div>
+            )}
+          </div>
+        );
+
+      case 'accessPoint':
+        return (
+          <div className="p-1">
+            {station.apSerial && (
+              <div className="font-mono text-[8px] text-muted-foreground truncate leading-none mb-0.5">
+                {station.apSerial}
+              </div>
+            )}
+            <div className="flex items-center gap-0.5">
+              <Clock className="h-2 w-2 text-muted-foreground flex-shrink-0" />
+              <span className="text-[12px] leading-none">{station.lastSeen || '-'}</span>
+            </div>
+          </div>
+        );
+
+      case 'band':
+        const bandInfo = getBandFromRadioId(station.radioId);
+        return (
+          <div className="p-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200 hover:scale-105 ${bandInfo.bgColor}`}>
+                  {station.radioId === 20 ? (
+                    <Router className={`h-3 w-3 ${bandInfo.color} flex-shrink-0`} />
+                  ) : (
+                    <Radio className={`h-3 w-3 ${bandInfo.color} flex-shrink-0`} />
+                  )}
+                  <span className={`text-[10px] leading-none font-medium ${bandInfo.color}`}>
+                    {bandInfo.band}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div>Band: {bandInfo.band}</div>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        );
+
+      case 'signal':
+        return (
+          <div className="p-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 mb-1 transition-all duration-200 hover:gap-2">
+                  <Signal className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <span className="text-[12px] leading-none">{station.signalStrength || 'N/A'}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div>Signal Strength: {station.signalStrength || 'N/A'}</div>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        );
+
+      case 'traffic':
+        return (
+          <div className="p-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="cursor-pointer transition-all duration-200 hover:scale-110 hover:bg-muted/20 rounded p-1 -m-1">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Download className="h-3 w-3 text-green-600 flex-shrink-0" />
+                    <span className="text-[12px] leading-none">{formatBytes(station.txBytes || station.outBytes || 0)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 mb-1">
+                    <Upload className="h-3 w-3 text-blue-600 flex-shrink-0" />
+                    <span className="text-[12px] leading-none">{formatBytes(station.rxBytes || station.inBytes || 0)}</span>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div>Traffic: Down {formatBytes(station.txBytes || 0)} / Up {formatBytes(station.rxBytes || 0)}</div>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        );
+
+      // Individual field columns
+      case 'macAddress':
+        return <span className="font-mono text-sm">{station.macAddress}</span>;
+      case 'ipAddress':
+        return <span className="font-mono text-sm">{station.ipAddress || 'N/A'}</span>;
+      case 'ipv6Address':
+        return <span className="font-mono text-xs">{station.ipv6Address || 'N/A'}</span>;
+      case 'hostname':
+        return <span className="text-sm">{station.hostName || 'N/A'}</span>;
+      case 'siteName':
+        return <span className="text-sm">{station.siteName || 'N/A'}</span>;
+      case 'lastSeen':
+        return <span className="text-sm">{station.lastSeen || 'N/A'}</span>;
+      case 'deviceType':
+        return <Badge variant="outline" className="text-xs">{station.deviceType || 'Unknown'}</Badge>;
+      case 'rssi':
+        return <span className="text-sm">{station.signalStrength || 'N/A'}</span>;
+      case 'username':
+        return <span className="text-sm">{station.username || 'N/A'}</span>;
+      case 'role':
+        return <span className="text-sm">{station.role || 'N/A'}</span>;
+      case 'network':
+        return <span className="text-sm">{station.network || 'N/A'}</span>;
+      case 'apName':
+        return <span className="text-sm">{station.apName || 'N/A'}</span>;
+      case 'apSerial':
+        return <span className="font-mono text-xs">{station.apSerial || 'N/A'}</span>;
+      case 'capabilities':
+        return <span className="text-xs">{(station as any).capabilities || 'N/A'}</span>;
+      case 'channel':
+        return <span className="text-sm">{(station as any).channel || 'N/A'}</span>;
+      case 'protocol':
+        return <span className="text-sm">{(station as any).protocol || 'N/A'}</span>;
+      case 'rxRate':
+        return <span className="text-sm">{(station as any).rxRate || 'N/A'}</span>;
+      case 'txRate':
+        return <span className="text-sm">{(station as any).txRate || 'N/A'}</span>;
+      case 'spatialStreams':
+        return <span className="text-sm">{(station as any).spatialStreams || 'N/A'}</span>;
+      case 'inBytes':
+        return <span className="text-sm">{formatBytes(station.rxBytes || station.inBytes || 0)}</span>;
+      case 'outBytes':
+        return <span className="text-sm">{formatBytes(station.txBytes || station.outBytes || 0)}</span>;
+      case 'inPackets':
+        return <span className="text-sm">{(station as any).inPackets || '0'}</span>;
+      case 'outPackets':
+        return <span className="text-sm">{(station as any).outPackets || '0'}</span>;
+      case 'dlLostRetriesPackets':
+        return <span className="text-sm">{(station as any).dlLostRetriesPackets || '0'}</span>;
+      case 'manufacturer':
+        return <span className="text-sm">{station.manufacturer || 'Unknown'}</span>;
+
+      default:
+        return <span className="text-sm">-</span>;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -373,6 +681,14 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
+          <Button
+            onClick={() => setIsColumnDialogOpen(true)}
+            variant="outline"
+            size="sm"
+          >
+            <Columns className="mr-2 h-4 w-4" />
+            Customize Columns
+          </Button>
         </div>
       </div>
 
@@ -382,6 +698,142 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      {/* Column Customization Dialog */}
+      <Dialog open={isColumnDialogOpen} onOpenChange={setIsColumnDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[65vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Customize Table Columns</DialogTitle>
+            <DialogDescription>
+              Select which columns you want to display in the Connected Clients table
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="flex-1 pr-4" style={{ maxHeight: 'calc(65vh - 180px)' }}>
+            <div className="space-y-6">
+              {/* Basic Columns */}
+              <div>
+                <h3 className="font-semibold mb-3 text-sm uppercase text-muted-foreground">Basic Information</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {AVAILABLE_COLUMNS.filter(col => col.category === 'basic').map(column => (
+                    <div key={column.key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={column.key}
+                        checked={visibleColumns.includes(column.key)}
+                        onCheckedChange={() => toggleColumn(column.key)}
+                      />
+                      <label
+                        htmlFor={column.key}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {column.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Network Columns */}
+              <div>
+                <h3 className="font-semibold mb-3 text-sm uppercase text-muted-foreground">Network</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {AVAILABLE_COLUMNS.filter(col => col.category === 'network').map(column => (
+                    <div key={column.key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={column.key}
+                        checked={visibleColumns.includes(column.key)}
+                        onCheckedChange={() => toggleColumn(column.key)}
+                      />
+                      <label
+                        htmlFor={column.key}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {column.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Connection Columns */}
+              <div>
+                <h3 className="font-semibold mb-3 text-sm uppercase text-muted-foreground">Connection</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {AVAILABLE_COLUMNS.filter(col => col.category === 'connection').map(column => (
+                    <div key={column.key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={column.key}
+                        checked={visibleColumns.includes(column.key)}
+                        onCheckedChange={() => toggleColumn(column.key)}
+                      />
+                      <label
+                        htmlFor={column.key}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {column.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Performance Columns */}
+              <div>
+                <h3 className="font-semibold mb-3 text-sm uppercase text-muted-foreground">Performance</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {AVAILABLE_COLUMNS.filter(col => col.category === 'performance').map(column => (
+                    <div key={column.key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={column.key}
+                        checked={visibleColumns.includes(column.key)}
+                        onCheckedChange={() => toggleColumn(column.key)}
+                      />
+                      <label
+                        htmlFor={column.key}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {column.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Advanced Columns */}
+              <div>
+                <h3 className="font-semibold mb-3 text-sm uppercase text-muted-foreground">Advanced</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {AVAILABLE_COLUMNS.filter(col => col.category === 'advanced').map(column => (
+                    <div key={column.key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={column.key}
+                        checked={visibleColumns.includes(column.key)}
+                        onCheckedChange={() => toggleColumn(column.key)}
+                      />
+                      <label
+                        htmlFor={column.key}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {column.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button variant="outline" onClick={resetColumns}>
+              Reset to Default
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              {visibleColumns.length} of {AVAILABLE_COLUMNS.length} columns selected
+            </div>
+            <Button onClick={() => setIsColumnDialogOpen(false)}>
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="surface-1dp">
@@ -532,14 +984,10 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
                         className="h-3 w-3"
                       />
                     </TableHead>
-                    <TableHead className="w-16 p-1 text-[10px]">Status / Last Seen</TableHead>
-                    <TableHead className="w-24 p-1 text-[10px]">Client Info</TableHead>
-                    <TableHead className="w-24 p-1 text-[10px]">Device Info</TableHead>
-                    <TableHead className="w-20 p-1 text-[10px]">User & Network</TableHead>
-                    <TableHead className="w-20 p-1 text-[10px]">Access Point</TableHead>
-                    <TableHead className="w-14 p-1 text-[10px]">Band</TableHead>
-                    <TableHead className="w-20 p-1 text-[10px]">Signal</TableHead>
-                    <TableHead className="w-20 p-1 text-[10px]">Traffic</TableHead>
+                    {visibleColumns.map(columnKey => {
+                      const column = AVAILABLE_COLUMNS.find(c => c.key === columnKey);
+                      return <TableHead key={columnKey} className="p-1 text-[10px]">{column?.label || columnKey}</TableHead>;
+                    })}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -568,217 +1016,12 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
                           onClick={(e) => e.stopPropagation()}
                         />
                       </TableCell>
-                      
-                      <TableCell className="p-1">
-                        {station.status ? (
-                          <Badge variant={getStatusBadgeVariant(station.status)} className="text-[9px] px-1 py-0 h-3 min-h-0">
-                            {station.status}
-                          </Badge>
-                        ) : (
-                          '-'
-                        )}
-                        <div className="text-[8px] text-muted-foreground leading-none truncate max-w-14">
-                          {station.lastSeen || 'N/A'}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="p-1">
-                        <div>
-                          <div className="font-mono text-[12px] leading-none mb-0.5">{station.macAddress}</div>
-                          <div className="font-mono text-[12px] text-muted-foreground leading-none mb-0.5">
-                            {station.ipAddress || 'No IP'}
-                          </div>
-                          {station.hostName && (
-                            <div className="text-[8px] text-muted-foreground truncate leading-none">
-                              {station.hostName}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="p-0.5 w-16">
-                        <div className="space-y-0.5 max-w-16">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-0.5">
-                                <MapPin className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                                <span className="text-[9px] truncate leading-none">{station.siteName || '-'}</span>
-                                {station.siteRating !== undefined && (
-                                  <>
-                                    <Star className="h-2 w-2 text-yellow-500 flex-shrink-0" />
-                                    <span className="text-[8px] leading-none">{station.siteRating}</span>
-                                  </>
-                                )}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{station.siteName || '-'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          {station.deviceType && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[8px] h-2.5 px-1 py-0 max-w-14">
-                                  <span className="truncate">{station.deviceType}</span>
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{station.deviceType}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          {station.manufacturer && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="text-[10px] text-muted-foreground leading-none truncate max-w-14">
-                                  {station.manufacturer}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{station.manufacturer}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="p-1">
-                        <div>
 
-                          {station.role && (
-                            <div className="text-[13px] text-muted-foreground leading-none mb-0.5">{station.role}</div>
-                          )}
-
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="p-1">
-                        <div>
-
-                          {station.apSerial && (
-                            <div className="font-mono text-[8px] text-muted-foreground truncate leading-none mb-0.5">
-                              {station.apSerial}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-0.5">
-                            <Clock className="h-2 w-2 text-muted-foreground flex-shrink-0" />
-                            <span className="text-[12px] leading-none">{station.lastSeen || '-'}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="p-1">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200 hover:scale-105 ${getBandFromRadioId(station.radioId).bgColor}`}>
-                              {station.radioId === 20 ? (
-                                <Router className={`h-3 w-3 ${getBandFromRadioId(station.radioId).color} flex-shrink-0`} />
-                              ) : (
-                                <Radio className={`h-3 w-3 ${getBandFromRadioId(station.radioId).color} flex-shrink-0`} />
-                              )}
-                              <span className={`text-[10px] leading-none font-medium ${getBandFromRadioId(station.radioId).color}`}>
-                                {getBandFromRadioId(station.radioId).band}
-                              </span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="space-y-1">
-                              <div className="font-medium text-sm">
-                                {station.radioId === 20 ? 'Wired Connection Information' : 'WiFi Band Information'}
-                              </div>
-                              <div className="text-sm">
-                                <span className={`${getBandFromRadioId(station.radioId).color}`}>
-                                  {getBandFromRadioId(station.radioId).band}
-                                </span>
-                                {station.radioId && station.radioId !== 20 && (
-                                  <span className="text-muted-foreground ml-1">
-                                    (Radio ID: {station.radioId})
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {station.radioId === 1 && 'Longer range, lower speeds, more congested'}
-                                {station.radioId === 2 && 'Balanced range and speed, less congested'}
-                                {station.radioId === 3 && 'Shortest range, highest speeds, latest standard'}
-                                {station.radioId === 20 && 'Wired Ethernet connection - highest reliability and speed'}
-                                {!station.radioId && 'Connection information not available'}
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                      
-                      <TableCell className="p-1">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1 mb-1 transition-all duration-200 hover:gap-2">
-                              <Signal className="h-3 w-3 text-muted-foreground flex-shrink-0 transition-all duration-200 hover:h-4 hover:w-4" />
-                              <span className="text-[12px] leading-none transition-all duration-200 hover:text-sm hover:font-medium">{station.signalStrength || 'N/A'}</span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <div className="space-y-2">
-                              <div className="font-medium text-sm">Signal Strength</div>
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <Signal className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm">Signal:</span>
-                                  </div>
-                                  <span className="font-mono text-sm font-medium">{station.signalStrength || 'N/A'}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                      
-                      <TableCell className="p-1">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-pointer transition-all duration-200 hover:scale-110 hover:bg-muted/20 rounded p-1 -m-1">
-                              <div className="flex items-center gap-1 mb-1 transition-all duration-200 hover:gap-2">
-                                <Download className="h-3 w-3 text-green-600 flex-shrink-0 transition-all duration-200 hover:h-4 hover:w-4" />
-                                <span className="text-[12px] leading-none transition-all duration-200 hover:text-sm hover:font-medium">{formatBytes(station.txBytes || station.outBytes || 0)}</span>
-                              </div>
-                              <div className="flex items-center gap-1 mb-1 transition-all duration-200 hover:gap-2">
-                                <Upload className="h-3 w-3 text-blue-600 flex-shrink-0 transition-all duration-200 hover:h-4 hover:w-4" />
-                                <span className="text-[12px] leading-none transition-all duration-200 hover:text-sm hover:font-medium">{formatBytes(station.rxBytes || station.inBytes || 0)}</span>
-                              </div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <div className="space-y-2">
-                              <div className="font-medium text-sm">Traffic Statistics</div>
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <Download className="h-4 w-4 text-green-600" />
-                                    <span className="text-sm">Downloaded:</span>
-                                  </div>
-                                  <span className="font-mono text-sm font-medium">{formatBytes(station.txBytes || station.outBytes || 0)}</span>
-                                </div>
-                                <div className="flex items-center justify-between gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <Upload className="h-4 w-4 text-blue-600" />
-                                    <span className="text-sm">Uploaded:</span>
-                                  </div>
-                                  <span className="font-mono text-sm font-medium">{formatBytes(station.rxBytes || station.inBytes || 0)}</span>
-                                </div>
-                                <div className="border-t pt-1 mt-2">
-                                  <div className="flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-2">
-                                      <Activity className="h-4 w-4 text-muted-foreground" />
-                                      <span className="text-sm">Total:</span>
-                                    </div>
-                                    <span className="font-mono text-sm font-bold">{formatBytes((station.rxBytes || station.inBytes || 0) + (station.txBytes || station.outBytes || 0))}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
+                      {visibleColumns.map(columnKey => (
+                        <TableCell key={columnKey}>
+                          {renderColumnContent(columnKey, station)}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   ))}
                 </TableBody>
