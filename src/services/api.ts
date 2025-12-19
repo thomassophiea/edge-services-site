@@ -1,4 +1,6 @@
 
+import { cacheService, CACHE_TTL } from './cache';
+
 // Use proxy in production, direct connection in development
 const isProduction = import.meta.env.PROD || window.location.hostname !== 'localhost';
 const BASE_URL = isProduction
@@ -1061,10 +1063,17 @@ class ApiService {
 
   // Sites API methods with fallback endpoints
   async getSites(): Promise<Site[]> {
+    // Check cache first
+    const cacheKey = 'sites';
+    const cached = cacheService.get<Site[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     // Try multiple endpoints as Campus Controller may use different versions
     const siteEndpoints = [
       '/v3/sites',
-      '/v1/sites', 
+      '/v1/sites',
       '/sites',
       '/v2/sites',
       '/v1/sites/all'
@@ -1073,7 +1082,6 @@ class ApiService {
     for (let i = 0; i < siteEndpoints.length; i++) {
       const endpoint = siteEndpoints[i];
       try {
-        console.log(`Fetching sites from ${endpoint} (attempt ${i + 1}/${siteEndpoints.length})...`);
         const response = await this.makeAuthenticatedRequest(endpoint, {}, 10000); // Longer timeout for sites
         
         if (!response.ok) {
@@ -1108,7 +1116,10 @@ class ApiService {
               site: targetSite
             });
           }
-          
+
+          // Cache the sites for 5 minutes
+          cacheService.set(cacheKey, sites, CACHE_TTL.MEDIUM);
+
           return sites;
         } else {
           console.warn(`${endpoint} returned empty or null sites array`);
@@ -1423,13 +1434,27 @@ class ApiService {
   }
 
   async getAPQueryColumns(): Promise<APQueryColumn[]> {
+    // Check cache first
+    const cacheKey = 'ap-query-columns';
+    const cached = cacheService.get<APQueryColumn[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     try {
       const response = await this.makeAuthenticatedRequest('/v1/aps/query/columns');
       if (!response.ok) {
         throw new Error(`Failed to fetch AP query columns: ${response.status}`);
       }
       const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      const columns = Array.isArray(data) ? data : [];
+
+      // Cache for 10 minutes (columns rarely change)
+      if (columns.length > 0) {
+        cacheService.set(cacheKey, columns, CACHE_TTL.LONG);
+      }
+
+      return columns;
     } catch (error) {
       return [];
     }
