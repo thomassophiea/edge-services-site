@@ -183,7 +183,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       if (ap5020) {
         console.log('🔍 AP5020 (CV012408S-C0102) full data:', ap5020);
         console.log('🔍 AP5020 - All field names:', Object.keys(ap5020));
-        console.log('🔍 AP5020 - Fields that might indicate status:', {
+        console.log('🔍 AP5020 - Status-related fields:', {
           status: ap5020.status,
           state: ap5020.state,
           adminState: ap5020.adminState,
@@ -193,8 +193,20 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
           online: ap5020.online,
           reachable: ap5020.reachable,
           up: ap5020.up,
-          active: ap5020.active
+          active: ap5020.active,
+          proxied: ap5020.proxied,
+          powerSource: ap5020.powerSource,
+          pwrSource: ap5020.pwrSource,
+          ethPowerStatus: ap5020.ethPowerStatus,
+          adoptedBy: ap5020.adoptedBy
         });
+        // Check if ANY field contains "In-Service" or "in-service"
+        const fieldsWithInService = Object.entries(ap5020).filter(([key, value]) =>
+          typeof value === 'string' && value.toLowerCase().includes('in-service')
+        );
+        if (fieldsWithInService.length > 0) {
+          console.log('🔍 AP5020 - Fields containing "In-Service":', fieldsWithInService);
+        }
       }
 
       setAccessPoints(accessPointsArray);
@@ -324,6 +336,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       case 'online':
       case 'connected':
       case 'up':
+      case 'in-service':
         return 'default';
       case 'offline':
       case 'disconnected':
@@ -465,10 +478,10 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
     if (typeof clientCount === 'number' && clientCount > 0) {
       return true;
     }
-    
+
     // Otherwise, check the status field
     const status = ap.status?.toLowerCase();
-    return status === 'online' || status === 'connected' || status === 'up';
+    return status === 'online' || status === 'connected' || status === 'up' || status === 'in-service';
   };
 
   // Helper function to get connection status icon and color

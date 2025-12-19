@@ -147,7 +147,7 @@ export function AccessPointDetail({ serialNumber }: AccessPointDetailProps) {
   const getStatusBadgeVariant = (status?: string) => {
     if (!status) return 'secondary';
     const s = status.toLowerCase();
-    if (s === 'online' || s === 'connected' || s === 'up') return 'default';
+    if (s === 'online' || s === 'connected' || s === 'up' || s === 'in-service') return 'default';
     if (s === 'offline' || s === 'disconnected' || s === 'down') return 'destructive';
     return 'secondary';
   };
