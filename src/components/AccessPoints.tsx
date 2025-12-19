@@ -168,47 +168,6 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       const accessPointsArray = Array.isArray(apsData) ? apsData : [];
       console.log(`Loaded ${accessPointsArray.length} access points for site ${selectedSite || 'all'}`);
 
-      // Debug: Show all AP data with status
-      console.table(accessPointsArray.map(ap => ({
-        serialNumber: ap.serialNumber,
-        displayName: ap.displayName || ap.apName || 'N/A',
-        status: ap.status,
-        model: ap.model || ap.hardwareType,
-        ipAddress: ap.ipAddress,
-        site: ap.hostSite || ap.site
-      })));
-
-      // Special debug for AP5020
-      const ap5020 = accessPointsArray.find(ap => ap.serialNumber === 'CV012408S-C0102');
-      if (ap5020) {
-        console.log('🔍 AP5020 (CV012408S-C0102) full data:', ap5020);
-        console.log('🔍 AP5020 - All field names:', Object.keys(ap5020));
-        console.log('🔍 AP5020 - Status-related fields:', {
-          status: ap5020.status,
-          state: ap5020.state,
-          adminState: ap5020.adminState,
-          operState: ap5020.operState,
-          connected: ap5020.connected,
-          connectionState: ap5020.connectionState,
-          online: ap5020.online,
-          reachable: ap5020.reachable,
-          up: ap5020.up,
-          active: ap5020.active,
-          proxied: ap5020.proxied,
-          powerSource: ap5020.powerSource,
-          pwrSource: ap5020.pwrSource,
-          ethPowerStatus: ap5020.ethPowerStatus,
-          adoptedBy: ap5020.adoptedBy
-        });
-        // Check if ANY field contains "In-Service" or "in-service"
-        const fieldsWithInService = Object.entries(ap5020).filter(([key, value]) =>
-          typeof value === 'string' && value.toLowerCase().includes('in-service')
-        );
-        if (fieldsWithInService.length > 0) {
-          console.log('🔍 AP5020 - Fields containing "In-Service":', fieldsWithInService);
-        }
-      }
-
       setAccessPoints(accessPointsArray);
 
       // Load client counts for filtered APs
@@ -337,6 +296,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       case 'connected':
       case 'up':
       case 'in-service':
+      case 'inservice':
         return 'default';
       case 'offline':
       case 'disconnected':
@@ -481,7 +441,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
 
     // Otherwise, check the status field
     const status = ap.status?.toLowerCase();
-    return status === 'online' || status === 'connected' || status === 'up' || status === 'in-service';
+    return status === 'online' || status === 'connected' || status === 'up' || status === 'in-service' || status === 'inservice';
   };
 
   // Helper function to get connection status icon and color
