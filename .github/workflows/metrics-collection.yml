@@ -31,7 +31,7 @@ jobs:
           CAMPUS_CONTROLLER_URL: ${{ secrets.CAMPUS_CONTROLLER_URL }}
           CAMPUS_CONTROLLER_USER: ${{ secrets.CAMPUS_CONTROLLER_USER }}
           CAMPUS_CONTROLLER_PASSWORD: ${{ secrets.CAMPUS_CONTROLLER_PASSWORD }}
-          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           echo "Starting metrics collection..."
