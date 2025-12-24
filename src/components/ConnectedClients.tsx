@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+
+// DEPLOYMENT VERIFICATION - Module load timestamp
+console.error('🚨 CONNECTED CLIENTS MODULE LOADED - BUILD TIMESTAMP: 2024-12-23-20:05 🚨');
+console.error('🚨 If you see this, new code is deployed! 🚨');
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -380,7 +384,10 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-red-500 bg-yellow-300 p-4">⚠️ DEPLOYMENT TEST - v2024-12-23 - BUILD #2 ⚠️</h2>
+          <div className="bg-red-600 text-white p-6 text-center mb-4 border-4 border-yellow-400">
+            <h1 className="text-4xl font-black">🚨 NEW BUILD ACTIVE 🚨</h1>
+            <p className="text-2xl font-bold">BUILD #3 - 20:05 UTC</p>
+          </div>
           <p className="text-muted-foreground">
             Monitor and manage connected wireless client devices across your network
           </p>

@@ -1,6 +1,6 @@
 {
   "name": "AURA (Autonomous Unified Radio Agent) v500 (w/3rd party)",
-  "version": "0.1.0",
+  "version": "0.1.1-deploy-test",
   "private": true,
   "type": "module",
   "dependencies": {
