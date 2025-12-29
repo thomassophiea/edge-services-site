@@ -192,33 +192,33 @@ export const themes: Record<ThemeMode, Theme> = {
     displayName: 'Kroger',
     emoji: '🛒',
     colors: {
-      // Kroger primary blue - #084999
-      primary: '211 90% 32%', // #084999 (Kroger dark blue)
+      // Kroger brand blue from website - #0F3989
+      primary: '217 83% 31%', // #0F3989 (Kroger brand blue)
       primaryForeground: '0 0% 100%', // #FFFFFF (white text on blue)
-      // Kroger medium blue - #396dad
-      secondary: '213 51% 45%', // #396dad (medium blue)
-      secondaryForeground: '0 0% 100%', // #FFFFFF
-      // Light background - #FFFFFF
+      // Kroger light blue hover - #64C2EA
+      secondary: '196 75% 66%', // #64C2EA (light blue)
+      secondaryForeground: '217 83% 31%', // #0F3989 (dark blue text)
+      // Clean white background - #FFFFFF
       background: '0 0% 100%', // #FFFFFF (white)
-      foreground: '211 90% 32%', // #084999 (dark blue text)
-      // Card surfaces - very light blue - #cedbeb
-      card: '213 42% 86%', // #cedbeb (pale blue)
-      cardForeground: '211 90% 32%', // #084999
+      foreground: '0 0% 29%', // #4A4A4A (medium gray text)
+      // Card surfaces - light gray - #F7F8F8
+      card: '200 17% 98%', // #F7F8F8 (very light gray)
+      cardForeground: '0 0% 29%', // #4A4A4A
       popover: '0 0% 100%', // #FFFFFF
-      popoverForeground: '211 90% 32%', // #084999
-      // Muted using light blue - #9cb6d6
-      muted: '213 42% 73%', // #9cb6d6 (very light blue)
-      mutedForeground: '213 51% 45%', // #396dad (medium blue)
-      // Accent with lighter blue - #6b92c2
-      accent: '213 43% 59%', // #6b92c2 (lighter blue)
-      accentForeground: '0 0% 100%', // #FFFFFF
-      // Destructive red (Kroger uses red for alerts)
+      popoverForeground: '0 0% 29%', // #4A4A4A
+      // Muted using light gray
+      muted: '200 17% 98%', // #F7F8F8 (light gray)
+      mutedForeground: '0 0% 60%', // Slightly lighter gray
+      // Accent with light blue
+      accent: '196 75% 66%', // #64C2EA (light blue)
+      accentForeground: '217 83% 31%', // #0F3989
+      // Destructive red (standard)
       destructive: '0 84.2% 60.2%', // Standard red
       destructiveForeground: '0 0% 100%', // #FFFFFF
-      // Borders with medium blue
-      border: '213 51% 45%', // #396dad (medium blue)
-      input: '213 42% 86%', // #cedbeb (pale blue input bg)
-      ring: '211 90% 32%' // #084999 (dark blue focus ring)
+      // Borders with light gray
+      border: '0 0% 90%', // Light gray border
+      input: '0 0% 100%', // #FFFFFF (white input bg)
+      ring: '217 83% 31%' // #0F3989 (brand blue focus ring)
     }
   }
 };

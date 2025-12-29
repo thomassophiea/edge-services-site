@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;600&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -184,6 +184,55 @@
   --sidebar-accent-foreground: rgba(0, 0, 0, 0.87);
   --sidebar-border: rgba(0, 0, 0, 0.12);
   --sidebar-ring: #6200EE;
+}
+
+/* Kroger Theme */
+.theme-kroger {
+  /* Kroger brand colors from thekrogerco.com */
+  --background: #ffffff; /* Clean white background */
+  --foreground: #4A4A4A; /* Medium gray text */
+  --card: #F7F8F8; /* Very light gray for cards */
+  --card-foreground: #4A4A4A;
+  --popover: #ffffff;
+  --popover-foreground: #4A4A4A;
+  --primary: #0F3989; /* Kroger brand blue */
+  --primary-foreground: #ffffff;
+  --secondary: #64C2EA; /* Kroger light blue (hover) */
+  --secondary-foreground: #0F3989;
+  --muted: #F7F8F8; /* Light gray */
+  --muted-foreground: #999999; /* Medium-light gray */
+  --accent: #64C2EA; /* Light blue accent */
+  --accent-foreground: #0F3989;
+  --destructive: #ef4444; /* Standard red */
+  --destructive-foreground: #ffffff;
+  --border: #e5e5e5; /* Light gray border */
+  --input: #ffffff; /* White input background */
+  --input-background: #ffffff;
+  --ring: #0F3989; /* Brand blue focus ring */
+  --chart-1: #0F3989;
+  --chart-2: #64C2EA;
+  --chart-3: #FF6F00;
+  --chart-4: #ef4444;
+  --chart-5: #00C853;
+  --success: #00C853;
+  --success-foreground: #ffffff;
+  --warning: #FF6F00;
+  --warning-foreground: #ffffff;
+  --info: #64C2EA;
+  --info-foreground: #0F3989;
+
+  /* Kroger Sidebar - light and clean */
+  --sidebar: #ffffff; /* White sidebar background */
+  --sidebar-foreground: #4A4A4A; /* Medium gray text */
+  --sidebar-primary: #0F3989; /* Brand blue for active items */
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #F7F8F8; /* Light gray hover background */
+  --sidebar-accent-foreground: #0F3989; /* Brand blue hover text */
+  --sidebar-border: #e5e5e5; /* Light gray border */
+  --sidebar-ring: #0F3989; /* Brand blue focus ring */
+
+  /* Poppins font for Kroger theme */
+  --font-family-sans: 'Poppins', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 @theme inline {
