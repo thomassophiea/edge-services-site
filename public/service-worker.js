@@ -1,5 +1,5 @@
 // Service Worker for caching static assets
-const CACHE_NAME = 'aura-cache-v10-kroger-fix';
+const CACHE_NAME = 'aura-cache-v11-kroger-important';
 const urlsToCache = [
   '/',
   '/index.html',
