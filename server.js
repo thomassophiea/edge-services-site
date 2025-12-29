@@ -78,10 +78,29 @@ app.use('/api', (req, res, next) => {
   next();
 }, createProxyMiddleware(proxyOptions));
 
-// Serve static files from the build directory
+// Serve static files from the build directory with cache control
 const buildPath = path.join(__dirname, 'build');
 console.log('[Proxy Server] Serving static files from:', buildPath);
-app.use(express.static(buildPath));
+
+// Cache control middleware
+app.use(express.static(buildPath, {
+  setHeaders: (res, filePath) => {
+    // Never cache HTML files (including index.html)
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+    // Cache JS/CSS files for 1 year (they have hashed names)
+    else if (filePath.match(/\.(js|css)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // Cache images/fonts for 1 week
+    else if (filePath.match(/\.(jpg|jpeg|png|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  }
+}));
 
 // Handle React routing - serve index.html for all non-API routes
 app.get('*', (req, res) => {
@@ -90,6 +109,10 @@ app.get('*', (req, res) => {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
 
+  // Never cache index.html
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 
