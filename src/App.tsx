@@ -831,11 +831,17 @@ export default function App() {
             paddingBottom: isDevModeOpen ? `${devPanelHeight}px` : '0'
           }}
         >
-          <div className="p-6">
+          <div className={theme === 'kroger' ? '' : 'p-6'}>
             {/* Top Bar with Test Tools */}
-            <div className="flex justify-between items-center mb-6">
+            <div className={`flex justify-between items-center ${
+              theme === 'kroger'
+                ? 'bg-[#084999] text-white px-6 py-4 -mx-6 -mt-6 mb-6'
+                : 'mb-6'
+            }`}>
               <div className="flex items-center space-x-4">
-                <h2 className="text-lg font-semibold text-[rgba(255,255,255,1)]">
+                <h2 className={`text-lg font-semibold ${
+                  theme === 'kroger' ? 'text-white' : 'text-[rgba(255,255,255,1)]'
+                }`}>
                   {pageInfo[currentPage as keyof typeof pageInfo]?.title || 'Mobility Engine'}
                 </h2>
               </div>
@@ -877,8 +883,10 @@ export default function App() {
                 <AppsMenu />
               </div>
             </div>
-            
-            {renderPage()}
+
+            <div className={theme === 'kroger' ? 'px-6' : ''}>
+              {renderPage()}
+            </div>
           </div>
         </main>
         
