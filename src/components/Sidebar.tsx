@@ -93,7 +93,8 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
                 <img
                   src="/branding/kroger/logo.svg"
                   alt="Kroger"
-                  className="h-8 w-auto"
+                  className="h-8 w-auto brightness-0 invert"
+                  style={{ filter: 'brightness(0) invert(1)' }}
                 />
               ) : (
                 <div className="text-foreground">
