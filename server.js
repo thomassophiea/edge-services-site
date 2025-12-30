@@ -1,4 +1,4 @@
-// Version: Kroger Semantic Tokens Deployment - Dec 29 2025 v3 - 18:15
+// Version: Kroger Top Bar Background - Dec 29 2025 v5 - 19:15
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import cors from 'cors';
@@ -34,11 +34,11 @@ app.get('/health', (req, res) => {
 // Version check endpoint - proves which commit is deployed
 app.get('/api/version', (req, res) => {
   res.json({
-    version: 'v3-kroger-semantic-tokens',
-    commit: '39e23af9f110a5bc2348f6a9e175203c36ba3810',
+    version: 'v5-kroger-top-bar',
+    commit: '3d4f8e62ccc418471464a95f6310e72eca615571',
     blue: '#084999',
-    timestamp: 'Dec 29 2025 18:15',
-    message: 'Kroger blue semantic tokens - Official Pantone 2728 C'
+    timestamp: 'Dec 29 2025 19:15',
+    message: 'Kroger theme with logo, blue sidebar, and blue top bar'
   });
 });
 
