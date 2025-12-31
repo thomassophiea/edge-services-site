@@ -1541,3 +1541,194 @@ html[data-theme="light"], html.light {
     border-width: 2px;
   }
 }
+
+/* ===== RF Quality Widget Styles ===== */
+.rf-quality-score {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.rf-status-excellent {
+  color: hsl(142, 76%, 36%);
+}
+
+.rf-status-good {
+  color: hsl(221, 83%, 53%);
+}
+
+.rf-status-fair {
+  color: hsl(48, 96%, 53%);
+}
+
+.rf-status-poor {
+  color: hsl(0, 84%, 60%);
+}
+
+.rf-metric-card {
+  transition: all 0.2s ease;
+}
+
+.rf-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Application Analytics Widget Styles ===== */
+.app-analytics-item {
+  transition: background-color 0.15s ease;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.app-analytics-item:hover {
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+.app-rank-badge {
+  min-width: 2rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-category-badge {
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Widget Container Spacing */
+.widget-container {
+  margin-bottom: 1.5rem;
+}
+
+.widget-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.widget-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.widget-description {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Progress Bar Enhancements for Widgets */
+.widget-progress {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background-color: hsl(var(--secondary));
+}
+
+.widget-progress-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+  background: linear-gradient(90deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--primary) / 0.8) 100%
+  );
+}
+
+/* Kroger Theme Overrides for Widgets */
+.theme-kroger .rf-quality-score {
+  color: var(--brand-primary);
+}
+
+.theme-kroger .app-analytics-item:hover {
+  background-color: hsl(210, 100%, 97%);
+}
+
+.theme-kroger .widget-progress-bar {
+  background: linear-gradient(90deg,
+    var(--brand-primary) 0%,
+    var(--brand-accent) 100%
+  );
+}
+
+/* Widget Loading States */
+.widget-skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.6) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Widget Error States */
+.widget-error {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 2px solid hsl(48, 96%, 53%);
+  background-color: hsl(48, 96%, 53%, 0.05);
+}
+
+.widget-error-icon {
+  color: hsl(48, 96%, 53%);
+}
+
+.widget-error-text {
+  color: hsl(48, 96%, 30%);
+}
+
+/* Dark Mode Widget Adjustments */
+@media (prefers-color-scheme: dark) {
+  .rf-status-excellent {
+    color: hsl(142, 76%, 46%);
+  }
+
+  .rf-status-good {
+    color: hsl(221, 83%, 63%);
+  }
+
+  .rf-status-fair {
+    color: hsl(48, 96%, 63%);
+  }
+
+  .rf-status-poor {
+    color: hsl(0, 84%, 70%);
+  }
+
+  .widget-error {
+    background-color: hsl(48, 96%, 53%, 0.1);
+  }
+
+  .widget-error-text {
+    color: hsl(48, 96%, 70%);
+  }
+}
+
+/* Responsive Widget Layouts */
+@media (max-width: 768px) {
+  .rf-quality-score {
+    font-size: 2rem;
+  }
+
+  .widget-container {
+    margin-bottom: 1rem;
+  }
+
+  .app-analytics-item {
+    padding: 0.375rem;
+  }
+}
