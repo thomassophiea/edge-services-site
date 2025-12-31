@@ -1,5 +1,5 @@
 # Railway Configuration - Auto-updated on each deployment
-# Last Update: 2025-12-31 18:19:34 UTC - Commit 21df8ed
+# Last Update: 2025-12-31 20:21:46 UTC - Commit e8453f5
 [build]
 builder = "nixpacks"
 
