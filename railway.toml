@@ -1,11 +1,19 @@
-# Kroger Alignment & Logo - Dec 29 2025 20:15 - FORCE REBUILD v8
+# Railway Configuration - Auto-updated on each deployment
+# Last Update: Dec 31 2025 - P0/P1 Dashboard Audit Implementation
 [build]
 builder = "nixpacks"
 
 [build.nixpacksPlan]
 phases.setup.nixPkgs = ["nodejs"]
-phases.install.cmds = ["npm ci --no-cache"]
-phases.build.cmds = ["rm -rf node_modules/.vite build dist && npm run build"]
+phases.install.cmds = [
+  "npm ci --no-cache",
+  "echo 'Build started at:' $(date -u)"
+]
+phases.build.cmds = [
+  "rm -rf node_modules/.vite build dist",
+  "npm run build",
+  "echo 'Build completed at:' $(date -u)"
+]
 
 [deploy]
 startCommand = "node server.js"
