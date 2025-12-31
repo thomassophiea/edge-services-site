@@ -97,7 +97,7 @@ export function NetworkInsights() {
         />
       </div>
 
-      {/* Smart RF Optimization */}
+      {/* Site RRM (Radio Resource Management) */}
       <div className="widget-container">
         <SmartRFWidget
           key={`smartrf-${refreshKey}`}

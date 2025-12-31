@@ -73,9 +73,9 @@ export function SmartRFWidget({ siteId, duration = '24H' }: SmartRFWidgetProps) 
         <CardHeader>
           <div className="flex items-center gap-2">
             <Radio className="h-5 w-5 animate-pulse" />
-            <CardTitle>Smart RF Optimization</CardTitle>
+            <CardTitle>Site RRM</CardTitle>
           </div>
-          <CardDescription>AI-driven RF optimization insights</CardDescription>
+          <CardDescription>Radio Resource Management optimization insights</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-3">
@@ -93,7 +93,7 @@ export function SmartRFWidget({ siteId, duration = '24H' }: SmartRFWidgetProps) 
         <CardHeader>
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            <CardTitle>Smart RF Optimization</CardTitle>
+            <CardTitle>Site RRM</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -118,9 +118,9 @@ export function SmartRFWidget({ siteId, duration = '24H' }: SmartRFWidgetProps) 
           <div className="flex items-center gap-2">
             <Radio className="h-5 w-5 text-primary" />
             <div>
-              <CardTitle>Smart RF Optimization</CardTitle>
+              <CardTitle>Site RRM</CardTitle>
               <CardDescription>
-                AI-driven RF optimization insights
+                Radio Resource Management optimization insights
                 {lastUpdate && (
                   <span className="ml-2">• Updated {lastUpdate.toLocaleTimeString()}</span>
                 )}
@@ -195,7 +195,7 @@ export function SmartRFWidget({ siteId, duration = '24H' }: SmartRFWidgetProps) 
               <div className="flex items-start gap-2 text-sm">
                 <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                 <p className="text-muted-foreground">
-                  High channel change activity detected. Smart RF is actively optimizing for interference.
+                  High channel change activity detected. Site RRM is actively optimizing for interference.
                 </p>
               </div>
             )}
@@ -219,7 +219,7 @@ export function SmartRFWidget({ siteId, duration = '24H' }: SmartRFWidgetProps) 
               <div className="flex items-start gap-2 text-sm">
                 <Radio className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                 <p className="text-muted-foreground">
-                  RF environment is stable with excellent signal quality. Smart RF optimizations are minimal.
+                  RF environment is stable with excellent signal quality. Site RRM optimizations are minimal.
                 </p>
               </div>
             )}
