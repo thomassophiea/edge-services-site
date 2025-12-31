@@ -896,12 +896,16 @@ export function DashboardEnhanced() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <VersionBadge />
           <Button onClick={() => loadDashboardData(true)} variant="outline" disabled={refreshing}>
             <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
+      </div>
+
+      {/* Version Badge - Fixed Bottom Left */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <VersionBadge />
       </div>
 
       {/* Filter Bar */}

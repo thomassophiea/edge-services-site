@@ -9,14 +9,21 @@
  * Format throughput with auto-scaling
  * Rules:
  * - >= 1000 Mbps → Gbps with 1 decimal
- * - < 1000 Mbps → Mbps with 0 decimals
+ * - >= 1 Mbps → Mbps with up to 1 decimal
+ * - < 1 Mbps → Kbps with 0 decimals
  */
 export function formatThroughput(mbps: number): string {
   if (mbps >= 1000) {
     const gbps = mbps / 1000;
     return `${gbps.toFixed(1)} Gbps`;
   }
-  return `${Math.round(mbps)} Mbps`;
+  if (mbps >= 1) {
+    // Show 1 decimal for values 1-999 Mbps to avoid losing precision
+    return `${mbps.toFixed(1)} Mbps`;
+  }
+  // For very small values, show in Kbps
+  const kbps = mbps * 1000;
+  return `${Math.round(kbps)} Kbps`;
 }
 
 /**
