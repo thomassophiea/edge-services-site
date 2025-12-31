@@ -37,6 +37,10 @@ import { throughputService, ThroughputSnapshot } from '../services/throughput';
 import { toast } from 'sonner';
 import { getVendor, getVendorIcon, getShortVendor } from '../services/oui-lookup';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
+import { OperationalHealthSummary } from './OperationalHealthSummary';
+import { AnomalyDetector } from './AnomalyDetector';
+import { FilterBar } from './FilterBar';
+import { VersionBadge } from './VersionBadge';
 
 interface AccessPoint {
   serialNumber: string;
@@ -903,11 +907,30 @@ export function DashboardEnhanced() {
             )}
           </p>
         </div>
-        <Button onClick={() => loadDashboardData(true)} variant="outline" disabled={refreshing}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <VersionBadge />
+          <Button onClick={() => loadDashboardData(true)} variant="outline" disabled={refreshing}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      {/* Filter Bar */}
+      <FilterBar
+        showSiteFilter={true}
+        showTimeRangeFilter={true}
+        onFilterChange={(filters) => {
+          console.log('[Dashboard] Filters changed:', filters);
+          // Filters will automatically be applied via useGlobalFilters hook
+        }}
+      />
+
+      {/* Operational Health Summary Widget (P1-001) */}
+      <OperationalHealthSummary />
+
+      {/* Anomaly Detector Widget (P1-005) */}
+      <AnomalyDetector />
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
