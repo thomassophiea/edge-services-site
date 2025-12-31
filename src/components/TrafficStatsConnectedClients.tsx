@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Checkbox } from './ui/checkbox';
-import { AlertCircle, Users, Search, RefreshCw, Filter, Wifi, Activity, Timer, Signal, Download, Upload, Shield, Router, MapPin, Building, User, Clock, Star, Trash2, UserX, RotateCcw, UserPlus, UserMinus, ShieldCheck, ShieldX, Info, Radio, WifiOff, SignalHigh, SignalMedium, SignalLow, SignalZero, Cable, Shuffle } from 'lucide-react';
+import { AlertCircle, Users, Search, RefreshCw, Filter, Wifi, Activity, Timer, Signal, Download, Upload, Shield, Router, MapPin, Building, User, Clock, Star, Trash2, UserX, RotateCcw, UserPlus, UserMinus, ShieldCheck, ShieldX, Info, Radio, WifiOff, SignalHigh, SignalMedium, SignalLow, SignalZero, Cable, Shuffle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Alert, AlertDescription } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
@@ -46,6 +46,11 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
   const [stationTrafficData, setStationTrafficData] = useState<Map<string, any>>(new Map());
   const [isLoadingTraffic, setIsLoadingTraffic] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(100);
+  const [totalItems, setTotalItems] = useState(0);
+
   useEffect(() => {
     loadStations();
   }, []);
@@ -57,19 +62,20 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       // Use the new correlation method to get stations with proper site information
       const stationsData = await apiService.getStationsWithSiteCorrelation();
       const stationsArray = Array.isArray(stationsData) ? stationsData : [];
       setStations(stationsArray);
-      
-      // Load traffic statistics for all stations
+      setTotalItems(stationsArray.length);
+
+      // Load traffic statistics for all stations with pagination
       if (stationsArray.length > 0) {
-        await loadTrafficStatisticsForStations(stationsArray);
+        await loadTrafficStatisticsForCurrentPage(stationsArray);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load connected clients');
@@ -79,18 +85,40 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
     }
   };
 
-  const loadTrafficStatisticsForStations = async (stationsList: Station[]) => {
+  // Load traffic statistics for the current page of filtered stations
+  const loadTrafficStatisticsForCurrentPage = async (stationsList: Station[]) => {
     setIsLoadingTraffic(true);
-    
+
     try {
-      const trafficMap = await trafficService.loadTrafficStatisticsForStations(stationsList);
+      // Calculate pagination offset
+      const offset = (currentPage - 1) * itemsPerPage;
+
+      // Load traffic data with pagination support
+      const trafficMap = await trafficService.loadTrafficStatisticsForStations(
+        stationsList,
+        itemsPerPage,
+        offset
+      );
+
       setStationTrafficData(trafficMap);
+
+      console.log(`[TrafficStats] Loaded traffic for page ${currentPage} (${trafficMap.size} stations)`);
     } catch (error) {
       console.warn('Error loading traffic statistics:', error);
+      toast.error('Failed to load traffic statistics', {
+        description: 'Some traffic data may be unavailable'
+      });
     } finally {
       setIsLoadingTraffic(false);
     }
   };
+
+  // Reload traffic when page changes
+  useEffect(() => {
+    if (stations.length > 0) {
+      loadTrafficStatisticsForCurrentPage(stations);
+    }
+  }, [currentPage, itemsPerPage]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -249,8 +277,9 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
     }
   };
 
+  // Filter stations based on search and filters
   const filteredStations = stations.filter((station) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       station.macAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       station.ipAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       station.hostName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -261,12 +290,12 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
       station.network?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       station.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       station.deviceType?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || station.status?.toLowerCase() === statusFilter.toLowerCase();
     const matchesAP = apFilter === 'all' || station.apSerial === apFilter || station.apName === apFilter;
     const matchesSite = selectedSite === 'all' || station.siteName === selectedSite;
     const matchesDeviceType = deviceTypeFilter === 'all' || station.deviceType === deviceTypeFilter;
-    
+
     // MAC address type filter
     let matchesMacType = true;
     if (macTypeFilter === 'randomized') {
@@ -274,9 +303,21 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
     } else if (macTypeFilter === 'permanent') {
       matchesMacType = !isRandomizedMac(station.macAddress);
     }
-    
+
     return matchesSearch && matchesStatus && matchesAP && matchesSite && matchesDeviceType && matchesMacType;
   });
+
+  // Pagination calculations
+  const totalFilteredItems = filteredStations.length;
+  const totalPages = Math.ceil(totalFilteredItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalFilteredItems);
+  const paginatedStations = filteredStations.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, apFilter, selectedSite, deviceTypeFilter, macTypeFilter]);
 
   const getUniqueStatuses = () => {
     const statuses = new Set(stations.map(station => station.status).filter(Boolean));
@@ -361,7 +402,8 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allMacAddresses = new Set(filteredStations.map(station => station.macAddress));
+      // Select all stations on current page
+      const allMacAddresses = new Set(paginatedStations.map(station => station.macAddress));
       setSelectedStations(allMacAddresses);
     } else {
       setSelectedStations(new Set());
@@ -506,7 +548,7 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
         <CardHeader>
           <CardTitle>Connected Clients with Traffic Statistics</CardTitle>
           <CardDescription>
-            Click any client to view detailed connection information. Traffic data and signal strength (RSS/RSSI) from /v1/stations endpoint.
+            Click any client to view detailed connection information. Traffic data loaded with optimized batch query (up to {itemsPerPage} clients per page). Signal strength (RSS/RSSI) included.
           </CardDescription>
           
           <div className="flex flex-col sm:flex-row gap-4">
@@ -579,7 +621,7 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
                   <TableRow className="h-8">
                     <TableHead className="w-12 p-2 text-[10px]">
                       <Checkbox
-                        checked={selectedStations.size === filteredStations.length && filteredStations.length > 0}
+                        checked={selectedStations.size === paginatedStations.length && paginatedStations.length > 0}
                         onCheckedChange={handleSelectAll}
                         className="h-3 w-3"
                       />
@@ -595,7 +637,7 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStations.map((station, index) => {
+                  {paginatedStations.map((station, index) => {
                     const trafficData = stationTrafficData.get(station.macAddress);
                     
                     return (
@@ -847,6 +889,87 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
                   })}
                 </TableBody>
               </Table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalFilteredItems > 0 && (
+            <div className="flex items-center justify-between px-2 py-4 border-t">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1}-{endIndex} of {totalFilteredItems} clients
+                  {isLoadingTraffic && <span className="ml-2 text-xs">(loading traffic...)</span>}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm text-muted-foreground">Per page:</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(Number(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="200">200</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-sm">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

@@ -30,13 +30,79 @@ class TrafficService {
     }
   }
 
-  // Load traffic statistics for multiple stations
-  async loadTrafficStatisticsForStations(stations: { macAddress: string }[]): Promise<Map<string, StationTrafficStats>> {
+  // Load traffic statistics for multiple stations using batch query with field projection
+  // This replaces the N+1 query pattern with a single optimized query
+  async loadTrafficStatisticsForStations(
+    stations: { macAddress: string }[],
+    limit: number = 100,
+    offset: number = 0
+  ): Promise<Map<string, StationTrafficStats>> {
     const trafficMap = new Map<string, StationTrafficStats>();
-    
-    // Load traffic statistics for each station (limit to first 20 to avoid overwhelming the API)
-    const stationsToLoad = stations.slice(0, 20);
-    
+
+    try {
+      console.log(`[TrafficService] Loading traffic stats for ${stations.length} stations (limit: ${limit}, offset: ${offset})`);
+
+      // Use field projection to fetch only traffic-related fields
+      // This significantly reduces payload size and improves performance
+      const trafficFields = [
+        'macAddress',
+        'inBytes',
+        'outBytes',
+        'rxBytes',
+        'txBytes',
+        'packets',
+        'outPackets',
+        'rss',
+        'signalStrength'
+      ];
+
+      // Fetch stations with traffic data using optimized query
+      const stationsWithTraffic = await apiService.getStations({
+        fields: trafficFields,
+        limit: limit,
+        offset: offset
+      });
+
+      // Build map of MAC address to traffic data
+      stationsWithTraffic.forEach((station) => {
+        if (station.macAddress) {
+          trafficMap.set(station.macAddress, {
+            macAddress: station.macAddress,
+            inBytes: station.inBytes || station.rxBytes || 0,
+            outBytes: station.outBytes || station.txBytes || 0,
+            rxBytes: station.rxBytes || station.inBytes || 0,
+            txBytes: station.txBytes || station.outBytes || 0,
+            packets: station.packets || 0,
+            outPackets: station.outPackets || 0,
+            rss: station.rss || station.signalStrength,
+            signalStrength: station.signalStrength || station.rss
+          });
+        }
+      });
+
+      console.log(`[TrafficService] Successfully loaded traffic stats for ${trafficMap.size} stations`);
+      return trafficMap;
+
+    } catch (error) {
+      console.warn('[TrafficService] Error loading traffic statistics, falling back to individual queries:', error);
+
+      // Fallback: Use the old N+1 pattern for a limited subset if batch query fails
+      // This ensures backward compatibility with older API versions
+      return this.loadTrafficStatisticsFallback(stations, Math.min(limit, 20));
+    }
+  }
+
+  // Fallback method using individual queries (legacy N+1 pattern)
+  // Only used if the batch query method fails
+  private async loadTrafficStatisticsFallback(
+    stations: { macAddress: string }[],
+    limit: number = 20
+  ): Promise<Map<string, StationTrafficStats>> {
+    const trafficMap = new Map<string, StationTrafficStats>();
+    const stationsToLoad = stations.slice(0, limit);
+
+    console.log(`[TrafficService] Using fallback N+1 pattern for ${stationsToLoad.length} stations`);
+
     const trafficPromises = stationsToLoad.map(async (station) => {
       try {
         const trafficData = await this.getStationTrafficStats(station.macAddress);
@@ -54,7 +120,7 @@ class TrafficService {
           trafficMap.set(result.value.macAddress, result.value.data);
         }
       });
-      
+
       return trafficMap;
     } catch (error) {
       console.warn('Error loading traffic statistics:', error);
