@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import {
   Activity,
   AlertTriangle,
@@ -20,7 +21,8 @@ import {
   ChevronUp,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { apiService, AccessPoint, Station, Service } from '../services/api';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
@@ -60,6 +62,7 @@ export function OperationalHealthSummary() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMetric, setSelectedMetric] = useState<'organization' | 'alerts' | 'services' | 'experience' | null>(null);
 
   useEffect(() => {
     loadHealthMetrics();
@@ -361,10 +364,16 @@ export function OperationalHealthSummary() {
         {/* 4-card KPI layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Organization Health Score */}
-          <div className="p-4 border rounded-lg bg-card">
+          <div
+            className="p-4 border rounded-lg bg-card cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setSelectedMetric('organization')}
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="text-sm text-muted-foreground mb-1">Organization Health</div>
+                <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                  Organization Health
+                  <Info className="h-3 w-3" />
+                </div>
                 <div className={`text-3xl font-bold ${getStatusColor(metrics.organizationHealth.status)}`}>
                   {metrics.organizationHealth.score}%
                 </div>
@@ -380,10 +389,16 @@ export function OperationalHealthSummary() {
           </div>
 
           {/* Critical Alerts */}
-          <div className="p-4 border rounded-lg bg-card">
+          <div
+            className="p-4 border rounded-lg bg-card cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setSelectedMetric('alerts')}
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="text-sm text-muted-foreground mb-1">Critical Alerts</div>
+                <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                  Critical Alerts
+                  <Info className="h-3 w-3" />
+                </div>
                 <div className={`text-3xl font-bold ${metrics.criticalAlerts.count > 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {metrics.criticalAlerts.count}
                 </div>
@@ -399,10 +414,16 @@ export function OperationalHealthSummary() {
           </div>
 
           {/* Service Degradation */}
-          <div className="p-4 border rounded-lg bg-card">
+          <div
+            className="p-4 border rounded-lg bg-card cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setSelectedMetric('services')}
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="text-sm text-muted-foreground mb-1">Service Issues</div>
+                <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                  Service Issues
+                  <Info className="h-3 w-3" />
+                </div>
                 <div className={`text-3xl font-bold ${metrics.serviceDegradation.count > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
                   {metrics.serviceDegradation.count}
                 </div>
@@ -418,10 +439,16 @@ export function OperationalHealthSummary() {
           </div>
 
           {/* Client Experience */}
-          <div className="p-4 border rounded-lg bg-card">
+          <div
+            className="p-4 border rounded-lg bg-card cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setSelectedMetric('experience')}
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="text-sm text-muted-foreground mb-1">Client Experience</div>
+                <div className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                  Client Experience
+                  <Info className="h-3 w-3" />
+                </div>
                 <div className={`text-3xl font-bold ${getStatusColor(metrics.clientExperience.status)}`}>
                   {metrics.clientExperience.score}%
                 </div>
@@ -513,6 +540,222 @@ export function OperationalHealthSummary() {
           </div>
         )}
       </CardContent>
+
+      {/* Detail Dialog */}
+      <Dialog open={selectedMetric !== null} onOpenChange={() => setSelectedMetric(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedMetric === 'organization' && <Activity className="h-5 w-5" />}
+              {selectedMetric === 'alerts' && <AlertTriangle className="h-5 w-5" />}
+              {selectedMetric === 'services' && <TrendingDown className="h-5 w-5" />}
+              {selectedMetric === 'experience' && <Users className="h-5 w-5" />}
+              {selectedMetric === 'organization' && 'Organization Health Details'}
+              {selectedMetric === 'alerts' && 'Critical Alerts Details'}
+              {selectedMetric === 'services' && 'Service Issues Details'}
+              {selectedMetric === 'experience' && 'Client Experience Details'}
+            </DialogTitle>
+            <DialogDescription>
+              Detailed breakdown and insights
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {selectedMetric === 'organization' && (
+              <>
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">Overall Score</h3>
+                    <div className={`text-4xl font-bold ${getStatusColor(metrics.organizationHealth.status)}`}>
+                      {metrics.organizationHealth.score}%
+                    </div>
+                  </div>
+                  <Badge variant={getStatusBadgeVariant(metrics.organizationHealth.status)}>
+                    {metrics.organizationHealth.status.toUpperCase()}
+                  </Badge>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Component Breakdown</h4>
+                  <div className="grid gap-3">
+                    <div className="p-3 rounded-lg border">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">AP Uptime</span>
+                        <span className="font-bold">{metrics.organizationHealth.details.apUptime}%</span>
+                      </div>
+                      <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${metrics.organizationHealth.details.apUptime}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg border">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Client Success Rate</span>
+                        <span className="font-bold">{metrics.organizationHealth.details.clientSuccessRate}%</span>
+                      </div>
+                      <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 transition-all"
+                          style={{ width: `${metrics.organizationHealth.details.clientSuccessRate}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg border">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Throughput Efficiency</span>
+                        <span className="font-bold">{metrics.organizationHealth.details.throughputEfficiency}%</span>
+                      </div>
+                      <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all"
+                          style={{ width: `${metrics.organizationHealth.details.throughputEfficiency}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-muted/20 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    The Organization Health score is a weighted composite of AP uptime (30%),
+                    client success rate (30%), and throughput efficiency (40%). This provides
+                    a single metric to assess overall network performance.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {selectedMetric === 'alerts' && (
+              <>
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">Critical Alerts</h3>
+                    <div className={`text-4xl font-bold ${metrics.criticalAlerts.count > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {metrics.criticalAlerts.count}
+                    </div>
+                  </div>
+                  <Badge variant={metrics.criticalAlerts.count > 0 ? 'destructive' : 'default'}>
+                    {metrics.criticalAlerts.count > 0 ? 'ACTION REQUIRED' : 'ALL CLEAR'}
+                  </Badge>
+                </div>
+
+                {metrics.criticalAlerts.count > 0 ? (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Active Alerts</h4>
+                    {metrics.criticalAlerts.alerts.map((alert, idx) => (
+                      <div key={idx} className="p-3 rounded-lg border border-red-500/50 bg-red-500/5">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">{alert.message || alert.description || 'Critical alert'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg text-center">
+                    <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No critical alerts at this time. All systems operating normally.</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {selectedMetric === 'services' && (
+              <>
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">Service Issues</h3>
+                    <div className={`text-4xl font-bold ${metrics.serviceDegradation.count > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
+                      {metrics.serviceDegradation.count}
+                    </div>
+                  </div>
+                  <Badge variant={metrics.serviceDegradation.count > 0 ? 'outline' : 'default'}>
+                    {metrics.serviceDegradation.count > 0 ? 'DEGRADED' : 'HEALTHY'}
+                  </Badge>
+                </div>
+
+                {metrics.serviceDegradation.count > 0 ? (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Degraded Services</h4>
+                    {metrics.serviceDegradation.services.map((service, idx) => (
+                      <div key={idx} className="p-3 rounded-lg border border-yellow-500/50 bg-yellow-500/5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 text-yellow-600" />
+                            <span className="font-medium">{service.name || service.serviceName || service.ssid}</span>
+                          </div>
+                          {!service.enabled && (
+                            <Badge variant="outline" className="text-xs">Disabled</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg text-center">
+                    <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">All services operating normally with no performance degradation detected.</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {selectedMetric === 'experience' && (
+              <>
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">Client Experience Score</h3>
+                    <div className={`text-4xl font-bold ${getStatusColor(metrics.clientExperience.status)}`}>
+                      {metrics.clientExperience.score}%
+                    </div>
+                  </div>
+                  <Badge variant={getStatusBadgeVariant(metrics.clientExperience.status)}>
+                    {metrics.clientExperience.status.toUpperCase()}
+                  </Badge>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Experience Metrics</h4>
+                  <div className="grid gap-3">
+                    <div className="p-3 rounded-lg border">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Average Signal Strength</span>
+                        <span className="font-bold">{metrics.clientExperience.details.avgSignalStrength} dBm</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {metrics.clientExperience.details.avgSignalStrength > -60 ? 'Excellent' :
+                         metrics.clientExperience.details.avgSignalStrength > -70 ? 'Good' :
+                         metrics.clientExperience.details.avgSignalStrength > -80 ? 'Fair' : 'Poor'} signal quality
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg border">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Authentication Failure Rate</span>
+                        <span className="font-bold">{metrics.clientExperience.details.authFailureRate}%</span>
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg border">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Average Retry Rate</span>
+                        <span className="font-bold">{metrics.clientExperience.details.avgRetryRate}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-muted/20 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Client Experience score combines signal strength (50%), authentication success (30%),
+                    and retry rates (20%) to measure overall end-user satisfaction.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

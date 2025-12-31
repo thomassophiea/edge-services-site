@@ -4,6 +4,8 @@ import { RefreshCw, TrendingUp } from 'lucide-react';
 import { AnomalyDetector } from './AnomalyDetector';
 import { RFQualityWidget } from './RFQualityWidget';
 import { ApplicationAnalyticsEnhancedWidget } from './ApplicationAnalyticsEnhancedWidget';
+import { SmartRFWidget } from './SmartRFWidget';
+import { VenueStatsWidget } from './VenueStatsWidget';
 
 /**
  * Network Insights Dashboard
@@ -90,6 +92,24 @@ export function NetworkInsights() {
       <div className="widget-container">
         <ApplicationAnalyticsEnhancedWidget
           key={`apps-${refreshKey}`}
+          siteId="c7395471-aa5c-46dc-9211-3ed24c5789bd"
+          duration="24H"
+        />
+      </div>
+
+      {/* Smart RF Optimization */}
+      <div className="widget-container">
+        <SmartRFWidget
+          key={`smartrf-${refreshKey}`}
+          siteId="c7395471-aa5c-46dc-9211-3ed24c5789bd"
+          duration="24H"
+        />
+      </div>
+
+      {/* Venue Statistics */}
+      <div className="widget-container">
+        <VenueStatsWidget
+          key={`venue-${refreshKey}`}
           siteId="c7395471-aa5c-46dc-9211-3ed24c5789bd"
           duration="24H"
         />
