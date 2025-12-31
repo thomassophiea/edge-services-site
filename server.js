@@ -33,14 +33,20 @@ app.get('/health', (req, res) => {
 
 // Version check endpoint - proves which commit is deployed
 app.get('/api/version', (req, res) => {
-  res.json({
-    version: 'v8-kroger-alignment',
-    commit: '4cf6350f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b',
-    topBarBlue: '#084999',
-    sidebarBlue: '#05316B',
-    timestamp: 'Dec 29 2025 20:15',
-    message: 'Fixed alignment, UserMenu readability, and added circular Kroger logo'
-  });
+  try {
+    // Try to read version.json from build directory
+    const versionPath = path.join(__dirname, 'build', 'version.json');
+    const versionData = require(versionPath);
+    res.json(versionData);
+  } catch (error) {
+    // Fallback if version.json doesn't exist
+    res.json({
+      version: 'unknown',
+      commit: 'unknown',
+      error: 'version.json not found in build',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Proxy configuration

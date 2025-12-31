@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from 'child_process';
-import { writeFileSync } from 'fs';
+import { writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -63,6 +63,16 @@ VITE_APP_COMMIT_DATE=${commitDate}
     join(rootDir, 'public', 'version.json'),
     JSON.stringify(versionJson, null, 2)
   );
+
+  // Also write to build directory if it exists (for postbuild)
+  const buildDir = join(rootDir, 'build');
+  if (existsSync(buildDir)) {
+    writeFileSync(
+      join(buildDir, 'version.json'),
+      JSON.stringify(versionJson, null, 2)
+    );
+    console.log('   version.json also written to build/');
+  }
 
   console.log('✅ Version generated:', version);
   console.log('   Commit:', commitHash);
