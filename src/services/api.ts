@@ -2991,6 +2991,165 @@ class ApiService {
       return [];
     }
   }
+
+  /**
+   * Fetch widget data from Campus Controller
+   * Discovered from HAR file analysis - uses /v1/report/sites endpoint
+   *
+   * @param siteId - Site ID to fetch data for
+   * @param widgetIds - Array of widget IDs to fetch (e.g., ['rfQuality', 'topAppGroupsByThroughputReport'])
+   * @param duration - Time range (e.g., '3H', '24H', '7D', '30D')
+   * @param resolution - Data resolution in minutes (default: 15)
+   * @returns Promise with widget data
+   */
+  async fetchWidgetData(
+    siteId: string,
+    widgetIds: string[],
+    duration: string = '24H',
+    resolution: number = 15
+  ): Promise<any> {
+    try {
+      // Build widgetList parameter - format: widget1|all,widget2|all
+      const widgetList = widgetIds.map(id => `${id}|all`).join(',');
+
+      // Add cache busting timestamp
+      const noCache = Date.now();
+
+      const endpoint = `/v1/report/sites/${encodeURIComponent(siteId)}?` +
+        `noCache=${noCache}&` +
+        `duration=${duration}&` +
+        `resolution=${resolution}&` +
+        `widgetList=${encodeURIComponent(widgetList)}`;
+
+      console.log(`[API] Fetching widget data: ${widgetIds.join(', ')}`);
+      console.log(`[API] Endpoint: ${endpoint}`);
+
+      const response = await this.makeAuthenticatedRequest(endpoint, {}, 15000);
+
+      if (!response.ok) {
+        throw new Error(`Widget data fetch failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`[API] ✓ Widget data fetched successfully`);
+
+      return data;
+
+    } catch (error) {
+      console.error(`[API] Failed to fetch widget data:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch RF Quality (RFQI) data for a site
+   * Widget ID: rfQuality
+   * Returns RF quality metrics including signal strength, interference, etc.
+   */
+  async fetchRFQualityData(siteId: string, duration: string = '24H'): Promise<any> {
+    try {
+      const data = await this.fetchWidgetData(siteId, ['rfQuality'], duration);
+      return data.rfQuality || data;
+    } catch (error) {
+      console.error(`[API] Failed to fetch RF quality data:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch application analytics data
+   * Includes top/worst apps by throughput, client count, and usage
+   */
+  async fetchApplicationAnalytics(siteId: string, duration: string = '24H'): Promise<any> {
+    try {
+      const widgetIds = [
+        'topAppGroupsByThroughputReport',
+        'topAppGroupsByClientCountReport',
+        'topAppGroupsByUsage',
+        'worstAppGroupsByThroughputReport'
+      ];
+
+      const data = await this.fetchWidgetData(siteId, widgetIds, duration);
+
+      return {
+        topByThroughput: data.topAppGroupsByThroughputReport || [],
+        topByClients: data.topAppGroupsByClientCountReport || [],
+        topByUsage: data.topAppGroupsByUsage || [],
+        worstByThroughput: data.worstAppGroupsByThroughputReport || []
+      };
+    } catch (error) {
+      console.error(`[API] Failed to fetch application analytics:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch site performance summary widgets
+   * Includes throughput, client counts, and QoE metrics
+   */
+  async fetchSitePerformanceSummary(siteId: string, duration: string = '24H'): Promise<any> {
+    try {
+      const widgetIds = [
+        'throughputReport',
+        'countOfUniqueUsersReport',
+        'topAccessPointsByThroughput',
+        'topAccessPointsByUserCount',
+        'byteUtilization',
+        'siteQoE'
+      ];
+
+      const data = await this.fetchWidgetData(siteId, widgetIds, duration);
+
+      return {
+        throughput: data.throughputReport || {},
+        uniqueUsers: data.countOfUniqueUsersReport || {},
+        topAPsByThroughput: data.topAccessPointsByThroughput || [],
+        topAPsByUserCount: data.topAccessPointsByUserCount || [],
+        byteUtilization: data.byteUtilization || {},
+        qoe: data.siteQoE || {}
+      };
+    } catch (error) {
+      console.error(`[API] Failed to fetch site performance summary:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch comprehensive site report with all available widgets
+   * Useful for dashboard overview
+   */
+  async fetchComprehensiveSiteReport(siteId: string, duration: string = '24H'): Promise<any> {
+    try {
+      const widgetIds = [
+        // Performance & throughput
+        'throughputReport',
+        'byteUtilization',
+        'siteQoE',
+
+        // User metrics
+        'countOfUniqueUsersReport',
+
+        // Top performers
+        'topAccessPointsByThroughput',
+        'topAccessPointsByUserCount',
+        'topUsersByThroughput',
+
+        // RF quality
+        'rfQuality',
+        'topAccessPointsByRfHealth',
+
+        // Applications
+        'topAppGroupsByThroughputReport',
+        'topAppGroupsByClientCountReport',
+        'topAppGroupsByUsage'
+      ];
+
+      return await this.fetchWidgetData(siteId, widgetIds, duration);
+    } catch (error) {
+      console.error(`[API] Failed to fetch comprehensive site report:`, error);
+      return null;
+    }
+  }
 }
 
 export const apiService = new ApiService();
