@@ -32,11 +32,12 @@ app.get('/health', (req, res) => {
 });
 
 // Version check endpoint - proves which commit is deployed
-app.get('/api/version', (req, res) => {
+app.get('/api/version', async (req, res) => {
   try {
     // Try to read version.json from build directory
     const versionPath = path.join(__dirname, 'build', 'version.json');
-    const versionData = require(versionPath);
+    const fs = await import('fs');
+    const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
     res.json(versionData);
   } catch (error) {
     // Fallback if version.json doesn't exist
@@ -44,6 +45,8 @@ app.get('/api/version', (req, res) => {
       version: 'unknown',
       commit: 'unknown',
       error: 'version.json not found in build',
+      errorDetails: error.message,
+      buildPath: path.join(__dirname, 'build'),
       timestamp: new Date().toISOString()
     });
   }
