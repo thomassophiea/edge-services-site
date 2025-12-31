@@ -1305,18 +1305,28 @@ class ApiService {
 
   // Roles API method - uses /v3/roles endpoint (network policy roles)
   async getRoles(): Promise<Role[]> {
+    // Check cache first - roles rarely change, cache for 30 minutes
+    const cacheKey = 'roles';
+    const cached = cacheService.get<Role[]>(cacheKey);
+    if (cached) {
+      console.log(`✓ Returned ${cached.length} roles from cache`);
+      return cached;
+    }
+
     try {
       const response = await this.makeAuthenticatedRequest('/v3/roles', {}, 8000);
-      
+
       if (!response.ok) {
         console.warn(`Failed to fetch roles: ${response.status} ${response.statusText}`);
         return [];
       }
-      
+
       const data = await response.json();
-      
+
       if (Array.isArray(data)) {
         console.log(`✓ Successfully loaded ${data.length} network roles from /v3/roles`);
+        // Cache for 30 minutes
+        cacheService.set(cacheKey, data, CACHE_TTL.VERY_LONG);
         return data;
       } else {
         console.warn('Roles response is not an array:', data);
@@ -2269,18 +2279,28 @@ class ApiService {
 
   // Get Topologies (VLANs) options
   async getTopologies(): Promise<Topology[]> {
+    // Check cache first - topologies rarely change, cache for 30 minutes
+    const cacheKey = 'topologies';
+    const cached = cacheService.get<Topology[]>(cacheKey);
+    if (cached) {
+      console.log(`✓ Returned ${cached.length} topologies from cache`);
+      return cached;
+    }
+
     try {
       const response = await this.makeAuthenticatedRequest('/v3/topologies', {}, 8000);
-      
+
       if (!response.ok) {
         console.warn(`Failed to fetch topologies: ${response.status} ${response.statusText}`);
         return [];
       }
-      
+
       const data = await response.json();
-      
+
       if (Array.isArray(data)) {
         console.log(`✓ Successfully loaded ${data.length} topology/VLAN options`);
+        // Cache for 30 minutes
+        cacheService.set(cacheKey, data, CACHE_TTL.VERY_LONG);
         return data;
       } else {
         console.warn('Topologies response is not an array:', data);
