@@ -38,10 +38,37 @@ VITE_APP_COMMIT_DATE=${commitDate}
   const rootDir = join(__dirname, '..');
   writeFileSync(join(rootDir, '.env.production'), envContent);
 
+  // Also write version.json for deployment verification
+  const versionJson = {
+    version: version,
+    commit: commitHash,
+    commitFull: execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim(),
+    commitCount: commitCount,
+    branch: branch,
+    buildDate: new Date().toISOString(),
+    commitDate: commitDate,
+    message: 'API Dashboard Consistency & Optimization Audit Implementation (P0/P1)',
+    features: [
+      'Data Normalization Layer (P0-002)',
+      'Universal FilterBar Component (P0-003)',
+      'Operational Health Summary Widget (P1-001)',
+      'Column Customization Hook (P1-002)',
+      'Tab Visibility Polling Hook (P1-003)',
+      'Aggressive Caching (P1-004)',
+      'Anomaly Detector Widget (P1-005)'
+    ]
+  };
+
+  writeFileSync(
+    join(rootDir, 'public', 'version.json'),
+    JSON.stringify(versionJson, null, 2)
+  );
+
   console.log('✅ Version generated:', version);
   console.log('   Commit:', commitHash);
   console.log('   Count:', commitCount);
   console.log('   Branch:', branch);
+  console.log('   version.json created in public/');
 
 } catch (error) {
   console.error('❌ Failed to generate version:', error.message);
