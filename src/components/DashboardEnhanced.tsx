@@ -38,11 +38,8 @@ import { toast } from 'sonner';
 import { getVendor, getVendorIcon, getShortVendor } from '../services/oui-lookup';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import { OperationalHealthSummary } from './OperationalHealthSummary';
-import { AnomalyDetector } from './AnomalyDetector';
 import { FilterBar } from './FilterBar';
 import { VersionBadge } from './VersionBadge';
-import { RFQualityWidget } from './RFQualityWidget';
-import { ApplicationAnalyticsEnhancedWidget } from './ApplicationAnalyticsEnhancedWidget';
 
 interface AccessPoint {
   serialNumber: string;
@@ -930,21 +927,6 @@ export function DashboardEnhanced() {
 
       {/* Operational Health Summary Widget (P1-001) */}
       <OperationalHealthSummary />
-
-      {/* Anomaly Detector Widget (P1-005) */}
-      <AnomalyDetector />
-
-      {/* RF Quality Widget - Campus Controller Integration */}
-      <RFQualityWidget
-        siteId="c7395471-aa5c-46dc-9211-3ed24c5789bd"
-        duration="24H"
-      />
-
-      {/* Application Analytics Widget - Campus Controller Integration */}
-      <ApplicationAnalyticsEnhancedWidget
-        siteId="c7395471-aa5c-46dc-9211-3ed24c5789bd"
-        duration="24H"
-      />
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

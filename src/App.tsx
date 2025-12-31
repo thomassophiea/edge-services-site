@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ServiceLevelsEnhanced } from './components/ServiceLevelsEnhanced';
 import { DashboardEnhanced } from './components/DashboardEnhanced';
+import { NetworkInsights } from './components/NetworkInsights';
 import { AlertsEventsEnhanced } from './components/AlertsEventsEnhanced';
 import { ReportWidgets } from './components/ReportWidgets';
 import { ConfigureNetworks } from './components/ConfigureNetworks';
@@ -729,6 +730,8 @@ export default function App() {
     switch (currentPage) {
       case 'service-levels':
         return <DashboardEnhanced />;
+      case 'network-insights':
+        return <NetworkInsights />;
       case 'access-points':
         return <AccessPoints onShowDetail={handleShowAccessPointDetail} />;
       case 'connected-clients':
