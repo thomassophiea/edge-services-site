@@ -8,30 +8,36 @@
 import { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Button } from './ui/button';
-import { Building, Clock, X, Calendar } from 'lucide-react';
+import { Building, Clock, X, Calendar, Settings2, Layers } from 'lucide-react';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
 import { apiService, Site } from '../services/api';
 import { Badge } from './ui/badge';
 import { getSiteDisplayName } from '../contexts/SiteContext';
+import { useSiteContexts } from '../hooks/useSiteContexts';
+import { ContextConfigModal } from './ContextConfigModal';
 
 export interface FilterBarProps {
   showSiteFilter?: boolean;
   showTimeRangeFilter?: boolean;
+  showContextFilter?: boolean;
   customFilters?: React.ReactNode;
-  onFilterChange?: (filters: { site: string; timeRange: string }) => void;
+  onFilterChange?: (filters: { site: string; timeRange: string; context?: string }) => void;
   className?: string;
 }
 
 export function FilterBar({
   showSiteFilter = true,
   showTimeRangeFilter = true,
+  showContextFilter = false,
   customFilters,
   onFilterChange,
   className = ''
 }: FilterBarProps) {
   const { filters, updateFilter, resetFilters, hasActiveFilters } = useGlobalFilters();
+  const { contexts, selectedContextId, selectContext } = useSiteContexts();
   const [sites, setSites] = useState<Site[]>([]);
   const [isLoadingSites, setIsLoadingSites] = useState(false);
+  const [isContextModalOpen, setIsContextModalOpen] = useState(false);
 
   useEffect(() => {
     if (showSiteFilter) {
@@ -43,10 +49,11 @@ export function FilterBar({
     if (onFilterChange) {
       onFilterChange({
         site: filters.site,
-        timeRange: filters.timeRange
+        timeRange: filters.timeRange,
+        context: selectedContextId
       });
     }
-  }, [filters.site, filters.timeRange, onFilterChange]);
+  }, [filters.site, filters.timeRange, selectedContextId, onFilterChange]);
 
   const loadSites = async () => {
     setIsLoadingSites(true);
@@ -118,6 +125,41 @@ export function FilterBar({
           </div>
         )}
 
+        {/* Context Filter */}
+        {showContextFilter && (
+          <div className="flex items-center gap-2">
+            <Select
+              value={selectedContextId}
+              onValueChange={selectContext}
+            >
+              <SelectTrigger className="w-56 h-10">
+                <Layers className="mr-2 h-4 w-4 flex-shrink-0" />
+                <SelectValue placeholder="Select Context" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Contexts</SelectItem>
+                {contexts.map((context) => (
+                  <SelectItem key={context.id} value={context.id}>
+                    <span className="flex items-center gap-2">
+                      <span>{context.icon}</span>
+                      <span>{context.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsContextModalOpen(true)}
+              className="h-10"
+              title="Configure Contexts"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         {/* Custom Filters */}
         {customFilters}
       </div>
@@ -138,6 +180,14 @@ export function FilterBar({
             Clear all
           </Button>
         </div>
+      )}
+
+      {/* Context Configuration Modal */}
+      {showContextFilter && (
+        <ContextConfigModal
+          open={isContextModalOpen}
+          onOpenChange={setIsContextModalOpen}
+        />
       )}
     </div>
   );

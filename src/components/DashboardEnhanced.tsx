@@ -1062,9 +1062,11 @@ export function DashboardEnhanced() {
       <FilterBar
         showSiteFilter={true}
         showTimeRangeFilter={true}
+        showContextFilter={true}
         onFilterChange={(filters) => {
           console.log('[Dashboard] Filters changed:', filters);
           // Filters will automatically be applied via useGlobalFilters hook
+          // Context is now available in filters.context
         }}
       />
 
