@@ -86,14 +86,66 @@ VITE_APP_COMMIT_DATE=${commitDate}
 } catch (error) {
   console.error('❌ Failed to generate version:', error.message);
 
-  // Fallback for non-git environments
-  const fallbackContent = `VITE_APP_VERSION=v0.0.0
-VITE_APP_COMMIT_HASH=unknown
+  // Fallback for non-git environments (Railway, etc.)
+  const buildDate = new Date().toISOString();
+
+  // Use environment variables from Railway if available
+  const railwayCommit = process.env.RAILWAY_GIT_COMMIT_SHA || 'unknown';
+  const railwayBranch = process.env.RAILWAY_GIT_BRANCH || 'unknown';
+  const commitShort = railwayCommit !== 'unknown' ? railwayCommit.substring(0, 7) : 'unknown';
+
+  const fallbackContent = `VITE_APP_VERSION=v0.${commitShort}
+VITE_APP_COMMIT_HASH=${commitShort}
 VITE_APP_COMMIT_COUNT=0
-VITE_APP_BRANCH=unknown
-VITE_APP_BUILD_DATE=${new Date().toISOString()}
+VITE_APP_BRANCH=${railwayBranch}
+VITE_APP_BUILD_DATE=${buildDate}
 VITE_APP_COMMIT_DATE=unknown
 `;
-  writeFileSync(join(__dirname, '..', '.env.production'), fallbackContent);
+
+  const rootDir = join(__dirname, '..');
+  writeFileSync(join(rootDir, '.env.production'), fallbackContent);
+
+  // Also create fallback version.json
+  const fallbackVersionJson = {
+    version: `v0.${commitShort}`,
+    commit: commitShort,
+    commitFull: railwayCommit,
+    commitCount: '0',
+    branch: railwayBranch,
+    buildDate: buildDate,
+    commitDate: 'unknown',
+    message: 'Site Selector Fix & Campus Controller Integration',
+    features: [
+      'Fixed site selector to display names instead of IDs',
+      'Data Normalization Layer (P0-002)',
+      'Universal FilterBar Component (P0-003)',
+      'Operational Health Summary Widget (P1-001)',
+      'Column Customization Hook (P1-002)',
+      'Tab Visibility Polling Hook (P1-003)',
+      'Aggressive Caching (P1-004)',
+      'Anomaly Detector Widget (P1-005)',
+      'RF Quality Index (RFQI) Widget',
+      'Application Analytics Widget',
+      'Campus Controller Widget API Integration'
+    ]
+  };
+
+  writeFileSync(
+    join(rootDir, 'public', 'version.json'),
+    JSON.stringify(fallbackVersionJson, null, 2)
+  );
+
+  const buildDir = join(rootDir, 'build');
+  if (existsSync(buildDir)) {
+    writeFileSync(
+      join(buildDir, 'version.json'),
+      JSON.stringify(fallbackVersionJson, null, 2)
+    );
+  }
+
   console.log('⚠️  Using fallback version (not a git repository)');
+  console.log('   Version:', `v0.${commitShort}`);
+  console.log('   Railway Commit:', railwayCommit);
+  console.log('   Railway Branch:', railwayBranch);
+  console.log('   version.json created in public/');
 }
