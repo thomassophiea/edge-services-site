@@ -587,12 +587,14 @@ export function DashboardEnhanced() {
 
       // Try to get upload rate with smart unit detection
       // API may return bps or Mbps depending on controller version
+      // Real data analysis: Campus Controller returns bps (values like 149610, 28375512)
+      // Threshold: > 1000 = bps, ≤ 1000 = Mbps
       if (station.transmittedRate !== undefined && station.transmittedRate !== null && station.transmittedRate > 0) {
-        // If value is very large (> 1M), assume it's already in bps
-        // Otherwise assume it's in Mbps and convert
-        tx = station.transmittedRate > 1000000 ? station.transmittedRate : station.transmittedRate * 1000000;
+        // If value > 1000, assume it's already in bps (e.g., 612612 bps)
+        // If value ≤ 1000, assume it's in Mbps and convert (e.g., 28.4 Mbps)
+        tx = station.transmittedRate > 1000 ? station.transmittedRate : station.transmittedRate * 1000000;
       } else if (station.txRate !== undefined && station.txRate !== null && station.txRate > 0) {
-        tx = station.txRate > 1000000 ? station.txRate : station.txRate * 1000000;
+        tx = station.txRate > 1000 ? station.txRate : station.txRate * 1000000;
       } else {
         // Estimate from cumulative bytes
         const uploadBytes = station.outBytes || station.txBytes || 0;
@@ -605,11 +607,11 @@ export function DashboardEnhanced() {
 
       // Try to get download rate with smart unit detection
       if (station.receivedRate !== undefined && station.receivedRate !== null && station.receivedRate > 0) {
-        // If value is very large (> 1M), assume it's already in bps
-        // Otherwise assume it's in Mbps and convert
-        rx = station.receivedRate > 1000000 ? station.receivedRate : station.receivedRate * 1000000;
+        // If value > 1000, assume it's already in bps (e.g., 4521356 bps)
+        // If value ≤ 1000, assume it's in Mbps and convert (e.g., 5.2 Mbps)
+        rx = station.receivedRate > 1000 ? station.receivedRate : station.receivedRate * 1000000;
       } else if (station.rxRate !== undefined && station.rxRate !== null && station.rxRate > 0) {
-        rx = station.rxRate > 1000000 ? station.rxRate : station.rxRate * 1000000;
+        rx = station.rxRate > 1000 ? station.rxRate : station.rxRate * 1000000;
       } else {
         // Estimate from cumulative bytes
         const downloadBytes = station.inBytes || station.rxBytes || 0;
@@ -861,6 +863,20 @@ export function DashboardEnhanced() {
   // These implement the cloud console spec for auto-scaling units
   const formatBytes = formatBytesUnit;
   const formatBps = formatBitsPerSecond;
+
+  // Helper function to format Tx/Rx rates with smart unit detection
+  // API may return bps or Mbps depending on controller version
+  // Real data analysis: Campus Controller returns bps (values like 149610, 28375512)
+  // Threshold: > 1000 = bps, ≤ 1000 = Mbps
+  const formatTxRxRate = (rate: number | undefined): string => {
+    if (rate === undefined || rate === null || rate === 0) {
+      return 'N/A';
+    }
+    // If value > 1000, assume it's already in bps (e.g., 612612 bps)
+    // If value ≤ 1000, assume it's in Mbps and convert (e.g., 28.4 Mbps)
+    const bps = rate > 1000 ? rate : rate * 1000000;
+    return formatBps(bps);
+  };
 
   const COLORS = ['#BB86FC', '#03DAC5', '#CF6679', '#3700B3', '#018786', '#B00020'];
 
@@ -1822,7 +1838,7 @@ export function DashboardEnhanced() {
 
       {/* Client Detail Dialog */}
       <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -2033,13 +2049,13 @@ export function DashboardEnhanced() {
                       {selectedClient.transmittedRate !== undefined && (
                         <div className="space-y-1">
                           <p className="text-xs text-muted-foreground">Tx Rate</p>
-                          <p className="text-sm font-medium">{selectedClient.transmittedRate} Mbps</p>
+                          <p className="text-sm font-medium">{formatTxRxRate(selectedClient.transmittedRate)}</p>
                         </div>
                       )}
                       {selectedClient.receivedRate !== undefined && (
                         <div className="space-y-1">
                           <p className="text-xs text-muted-foreground">Rx Rate</p>
-                          <p className="text-sm font-medium">{selectedClient.receivedRate} Mbps</p>
+                          <p className="text-sm font-medium">{formatTxRxRate(selectedClient.receivedRate)}</p>
                         </div>
                       )}
                     </div>

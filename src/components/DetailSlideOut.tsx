@@ -9,22 +9,25 @@ interface DetailSlideOutProps {
   title: string;
   description?: string;
   children: ReactNode;
-  width?: 'sm' | 'md' | 'lg' | 'xl';
+  width?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
 }
 
-export function DetailSlideOut({ 
-  isOpen, 
-  onClose, 
-  title, 
-  description, 
+export function DetailSlideOut({
+  isOpen,
+  onClose,
+  title,
+  description,
   children,
-  width = 'lg'
+  width = '2xl'  // Changed default to 2xl for better visibility
 }: DetailSlideOutProps) {
   const widthClasses = {
     sm: 'max-w-sm',
-    md: 'max-w-md', 
+    md: 'max-w-md',
     lg: 'max-w-lg',
-    xl: 'max-w-xl'
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl'
   };
 
   return (
