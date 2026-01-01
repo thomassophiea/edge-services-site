@@ -41,11 +41,17 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cartesia
 import { OperationalHealthSummary } from './OperationalHealthSummary';
 import { FilterBar } from './FilterBar';
 import { VersionBadge } from './VersionBadge';
+import { useGlobalFilters } from '../hooks/useGlobalFilters';
 
 interface AccessPoint {
   serialNumber: string;
   displayName?: string;
   model?: string;
+  hardwareType?: string;
+  platformName?: string;
+  hwType?: string;
+  apModel?: string;
+  deviceModel?: string;
   role?: string;
   status?: string;
   connectionState?: string;
@@ -131,10 +137,13 @@ interface Notification {
 }
 
 export function DashboardEnhanced() {
+  // Global filters for site/time filtering
+  const { filters } = useGlobalFilters();
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  
+
   // AP Data
   const [accessPoints, setAccessPoints] = useState<AccessPoint[]>([]);
   const [apStats, setApStats] = useState({
@@ -201,22 +210,22 @@ export function DashboardEnhanced() {
   useEffect(() => {
     loadDashboardData();
     loadHistoricalThroughput();
-    
+
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       loadDashboardData(true);
     }, 30000);
-    
+
     // Reload historical data every 5 minutes
     const historyInterval = setInterval(() => {
       loadHistoricalThroughput();
     }, 300000);
-    
+
     return () => {
       clearInterval(interval);
       clearInterval(historyInterval);
     };
-  }, []);
+  }, [filters.site]); // Reload when site filter changes
 
   const loadDashboardData = async (isRefresh = false) => {
     try {
@@ -282,19 +291,14 @@ export function DashboardEnhanced() {
   };
 
   const fetchAccessPoints = async (): Promise<AccessPoint[]> => {
-    console.log('[Dashboard] Fetching access points from /v1/aps...');
-    
-    try {
-      const response = await apiService.makeAuthenticatedRequest('/v1/aps', { method: 'GET' }, 15000);
-      
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
-      }
+    const siteFilter = filters.site !== 'all' ? filters.site : undefined;
+    console.log('[Dashboard] Fetching access points' + (siteFilter ? ` for site: ${siteFilter}` : ''));
 
-      const data = await response.json();
-      const aps = Array.isArray(data) ? data : (data.aps || data.data || []);
-      
-      console.log('[Dashboard] Fetched', aps.length, 'access points');
+    try {
+      // Use site-specific API if site is selected
+      const aps = await apiService.getAccessPointsBySite(siteFilter);
+
+      console.log('[Dashboard] Fetched', aps.length, 'access points' + (siteFilter ? ' (filtered by site)' : ''));
       return aps;
     } catch (error) {
       console.error('[Dashboard] Error fetching APs:', error);
@@ -303,20 +307,37 @@ export function DashboardEnhanced() {
   };
 
   const fetchStations = async (): Promise<Station[]> => {
-    console.log('[Dashboard] Fetching stations from /v1/stations...');
-    
-    try {
-      const response = await apiService.makeAuthenticatedRequest('/v1/stations', { method: 'GET' }, 15000);
-      
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
-      }
+    const siteFilter = filters.site !== 'all' ? filters.site : undefined;
+    console.log('[Dashboard] Fetching stations' + (siteFilter ? ` for site: ${siteFilter}` : ''));
 
-      const data = await response.json();
-      const stations = Array.isArray(data) ? data : (data.stations || data.clients || data.data || []);
-      
-      console.log('[Dashboard] Fetched', stations.length, 'stations');
-      return stations;
+    try {
+      // If site is selected, use site-specific endpoint
+      if (siteFilter) {
+        const response = await apiService.makeAuthenticatedRequest(`/v3/sites/${siteFilter}/stations`, { method: 'GET' }, 15000);
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        const stations = Array.isArray(data) ? data : (data.stations || data.clients || data.data || []);
+
+        console.log('[Dashboard] Fetched', stations.length, 'stations for site');
+        return stations;
+      } else {
+        // Get all stations
+        const response = await apiService.makeAuthenticatedRequest('/v1/stations', { method: 'GET' }, 15000);
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        const stations = Array.isArray(data) ? data : (data.stations || data.clients || data.data || []);
+
+        console.log('[Dashboard] Fetched', stations.length, 'stations');
+        return stations;
+      }
     } catch (error) {
       console.error('[Dashboard] Error fetching stations:', error);
       return [];
@@ -416,8 +437,14 @@ export function DashboardEnhanced() {
         stats.normalPower++;
       }
 
-      // Track AP models
-      const model = ap.model || 'Unknown Model';
+      // Track AP models - check multiple possible field names
+      const model = (ap as any).hardwareType ||
+                    (ap as any).platformName ||
+                    (ap as any).hwType ||
+                    ap.model ||
+                    (ap as any).apModel ||
+                    (ap as any).deviceModel ||
+                    'Unknown Model';
       stats.models[model] = (stats.models[model] || 0) + 1;
     });
 
