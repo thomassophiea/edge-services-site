@@ -145,7 +145,8 @@ export function DashboardEnhanced() {
     backup: 0,
     standby: 0,
     lowPower: 0,
-    normalPower: 0
+    normalPower: 0,
+    models: {} as Record<string, number>
   });
   
   // Client/Station Data
@@ -192,6 +193,10 @@ export function DashboardEnhanced() {
   // Client Detail Dialog
   const [selectedClient, setSelectedClient] = useState<Station | null>(null);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+
+  // Service Filter Dialog
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [isServiceClientsDialogOpen, setIsServiceClientsDialogOpen] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -377,7 +382,8 @@ export function DashboardEnhanced() {
       backup: 0,
       standby: 0,
       lowPower: 0,
-      normalPower: 0
+      normalPower: 0,
+      models: {} as Record<string, number>
     };
 
     aps.forEach(ap => {
@@ -409,6 +415,10 @@ export function DashboardEnhanced() {
       } else {
         stats.normalPower++;
       }
+
+      // Track AP models
+      const model = ap.model || 'Unknown Model';
+      stats.models[model] = (stats.models[model] || 0) + 1;
     });
 
     setApStats(stats);
@@ -878,6 +888,21 @@ export function DashboardEnhanced() {
     return formatBps(bps);
   };
 
+  // Handle clicking on a service to show its clients
+  const handleServiceClick = (serviceName: string) => {
+    setSelectedService(serviceName);
+    setIsServiceClientsDialogOpen(true);
+  };
+
+  // Get clients for the selected service
+  const getClientsForService = () => {
+    if (!selectedService) return [];
+    return stations.filter(station => {
+      const stationService = station.ssid || station.serviceName || station.serviceId || 'Unknown';
+      return stationService === selectedService;
+    });
+  };
+
   const COLORS = ['#BB86FC', '#03DAC5', '#CF6679', '#3700B3', '#018786', '#B00020'];
 
   if (loading) {
@@ -968,6 +993,21 @@ export function DashboardEnhanced() {
                 <span className="text-muted-foreground">Health</span>
                 <span className="font-medium text-green-600">{apStats.offline === 0 ? 'Good' : 'Check Required'}</span>
               </div>
+              {Object.keys(apStats.models).length > 0 && (
+                <div className="mt-2 pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Models</p>
+                  <div className="space-y-0.5">
+                    {Object.entries(apStats.models)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([model, count]) => (
+                        <div key={model} className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground truncate" title={model}>{model}</span>
+                          <Badge variant="secondary" className="text-xs">{count}</Badge>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1219,10 +1259,15 @@ export function DashboardEnhanced() {
                 {/* List view */}
                 <div className="space-y-3">
                   {clientDistribution.slice(0, 6).map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between">
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-md p-2 -mx-2 transition-colors"
+                      onClick={() => handleServiceClick(item.service)}
+                      title={`Click to view ${item.count} client(s) on ${item.service}`}
+                    >
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div 
-                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                         />
                         <span className="text-sm truncate">{item.service}</span>
@@ -1248,9 +1293,19 @@ export function DashboardEnhanced() {
                           cy="50%"
                           outerRadius={50}
                           isAnimationActive={false}
+                          onClick={(data) => {
+                            if (data && data.service) {
+                              handleServiceClick(data.service);
+                            }
+                          }}
+                          style={{ cursor: 'pointer' }}
                         >
                           {clientDistribution.slice(0, 6).map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                              style={{ cursor: 'pointer' }}
+                            />
                           ))}
                         </Pie>
                         <Tooltip />
@@ -2103,6 +2158,79 @@ export function DashboardEnhanced() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Service Clients Dialog */}
+      <Dialog open={isServiceClientsDialogOpen} onOpenChange={setIsServiceClientsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Network className="h-5 w-5" />
+              Clients on {selectedService}
+            </DialogTitle>
+            <DialogDescription>
+              {getClientsForService().length} client(s) connected to this service
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[600px]">
+            <div className="space-y-2">
+              {getClientsForService().length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No clients found for this service</p>
+                </div>
+              ) : (
+                getClientsForService().map((client, idx) => (
+                  <Card
+                    key={client.macAddress || idx}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      setSelectedClient(client);
+                      setIsServiceClientsDialogOpen(false);
+                      setIsClientDialogOpen(true);
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {client.vendorIcon && (
+                            <div className="text-2xl">{client.vendorIcon}</div>
+                          )}
+                          <div>
+                            <p className="font-medium">{client.hostName || client.macAddress}</p>
+                            <p className="text-xs text-muted-foreground">{client.macAddress}</p>
+                            {client.ipAddress && (
+                              <p className="text-xs text-muted-foreground">{client.ipAddress}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          {client.rssi !== undefined && (
+                            <div className="flex items-center gap-1">
+                              <Signal className={`h-4 w-4 ${
+                                client.rssi >= -50 ? 'text-green-600' :
+                                client.rssi >= -60 ? 'text-blue-600' :
+                                client.rssi >= -70 ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`} />
+                              <span className="text-muted-foreground">{client.rssi} dBm</span>
+                            </div>
+                          )}
+                          {client.authenticated !== false && (
+                            <Badge variant="outline" className="text-green-600 border-green-600">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Authenticated
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
