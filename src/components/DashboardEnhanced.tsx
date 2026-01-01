@@ -42,6 +42,8 @@ import { OperationalHealthSummary } from './OperationalHealthSummary';
 import { FilterBar } from './FilterBar';
 import { VersionBadge } from './VersionBadge';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
+import { VenueStatisticsWidget } from './VenueStatisticsWidget';
+import { SwitchesWidget } from './SwitchesWidget';
 
 interface AccessPoint {
   serialNumber: string;
@@ -1917,6 +1919,23 @@ export function DashboardEnhanced() {
           </CardContent>
         </Card>
       )}
+
+      {/* Phase 1 Widgets: Venue Statistics and Switches */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Venue Statistics Widget */}
+        {filters.site && filters.site !== 'all' && (
+          <VenueStatisticsWidget
+            siteId={filters.site}
+            duration={filters.timeRange === '15m' ? '15M' :
+                     filters.timeRange === '1h' ? '1H' :
+                     filters.timeRange === '7d' ? '7D' :
+                     filters.timeRange === '30d' ? '30D' : '24H'}
+          />
+        )}
+
+        {/* Switches Widget */}
+        <SwitchesWidget siteId={filters.site} />
+      </div>
 
       {/* Client Detail Dialog */}
       <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
