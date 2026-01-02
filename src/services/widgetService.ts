@@ -56,11 +56,11 @@ export async function fetchWidgetData(request: WidgetRequest): Promise<WidgetRes
 
   try {
     if (siteId) {
-      // Site-specific report endpoint (from HAR analysis)
-      endpoint = `/management/v1/report/sites/${siteId}`;
+      // Site-specific report endpoint (BASE_URL already has /api/management)
+      endpoint = `/v1/report/sites/${siteId}`;
     } else {
-      // Deployment-wide report endpoint (from HAR analysis)
-      endpoint = '/management/v1/report/sites';
+      // Deployment-wide report endpoint (BASE_URL already has /api/management)
+      endpoint = '/v1/report/sites';
     }
 
     // Build query string
