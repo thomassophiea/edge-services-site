@@ -4,7 +4,7 @@
  * Allows users to create, edit, and manage site contexts with configurable metrics.
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Button } from './ui/button';
@@ -32,6 +32,13 @@ export function ContextConfigModal({ open, onOpenChange }: ContextConfigModalPro
   const [isCreating, setIsCreating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contextToDelete, setContextToDelete] = useState<string | null>(null);
+
+  // Auto-select first context when modal opens
+  React.useEffect(() => {
+    if (open && contexts.length > 0 && !selectedContextId) {
+      setSelectedContextId(contexts[0].id);
+    }
+  }, [open, contexts, selectedContextId]);
 
   const selectedContext = selectedContextId
     ? contexts.find(c => c.id === selectedContextId) || null
@@ -129,17 +136,17 @@ export function ContextConfigModal({ open, onOpenChange }: ContextConfigModalPro
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[90vw] lg:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="w-[98vw] max-w-6xl max-h-[95vh] overflow-hidden flex flex-col p-6">
+          <DialogHeader className="flex-shrink-0 pb-4">
             <DialogTitle>Configure Site Contexts</DialogTitle>
             <DialogDescription>
               Define baseline metrics for different types of sites. Contexts help you understand what "healthy" means in different environments.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col sm:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
+          <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
             {/* Context List */}
-            <div className="w-full sm:w-64 sm:border-r sm:pr-4 flex-shrink-0">
+            <div className="w-72 border-r pr-6 flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold">Contexts</h3>
                 <Button
@@ -150,7 +157,7 @@ export function ContextConfigModal({ open, onOpenChange }: ContextConfigModalPro
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <ScrollArea className="h-[200px] sm:h-[calc(90vh-300px)] max-h-[500px]">
+              <ScrollArea className="h-[calc(95vh-280px)]">
                 <div className="space-y-2">
                   {contexts.map((context) => (
                     <Card
@@ -199,7 +206,7 @@ export function ContextConfigModal({ open, onOpenChange }: ContextConfigModalPro
             {/* Context Editor */}
             <div className="flex-1 min-w-0 overflow-hidden">
               {(selectedContext || editingContext) ? (
-                <ScrollArea className="h-[calc(90vh-250px)] sm:h-[calc(90vh-200px)] pr-2 sm:pr-4">
+                <ScrollArea className="h-[calc(95vh-200px)] pr-4">
                   <div className="space-y-6">
                     {/* Context Info */}
                     <div className="space-y-4">
@@ -254,7 +261,7 @@ export function ContextConfigModal({ open, onOpenChange }: ContextConfigModalPro
                       </div>
 
                       {editingContext && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
                             <Input
@@ -272,7 +279,7 @@ export function ContextConfigModal({ open, onOpenChange }: ContextConfigModalPro
                               maxLength={2}
                             />
                           </div>
-                          <div className="sm:col-span-2 space-y-2">
+                          <div className="col-span-2 space-y-2">
                             <Label htmlFor="description">Description</Label>
                             <Input
                               id="description"
