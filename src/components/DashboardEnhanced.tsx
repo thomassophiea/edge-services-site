@@ -429,21 +429,38 @@ export function DashboardEnhanced() {
       const isUp = (ap as any).isUp;
       const isOnline = (ap as any).online;
 
+      // DEBUG: Log AP status fields to understand data structure
+      console.log('[Dashboard] AP Status Debug:', {
+        name: ap.name || ap.hostname || ap.serialNumber,
+        status: ap.status,
+        connectionState: ap.connectionState,
+        operationalState: ap.operationalState,
+        state: (ap as any).state,
+        isUp: isUp,
+        online: isOnline,
+        computedStatus: status,
+        allKeys: Object.keys(ap).filter(k => k.toLowerCase().includes('status') || k.toLowerCase().includes('state') || k.toLowerCase().includes('connect') || k === 'online' || k === 'isUp')
+      });
+
       // Consider an AP online if:
       // 1. Status contains 'up', 'online', 'connected'
       // 2. isUp or online boolean is true
       // 3. No status field but AP exists in list (default to online)
-      if (
+      const apIsOnline = (
         status.includes('up') ||
         status.includes('online') ||
         status.includes('connected') ||
         isUp === true ||
         isOnline === true ||
         (!status && isUp !== false && isOnline !== false)
-      ) {
+      );
+
+      if (apIsOnline) {
         stats.online++;
+        console.log('[Dashboard] ✓ AP marked ONLINE:', ap.name || ap.hostname || ap.serialNumber);
       } else {
         stats.offline++;
+        console.log('[Dashboard] ✗ AP marked OFFLINE:', ap.name || ap.hostname || ap.serialNumber);
       }
 
       // Determine role
