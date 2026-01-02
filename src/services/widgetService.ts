@@ -39,9 +39,11 @@ export async function fetchWidgetData(request: WidgetRequest): Promise<WidgetRes
     noCache: Date.now()
   };
 
-  try {
-    let endpoint: string;
+  // Declare endpoint variables outside try block for error logging
+  let endpoint: string;
+  let fullEndpoint: string = '';
 
+  try {
     if (userGroups && siteId) {
       // Venue report endpoint
       endpoint = `/v3/sites/${siteId}/report/venue`;
@@ -57,7 +59,7 @@ export async function fetchWidgetData(request: WidgetRequest): Promise<WidgetRes
 
     // Build query string
     const queryString = new URLSearchParams(params).toString();
-    const fullEndpoint = `${endpoint}?${queryString}`;
+    fullEndpoint = `${endpoint}?${queryString}`;
 
     // Report endpoints can take 15-30 seconds to process analytics
     console.log(`[WidgetService] Fetching widgets from: ${fullEndpoint}`);
