@@ -129,23 +129,29 @@ export function FilterBar({
         {showContextFilter && (
           <div className="flex items-center gap-2">
             <Select
-              value={selectedContextId}
+              value={selectedContextId || 'all'}
               onValueChange={selectContext}
             >
               <SelectTrigger className="w-56 h-10">
                 <Layers className="mr-2 h-4 w-4 flex-shrink-0" />
-                <SelectValue placeholder="Select Context" />
+                <SelectValue>
+                  {selectedContextId === 'all' ? 'All Contexts' : contexts.find(c => c.id === selectedContextId)?.name || 'Select Context'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Contexts</SelectItem>
-                {contexts.map((context) => (
-                  <SelectItem key={context.id} value={context.id}>
-                    <span className="flex items-center gap-2">
-                      <span>{context.icon}</span>
-                      <span>{context.name}</span>
-                    </span>
-                  </SelectItem>
-                ))}
+                {contexts.length > 0 ? (
+                  contexts.map((context) => (
+                    <SelectItem key={context.id} value={context.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{context.icon}</span>
+                        <span>{context.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="loading" disabled>Loading contexts...</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <Button
