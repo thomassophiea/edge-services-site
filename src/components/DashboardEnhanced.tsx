@@ -632,8 +632,11 @@ export function DashboardEnhanced() {
     const clientThroughput: Array<{ name: string; mac: string; throughput: number }> = [];
 
     stations.forEach(station => {
-      // Count authenticated clients
-      if (station.authenticated !== false) {
+      // Count authenticated/successful clients
+      // If a client is in the connected stations list, they've successfully connected
+      // Default to true unless explicitly set to false
+      const isAuthenticated = station.authenticated === undefined || station.authenticated === true || station.authenticated === 1 || station.authenticated === null;
+      if (isAuthenticated) {
         authenticated++;
       }
 
