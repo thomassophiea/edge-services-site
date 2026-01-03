@@ -1,15 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AURA (Autonomous Unified Radio Agent) v500 (w/3rd party)</title>
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>AURA (Autonomous Unified Radio Agent) v500 (w/3rd party)</title>
-    </head>
+    <!-- Performance optimizations -->
+    <link rel="dns-prefetch" href="https://ufqjnesldbacyltbsvys.supabase.co" />
+    <link rel="preconnect" href="https://ufqjnesldbacyltbsvys.supabase.co" crossorigin />
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="/src/main.tsx" />
+    <link rel="preload" href="/src/styles/globals.css" as="style" />
+    <link rel="preload" href="/src/index.css" as="style" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

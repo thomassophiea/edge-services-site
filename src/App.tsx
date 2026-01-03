@@ -4,11 +4,20 @@ import { Sidebar } from './components/Sidebar';
 import { DetailSlideOut } from './components/DetailSlideOut';
 import { PlaceholderPage } from './components/PlaceholderPage';
 
-// Lazy load route components for better performance
+// Lazy load route components for better performance with prefetch
 const DashboardEnhanced = lazy(() => import('./components/DashboardEnhanced').then(m => ({ default: m.DashboardEnhanced })));
-const NetworkInsights = lazy(() => import('./components/NetworkInsightsSimplified').then(m => ({ default: m.NetworkInsightsSimplified })));
 const AccessPoints = lazy(() => import('./components/AccessPoints').then(m => ({ default: m.AccessPoints })));
 const TrafficStatsConnectedClients = lazy(() => import('./components/TrafficStatsConnectedClients').then(m => ({ default: m.TrafficStatsConnectedClients })));
+
+// Prefetch critical components after initial load
+const prefetchCriticalComponents = () => {
+  // Prefetch most commonly accessed pages
+  setTimeout(() => {
+    import('./components/AccessPoints');
+    import('./components/TrafficStatsConnectedClients');
+    import('./components/ReportWidgets');
+  }, 2000); // Delay to not block initial render
+};
 const ServiceLevelsEnhanced = lazy(() => import('./components/ServiceLevelsEnhanced').then(m => ({ default: m.ServiceLevelsEnhanced })));
 const AlertsEventsEnhanced = lazy(() => import('./components/AlertsEventsEnhanced').then(m => ({ default: m.AlertsEventsEnhanced })));
 const ReportWidgets = lazy(() => import('./components/ReportWidgets').then(m => ({ default: m.ReportWidgets })));
@@ -40,7 +49,7 @@ import { toast } from 'sonner';
 import { applyTheme as applyThemeColors } from './lib/themes';
 
 const pageInfo = {
-  'service-levels': { title: 'Context Overview', description: 'Context-aware network monitoring and analytics' },
+  'service-levels': { title: 'Contextual Insights', description: 'Context-aware network monitoring and analytics' },
   'connected-clients': { title: 'Connected Clients', description: 'View and manage connected devices' },
   'access-points': { title: 'Access Points', description: 'Manage and monitor wireless access points' },
   'sites-overview': { title: 'Sites Overview', description: 'View and manage network sites' },
@@ -691,6 +700,9 @@ export default function App() {
     setIsAuthenticated(true);
     setAdminRole(apiService.getAdminRole());
 
+    // Prefetch critical components for faster navigation
+    prefetchCriticalComponents();
+
     // Load site information
     try {
       const SITE_ID = 'c7395471-aa5c-46dc-9211-3ed24c5789bd';
@@ -834,8 +846,6 @@ export default function App() {
     switch (currentPage) {
       case 'service-levels':
         return <DashboardEnhanced />;
-      case 'network-insights':
-        return <NetworkInsights />;
       case 'access-points':
         return <AccessPoints onShowDetail={handleShowAccessPointDetail} />;
       case 'connected-clients':
