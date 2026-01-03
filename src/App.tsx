@@ -215,11 +215,26 @@ export default function App() {
           // Start SLE data collection
           sleDataCollectionService.startCollection();
         } catch (error) {
-          console.error('[App] ❌ Auto-login failed:', error);
-          toast.error('Auto-login failed', {
-            description: error instanceof Error ? error.message : 'Please check credentials',
-            duration: 5000
-          });
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          console.error('[App] ❌ Auto-login failed:', errorMsg);
+
+          // Determine if it's a credentials issue or something else
+          const isCredentialError = errorMsg.includes('Invalid credentials') || errorMsg.includes('401');
+
+          if (isCredentialError) {
+            console.warn('[App] Auto-login credentials appear to be incorrect or outdated');
+            console.warn('[App] Please update VITE_CAMPUS_CONTROLLER_USER and VITE_CAMPUS_CONTROLLER_PASSWORD environment variables');
+            toast.warning('Auto-login disabled', {
+              description: 'Environment credentials are invalid. Please login manually.',
+              duration: 6000
+            });
+          } else {
+            toast.error('Auto-login failed', {
+              description: errorMsg,
+              duration: 5000
+            });
+          }
+
           // Fall back to showing login screen
           setIsAuthenticated(false);
         }
