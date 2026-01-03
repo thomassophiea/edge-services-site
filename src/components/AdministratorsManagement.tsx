@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { DetailSlideOut } from './DetailSlideOut';
 import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Skeleton } from './ui/skeleton';
@@ -437,151 +437,10 @@ export function AdministratorsManagement() {
             Manage user accounts and permissions
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()} disabled={apiNotAvailable}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Administrator
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {editingAdmin ? 'Edit Administrator' : 'Add Administrator'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingAdmin
-                  ? 'Update administrator account details'
-                  : 'Create a new administrator account'}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Username</Label>
-                <Input
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  placeholder="admin123"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="admin@example.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Password {editingAdmin && '(leave blank to keep current)'}</Label>
-                <Input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Confirm Password</Label>
-                <Input
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value: Administrator['role']) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="super_admin">
-                      <div>
-                        <div className="font-medium">Super Admin</div>
-                        <div className="text-xs text-muted-foreground">
-                          Full system access
-                        </div>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="admin">
-                      <div>
-                        <div className="font-medium">Admin</div>
-                        <div className="text-xs text-muted-foreground">
-                          Configuration access
-                        </div>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="operator">
-                      <div>
-                        <div className="font-medium">Operator</div>
-                        <div className="text-xs text-muted-foreground">
-                          Operational access
-                        </div>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="viewer">
-                      <div>
-                        <div className="font-medium">Viewer</div>
-                        <div className="text-xs text-muted-foreground">
-                          Read-only access
-                        </div>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {getRoleDescription(formData.role)}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Account Enabled</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Allow user to log in
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.enabled}
-                  onCheckedChange={(checked) => setFormData({ ...formData, enabled: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Two-Factor Authentication</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Require 2FA for login
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.twoFactorEnabled}
-                  onCheckedChange={(checked) => setFormData({ ...formData, twoFactorEnabled: checked })}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseDialog}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveAdministrator}>
-                {editingAdmin ? 'Update' : 'Create'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => handleOpenDialog()} disabled={apiNotAvailable}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add Administrator
+        </Button>
       </div>
 
       {apiNotAvailable && (
@@ -653,6 +512,141 @@ export function AdministratorsManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Administrator Form Slide-out */}
+      <DetailSlideOut
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        title={editingAdmin ? 'Edit Administrator' : 'Add Administrator'}
+        description={editingAdmin ? 'Update administrator account details' : 'Create a new administrator account'}
+        width="md"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Username</Label>
+            <Input
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              placeholder="admin123"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="admin@example.com"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Password {editingAdmin && '(leave blank to keep current)'}</Label>
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Confirm Password</Label>
+            <Input
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Role</Label>
+            <Select
+              value={formData.role}
+              onValueChange={(value: Administrator['role']) => setFormData({ ...formData, role: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="super_admin">
+                  <div>
+                    <div className="font-medium">Super Admin</div>
+                    <div className="text-xs text-muted-foreground">
+                      Full system access
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="admin">
+                  <div>
+                    <div className="font-medium">Admin</div>
+                    <div className="text-xs text-muted-foreground">
+                      Configuration access
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="operator">
+                  <div>
+                    <div className="font-medium">Operator</div>
+                    <div className="text-xs text-muted-foreground">
+                      Operational access
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="viewer">
+                  <div>
+                    <div className="font-medium">Viewer</div>
+                    <div className="text-xs text-muted-foreground">
+                      Read-only access
+                    </div>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {getRoleDescription(formData.role)}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Account Enabled</Label>
+              <p className="text-xs text-muted-foreground">
+                Allow user to log in
+              </p>
+            </div>
+            <Switch
+              checked={formData.enabled}
+              onCheckedChange={(checked) => setFormData({ ...formData, enabled: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Two-Factor Authentication</Label>
+              <p className="text-xs text-muted-foreground">
+                Require 2FA for login
+              </p>
+            </div>
+            <Switch
+              checked={formData.twoFactorEnabled}
+              onCheckedChange={(checked) => setFormData({ ...formData, twoFactorEnabled: checked })}
+            />
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex gap-2 pt-6 border-t mt-6">
+            <Button variant="outline" onClick={handleCloseDialog} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={handleSaveAdministrator} className="flex-1">
+              {editingAdmin ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </div>
+      </DetailSlideOut>
     </div>
   );
 }
