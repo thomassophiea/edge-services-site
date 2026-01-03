@@ -528,7 +528,7 @@ class ApiService {
   private pendingRequests = new Set<AbortController>();
   private requestCounter = 0;
   private sessionExpiredHandler: (() => void) | null = null;
-  private isLoginInProgress = false; // Prevent simultaneous login attempts
+  private loginPromise: Promise<AuthResponse> | null = null; // Store ongoing login promise
 
   // Developer mode API logging
   private apiCallLogs: ApiCallLog[] = [];
@@ -582,14 +582,26 @@ class ApiService {
   }
 
   async login(userId: string, password: string): Promise<AuthResponse> {
-    // Prevent simultaneous login attempts (race condition protection)
-    if (this.isLoginInProgress) {
-      console.log('[Auth] Login already in progress, skipping duplicate attempt');
-      throw new Error('Login already in progress');
+    // If a login is already in progress, return the existing promise
+    if (this.loginPromise) {
+      console.log('[Auth] Login already in progress, returning existing promise');
+      return this.loginPromise;
     }
 
-    this.isLoginInProgress = true;
+    // Create and store the login promise
+    this.loginPromise = this._performLogin(userId, password);
 
+    try {
+      const result = await this.loginPromise;
+      this.loginPromise = null; // Clear the promise on success
+      return result;
+    } catch (error) {
+      this.loginPromise = null; // Clear the promise on error
+      throw error;
+    }
+  }
+
+  private async _performLogin(userId: string, password: string): Promise<AuthResponse> {
     try {
       // Validate inputs
       if (!userId.trim()) {
@@ -712,7 +724,6 @@ class ApiService {
           localStorage.setItem('admin_role', authResponse.adminRole);
 
           console.log(`✅ Login successful`);
-          this.isLoginInProgress = false;
           return authResponse;
         } else {
           const errorText = await response.text();
@@ -752,7 +763,6 @@ class ApiService {
     }
 
       // If all formats failed, throw the credential error (401) if we have one, otherwise the last error
-      this.isLoginInProgress = false;
       if (credentialError) {
         console.error('❌ Authentication failed: Invalid credentials');
         throw credentialError;
@@ -761,8 +771,7 @@ class ApiService {
         throw lastError || new Error('Login failed with all authentication formats');
       }
     } catch (error) {
-      // Ensure flag is cleared on any unexpected error
-      this.isLoginInProgress = false;
+      // Re-throw the error to be handled by the calling login() method
       throw error;
     }
   }
