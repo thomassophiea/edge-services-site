@@ -1649,6 +1649,17 @@ export function DashboardEnhanced() {
         </div>
       </div>
 
+      {/* ========================================
+          SECTION 4: BEST PRACTICE EVALUATION
+          ======================================== */}
+      <div className="space-y-4">
+        <div className="border-b pb-2">
+          <h3 className="text-lg font-semibold">Best Practice Evaluation</h3>
+          <p className="text-sm text-muted-foreground">Network configuration and optimization recommendations</p>
+        </div>
+        <BestPracticesWidget />
+      </div>
+
       {/* Top Clients */}
       {topClients.length > 0 && (
         <Card>
@@ -2068,17 +2079,6 @@ export function DashboardEnhanced() {
 
       {/* Network Switches Widget - Moved to Bottom */}
       <SwitchesWidget siteId={filters.site} />
-
-      {/* ========================================
-          SECTION 4: BEST PRACTICE EVALUATION
-          ======================================== */}
-      <div className="space-y-4">
-        <div className="border-b pb-2">
-          <h3 className="text-lg font-semibold">Best Practice Evaluation</h3>
-          <p className="text-sm text-muted-foreground">Network configuration and optimization recommendations</p>
-        </div>
-        <BestPracticesWidget />
-      </div>
 
       {/* Client Detail Dialog */}
       <DetailSlideOut
