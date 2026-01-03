@@ -9,7 +9,7 @@ import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { DetailSlideOut } from './DetailSlideOut';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Checkbox } from './ui/checkbox';
@@ -610,16 +610,14 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
       </Card>
 
       {/* Bulk Actions Modal */}
-      <Dialog open={isActionsModalOpen} onOpenChange={setIsActionsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Bulk Actions</DialogTitle>
-            <DialogDescription>
-              Perform actions on {selectedStations.size} selected clients
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
+      <DetailSlideOut
+        isOpen={isActionsModalOpen}
+        onClose={() => setIsActionsModalOpen(false)}
+        title="Bulk Actions"
+        description={`Perform actions on ${selectedStations.size} selected clients`}
+        width="md"
+      >
+        <div className="space-y-4">
             <div>
               <h4 className="font-medium mb-2">Station Management</h4>
               <div className="space-y-2">
@@ -724,22 +722,17 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
                 </div>
               </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </DetailSlideOut>
 
       {/* Station Detail Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[90vw] lg:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Client Details - {selectedStation?.hostName || selectedStation?.macAddress}
-            </DialogTitle>
-            <DialogDescription>
-              Detailed information and events for this connected client
-            </DialogDescription>
-          </DialogHeader>
+      <DetailSlideOut
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={`Client Details - ${selectedStation?.hostName || selectedStation?.macAddress}`}
+        description="Detailed information and events for this connected client"
+        width="xl"
+      >
           
           {selectedStation && (
             <Tabs defaultValue="details" className="w-full">
@@ -917,8 +910,7 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
               </TabsContent>
             </Tabs>
           )}
-        </DialogContent>
-      </Dialog>
+      </DetailSlideOut>
     </div>
   );
 }
