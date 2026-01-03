@@ -11,7 +11,7 @@ import { apiService } from '../services/api';
  * Displays comprehensive configuration profiles across all categories:
  * - RF Management Profiles
  * - IoT Profiles
- * - ADSP (Application Detection & Steering Policy) Profiles
+ * - ADSP (AirDefense Services Platform) Profiles
  * - Analytics Profiles
  * - Positioning Profiles
  * - Roles/Policies
@@ -165,7 +165,7 @@ export function ConfigurationProfilesWidget() {
                   <div className="text-sm font-medium">ADSP</div>
                 </div>
                 <div className="text-2xl font-bold">{profiles.adsp.length}</div>
-                <div className="text-xs text-muted-foreground">App detection & steering</div>
+                <div className="text-xs text-muted-foreground">AirDefense Services Platform</div>
               </div>
 
               {/* Analytics */}
