@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 
 // DEPLOYMENT VERIFICATION - Module load timestamp
 console.error('🚨 CONNECTED CLIENTS MODULE LOADED - BUILD TIMESTAMP: 2024-12-23-20:05 🚨');
@@ -28,7 +28,7 @@ interface ConnectedClientsProps {
   onShowDetail?: (macAddress: string, hostName?: string) => void;
 }
 
-export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
+function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
   const [stations, setStations] = useState<Station[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -979,3 +979,5 @@ export function ConnectedClients({ onShowDetail }: ConnectedClientsProps) {
     </div>
   );
 }
+// Export memoized component to prevent unnecessary re-renders
+export const ConnectedClients = memo(ConnectedClientsComponent);
