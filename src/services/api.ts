@@ -148,6 +148,23 @@ export interface Station {
   [key: string]: any;
 }
 
+export interface StationEvent {
+  timestamp: string;           // Unix timestamp in milliseconds as string
+  eventType: string;           // Event type: "Roam", "Associate", "Disassociate", "Authenticate", etc.
+  macAddress: string;          // Client MAC address
+  ipAddress?: string;          // Client IP address
+  ipv6Address?: string;        // Client IPv6 address
+  apName?: string;             // Access Point name
+  apSerial?: string;           // Access Point serial number
+  ssid?: string;               // SSID name
+  details?: string;            // Detailed event description
+  type?: string;               // Event category/type
+  level?: string;              // Event severity level
+  category?: string;           // Event category
+  context?: string;            // Event context
+  id?: string;                 // Event ID
+}
+
 export interface StationTrafficStats {
   macAddress: string;
   inBytes?: number;
@@ -3197,6 +3214,40 @@ class ApiService {
     } catch (error) {
       console.error(`[API] Failed to fetch station details for ${macAddress}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Fetch station events (connection, roaming, authentication history)
+   * Endpoint: GET /platformmanager/v2/logging/stations/events/query
+   */
+  async fetchStationEvents(macAddress: string, startTime?: number, endTime?: number): Promise<StationEvent[]> {
+    try {
+      // Default to last 30 days if not specified
+      const now = Date.now();
+      const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+
+      const start = startTime || thirtyDaysAgo;
+      const end = endTime || now;
+      const noCache = Date.now();
+
+      const endpoint = `/platformmanager/v2/logging/stations/events/query?query=${encodeURIComponent(macAddress)}&startTime=${start}&endTime=${end}&noCache=${noCache}`;
+
+      console.log(`[API] Fetching station events for MAC: ${macAddress} (${new Date(start).toLocaleDateString()} - ${new Date(end).toLocaleDateString()})`);
+      const response = await this.makeAuthenticatedRequest(endpoint, {}, 15000);
+
+      if (!response.ok) {
+        console.warn(`Station events API returned ${response.status}`);
+        return [];
+      }
+
+      const data = await response.json();
+      const events = data.stationEvents || [];
+      console.log(`[API] ✓ Loaded ${events.length} station events for ${macAddress}`);
+      return events;
+    } catch (error) {
+      console.error(`[API] Failed to fetch station events for ${macAddress}:`, error);
+      return [];
     }
   }
 

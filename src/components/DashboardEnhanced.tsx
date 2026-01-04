@@ -38,7 +38,7 @@ import {
   Target,
   Radio
 } from 'lucide-react';
-import { apiService } from '../services/api';
+import { apiService, type StationEvent } from '../services/api';
 import { throughputService, ThroughputSnapshot } from '../services/throughput';
 import { toast } from 'sonner';
 import { getVendor, getVendorIcon, getShortVendor } from '../services/oui-lookup';
@@ -215,6 +215,11 @@ export function DashboardEnhanced() {
   const [selectedClient, setSelectedClient] = useState<Station | null>(null);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
 
+  // Station Events
+  const [stationEvents, setStationEvents] = useState<StationEvent[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
+
   // Service Filter Dialog
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [isServiceClientsDialogOpen, setIsServiceClientsDialogOpen] = useState(false);
@@ -242,6 +247,44 @@ export function DashboardEnhanced() {
       clearInterval(historyInterval);
     };
   }, [filters.site]); // Reload when site filter changes
+
+  // Load station events when client is selected
+  useEffect(() => {
+    const loadStationEvents = async () => {
+      if (selectedClient && isClientDialogOpen) {
+        setIsLoadingEvents(true);
+        try {
+          const events = await apiService.fetchStationEvents(selectedClient.macAddress);
+          setStationEvents(events);
+        } catch (error) {
+          console.error('Failed to load station events:', error);
+          toast.error('Failed to load station events');
+        } finally {
+          setIsLoadingEvents(false);
+        }
+      } else {
+        // Reset events when dialog closes
+        setStationEvents([]);
+        setEventTypeFilter('all');
+      }
+    };
+
+    loadStationEvents();
+  }, [selectedClient, isClientDialogOpen]);
+
+  // Filter events by type
+  const filteredEvents = useMemo(() => {
+    if (eventTypeFilter === 'all') {
+      return stationEvents;
+    }
+    return stationEvents.filter(event => event.eventType === eventTypeFilter);
+  }, [stationEvents, eventTypeFilter]);
+
+  // Get unique event types for filter
+  const eventTypes = useMemo(() => {
+    const types = new Set(stationEvents.map(event => event.eventType));
+    return Array.from(types).sort();
+  }, [stationEvents]);
 
   const loadDashboardData = async (isRefresh = false) => {
     try {
@@ -2089,7 +2132,13 @@ export function DashboardEnhanced() {
         width="xl"
       >
         {selectedClient && (
-          <div className="space-y-4">
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="events">Station Events</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="details" className="space-y-4">
               {/* Basic Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -2340,8 +2389,123 @@ export function DashboardEnhanced() {
                   </CardContent>
                 </Card>
               )}
-            </div>
-          )}
+            </TabsContent>
+
+            <TabsContent value="events" className="space-y-4">
+              {isLoadingEvents ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground">No station events found for this client</p>
+                  <p className="text-sm text-muted-foreground mt-1">Events from the last 30 days will appear here</p>
+                </div>
+              ) : (
+                <>
+                  {/* Event Type Filter */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={eventTypeFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setEventTypeFilter('all')}
+                    >
+                      All Events ({stationEvents.length})
+                    </Button>
+                    {eventTypes.map((type) => (
+                      <Button
+                        key={type}
+                        variant={eventTypeFilter === type ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setEventTypeFilter(type)}
+                      >
+                        {type} ({stationEvents.filter(e => e.eventType === type).length})
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Event Timeline */}
+                  <ScrollArea className="h-[500px]">
+                    <div className="space-y-3">
+                      {filteredEvents.map((event, idx) => {
+                        const eventDate = new Date(parseInt(event.timestamp));
+                        const eventColor =
+                          event.eventType === 'Roam' ? 'blue' :
+                          event.eventType === 'Associate' ? 'green' :
+                          event.eventType === 'Disassociate' ? 'red' :
+                          event.eventType === 'Authenticate' ? 'purple' :
+                          'gray';
+
+                        return (
+                          <Card key={event.id || idx} className="relative pl-8">
+                            {/* Timeline dot */}
+                            <div className={`absolute left-3 top-6 w-2 h-2 rounded-full bg-${eventColor}-500`} />
+                            {idx !== filteredEvents.length - 1 && (
+                              <div className="absolute left-3.5 top-8 w-0.5 h-full bg-border" />
+                            )}
+
+                            <CardContent className="pt-4 pb-4">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge
+                                      variant={
+                                        event.eventType === 'Associate' || event.eventType === 'Authenticate' ? 'default' :
+                                        event.eventType === 'Disassociate' ? 'destructive' :
+                                        'secondary'
+                                      }
+                                    >
+                                      {event.eventType}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      {eventDate.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  {event.details && (
+                                    <p className="text-sm text-foreground mb-2">{event.details}</p>
+                                  )}
+
+                                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                    {event.apName && (
+                                      <div>
+                                        <span className="text-muted-foreground">AP: </span>
+                                        <span className="font-medium">{event.apName}</span>
+                                      </div>
+                                    )}
+                                    {event.ssid && (
+                                      <div>
+                                        <span className="text-muted-foreground">SSID: </span>
+                                        <span className="font-medium">{event.ssid}</span>
+                                      </div>
+                                    )}
+                                    {event.ipAddress && (
+                                      <div>
+                                        <span className="text-muted-foreground">IP: </span>
+                                        <span className="font-mono font-medium">{event.ipAddress}</span>
+                                      </div>
+                                    )}
+                                    {event.level && (
+                                      <div>
+                                        <span className="text-muted-foreground">Level: </span>
+                                        <span className="font-medium">{event.level}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
       </DetailSlideOut>
 
       {/* Service Clients Dialog */}
