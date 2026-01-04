@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -147,7 +147,7 @@ interface Notification {
   status?: string;
 }
 
-export function DashboardEnhanced() {
+function DashboardEnhancedComponent() {
   // Global filters for site/time filtering
   const { filters } = useGlobalFilters();
 
@@ -232,10 +232,10 @@ export function DashboardEnhanced() {
     loadDashboardData();
     loadHistoricalThroughput();
 
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 60 seconds (optimized for performance)
     const interval = setInterval(() => {
       loadDashboardData(true);
-    }, 30000);
+    }, 60000);
 
     // Reload historical data every 5 minutes
     const historyInterval = setInterval(() => {
@@ -298,12 +298,12 @@ export function DashboardEnhanced() {
 
       console.log('[Dashboard] Loading comprehensive dashboard data...');
 
-      // Fetch all data in parallel with fallback strategies
-      const [apsResult, stationsResult, servicesResult, notificationsResult] = await Promise.allSettled([
+      // Fetch critical data in parallel for faster initial load
+      // Notifications are loaded separately to not block dashboard rendering
+      const [apsResult, stationsResult, servicesResult] = await Promise.allSettled([
         fetchAccessPoints(),
         fetchStations(),
-        fetchServices(),
-        fetchNotifications()
+        fetchServices()
       ]);
 
       // Get services first to create a lookup map
@@ -329,14 +329,18 @@ export function DashboardEnhanced() {
         console.log('[Dashboard] Failed to load stations:', stationsResult.status === 'rejected' ? stationsResult.reason : 'No data');
       }
 
-      // Process Notifications
-      if (notificationsResult.status === 'fulfilled' && notificationsResult.value) {
-        processNotifications(notificationsResult.value);
-      } else {
-        console.log('[Dashboard] Failed to load notifications:', notificationsResult.status === 'rejected' ? notificationsResult.reason : 'No data');
-      }
-
       setLastUpdate(new Date());
+
+      // Load notifications asynchronously after main data (non-blocking)
+      if (!isRefresh) {
+        fetchNotifications().then(notifications => {
+          if (notifications) {
+            processNotifications(notifications);
+          }
+        }).catch(err => {
+          console.log('[Dashboard] Failed to load notifications:', err);
+        });
+      }
       
       if (isRefresh) {
         toast.success('Dashboard refreshed');
@@ -2578,3 +2582,6 @@ export function DashboardEnhanced() {
     </div>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const DashboardEnhanced = memo(DashboardEnhancedComponent);
