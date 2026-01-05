@@ -2405,8 +2405,31 @@ function DashboardEnhancedComponent() {
               ) : filteredEvents.length === 0 ? (
                 <div className="text-center py-12">
                   <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">No station events found for this client</p>
-                  <p className="text-sm text-muted-foreground mt-1">Events from the last 30 days will appear here</p>
+                  <p className="text-muted-foreground font-medium mb-2">No station events found</p>
+                  <p className="text-sm text-muted-foreground">Events from the last 30 days will appear here</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Searched for: {selectedClient?.macAddress}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => {
+                      if (selectedClient) {
+                        console.log('[Dashboard] Manually retrying station events load...');
+                        setIsLoadingEvents(true);
+                        apiService.fetchStationEvents(selectedClient.macAddress).then(events => {
+                          console.log('[Dashboard] Manual retry received:', events);
+                          setStationEvents(events);
+                        }).finally(() => {
+                          setIsLoadingEvents(false);
+                        });
+                      }
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry Loading Events
+                  </Button>
                 </div>
               ) : (
                 <>

@@ -3237,17 +3237,24 @@ class ApiService {
       const response = await this.makeAuthenticatedRequest(endpoint, {}, 15000);
 
       if (!response.ok) {
-        console.warn(`Station events API returned ${response.status}`);
+        const errorText = await response.text();
+        console.error(`[API] Station events API returned ${response.status}:`, errorText);
+        console.error(`[API] Endpoint was: ${endpoint}`);
         return [];
       }
 
       const data = await response.json();
+      console.log(`[API] Station events RAW response:`, data);
       console.log(`[API] Station events response structure:`, {
         hasStationEvents: !!data.stationEvents,
         responseKeys: Object.keys(data),
-        sampleData: data.stationEvents ? data.stationEvents.slice(0, 2) : data
+        dataType: typeof data,
+        isArray: Array.isArray(data),
+        sampleData: data.stationEvents ? data.stationEvents.slice(0, 2) : (Array.isArray(data) ? data.slice(0, 2) : data)
       });
-      const events = data.stationEvents || [];
+
+      // Handle both {stationEvents: [...]} and direct array responses
+      const events = data.stationEvents || (Array.isArray(data) ? data : []);
       console.log(`[API] ✓ Loaded ${events.length} station events for ${macAddress}`);
       return events;
     } catch (error) {
