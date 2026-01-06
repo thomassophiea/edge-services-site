@@ -100,73 +100,36 @@ export default function App() {
       applyThemeForMode(initialTheme);
     };
 
-    // Check if user is already authenticated and validate session
+    // Check if user is already authenticated - trust stored tokens
     const initializeAuth = async () => {
       if (apiService.isAuthenticated()) {
-        // Skip validation if user just logged in to prevent immediate logout
-        if (justLoggedIn) {
-          console.log('[App] Skipping session validation - user just logged in');
-          setIsAuthenticated(true);
-          setAdminRole(apiService.getAdminRole());
-          return;
-        }
+        console.log('[App] ✅ Found valid session - restoring authentication');
+        setIsAuthenticated(true);
+        setAdminRole(apiService.getAdminRole());
 
-        // Attempt a lightweight API call to verify the token is still valid
+        // Load site information
         try {
-          const response = await apiService.makeAuthenticatedRequest('/v1/sessions/self', { method: 'GET' }, 5000);
-
-          if (response.ok) {
-            // Token is valid
-            setIsAuthenticated(true);
-            setAdminRole(apiService.getAdminRole());
-
-            // Load site information
-            try {
-              const SITE_ID = 'c7395471-aa5c-46dc-9211-3ed24c5789bd';
-              const site = await apiService.getSiteById(SITE_ID);
-              if (site) {
-                const displayName = site.displayName || site.name || site.siteName || 'Production Site';
-                setSiteName(displayName);
-              } else {
-                const sites = await apiService.getSites();
-                if (sites && sites.length > 0) {
-                  const firstSite = sites[0];
-                  const displayName = firstSite.displayName || firstSite.name || firstSite.siteName || 'Site';
-                  setSiteName(displayName);
-                }
-              }
-            } catch (error) {
-              console.error('[App] Failed to load site name:', error);
-              setSiteName('Production Site');
-            }
-
-            // Show a subtle notification that session was restored
-            console.log('[App] ✅ Session restored from storage - you are still logged in');
-            toast.success('Session restored', {
-              description: 'You are still logged in from your previous session.',
-              duration: 3000
-            });
-
-            // Start SLE data collection automatically on successful authentication
-            console.log('[App] Starting SLE data collection service');
-            sleDataCollectionService.startCollection();
-          } else if (response.status === 401 || response.status === 403) {
-            // Token is explicitly unauthorized - clear it and show login screen
-            console.log('[App] Stored token is unauthorized - clearing session');
-            apiService.logout();
-            setIsAuthenticated(false);
+          const SITE_ID = 'c7395471-aa5c-46dc-9211-3ed24c5789bd';
+          const site = await apiService.getSiteById(SITE_ID);
+          if (site) {
+            const displayName = site.displayName || site.name || site.siteName || 'Production Site';
+            setSiteName(displayName);
           } else {
-            // Other errors (404, 500, etc.) - assume session is still valid
-            console.log(`[App] Session validation returned ${response.status} - keeping session`);
-            setIsAuthenticated(true);
-            setAdminRole(apiService.getAdminRole());
+            const sites = await apiService.getSites();
+            if (sites && sites.length > 0) {
+              const firstSite = sites[0];
+              const displayName = firstSite.displayName || firstSite.name || firstSite.siteName || 'Site';
+              setSiteName(displayName);
+            }
           }
         } catch (error) {
-          // Network error or timeout - assume session is still valid
-          console.log('[App] Session validation failed (network error) - keeping session');
-          setIsAuthenticated(true);
-          setAdminRole(apiService.getAdminRole());
+          console.error('[App] Failed to load site name:', error);
+          setSiteName('Production Site');
         }
+
+        // Start SLE data collection automatically on successful authentication
+        console.log('[App] Starting SLE data collection service');
+        sleDataCollectionService.startCollection();
       } else {
         // No stored session - show login screen
         console.log('[App] No valid session found - showing login screen');
@@ -199,32 +162,23 @@ export default function App() {
     
     mediaQuery.addEventListener('change', handleSystemThemeChange);
 
-    // Periodically check authentication status
+    // Periodically check authentication status (very infrequently)
+    // Only check if tokens are present - rely on API errors for actual session validation
     const authCheckInterval = setInterval(async () => {
       // Only check if we think we're authenticated
       if (isAuthenticated) {
         // Check if tokens are still present in localStorage
         const accessToken = localStorage.getItem('access_token');
         const refreshToken = localStorage.getItem('refresh_token');
-        
+
         // If tokens are missing but we think we're authenticated, log out
         if (!accessToken || !refreshToken) {
-          console.log('Authentication tokens missing - logging out');
+          console.log('[Auth] Authentication tokens missing - logging out');
           handleSessionExpired();
           return;
         }
-        
-        // Also check if the apiService thinks we're authenticated
-        if (!apiService.isAuthenticated()) {
-          console.log('API service reports not authenticated - logging out');
-          handleSessionExpired();
-          return;
-        }
-
-        // REMOVED: Periodic session validation - only validate on actual API errors
-        // This was causing unnecessary logouts during development
       }
-    }, 60000); // Check every 60 seconds (reduced from 30)
+    }, 300000); // Check every 5 minutes (reduced from 60 seconds)
 
     // Listen for session expiration errors
     const handleSessionExpired = () => {
