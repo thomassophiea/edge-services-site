@@ -144,31 +144,31 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
     );
   }
 
-  const TIMELINE_HEIGHT = 60; // Height per AP row
-  const CHART_HEIGHT = uniqueAPs.length * TIMELINE_HEIGHT + 100;
+  const TIMELINE_HEIGHT = 120; // Height per AP row
+  const CHART_HEIGHT = uniqueAPs.length * TIMELINE_HEIGHT + 120;
 
   return (
     <div className="flex flex-col h-full">
       {/* Header with legend */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between p-6 border-b">
         <div>
-          <h3 className="text-lg font-semibold">Roaming Trail</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="text-2xl font-semibold">Roaming Trail</h3>
+          <p className="text-base text-muted-foreground mt-1">
             {formatTimeShort(timeRange.min)} - {formatTimeShort(timeRange.max)}
           </p>
         </div>
-        <div className="flex items-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span>Good</span>
+        <div className="flex items-center gap-8 text-base">
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full bg-green-500"></div>
+            <span className="font-medium">Good</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-            <span>Warning</span>
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+            <span className="font-medium">Warning</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span>Bad</span>
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full bg-red-500"></div>
+            <span className="font-medium">Bad</span>
           </div>
         </div>
       </div>
@@ -176,20 +176,20 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
       {/* Main timeline view */}
       <div className="flex-1 flex overflow-hidden">
         {/* AP Names sidebar */}
-        <div className="w-64 border-r bg-muted/20 overflow-y-auto">
-          <div className="sticky top-0 bg-muted/40 border-b p-3 font-semibold text-sm">
+        <div className="w-80 border-r bg-muted/20 overflow-y-auto">
+          <div className="sticky top-0 bg-muted/40 border-b p-4 font-semibold text-base">
             Associated APs
           </div>
           {uniqueAPs.map((ap, idx) => (
             <div
               key={ap}
-              className="p-3 border-b flex items-center gap-2 hover:bg-accent/50 transition-colors"
+              className="p-4 border-b flex items-center gap-3 hover:bg-accent/50 transition-colors"
               style={{ height: `${TIMELINE_HEIGHT}px` }}
             >
-              <Radio className="h-4 w-4 text-primary flex-shrink-0" />
+              <Radio className="h-6 w-6 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{ap}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="font-semibold text-base truncate">{ap}</div>
+                <div className="text-sm text-muted-foreground mt-1">
                   {roamingEvents.filter(e => e.apName === ap).length} events
                 </div>
               </div>
@@ -207,10 +207,10 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
             {[0, 25, 50, 75, 100].map(percent => (
               <div
                 key={percent}
-                className="absolute top-0 bottom-0 border-l border-border/30"
+                className="absolute top-0 bottom-0 border-l-2 border-border/40"
                 style={{ left: `${percent}%` }}
               >
-                <div className="sticky top-0 text-xs text-muted-foreground p-1 bg-background/80">
+                <div className="sticky top-0 text-sm font-medium text-muted-foreground p-2 bg-background/90">
                   {formatTimeShort(timeRange.min + (timeRange.max - timeRange.min) * (percent / 100))}
                 </div>
               </div>
@@ -255,7 +255,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                     x2={`${x2}%`}
                     y2={y2}
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="3"
                     className="text-primary/40"
                   />
                 </svg>
@@ -277,17 +277,17 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                   key={idx}
                   onClick={() => setSelectedEvent(event)}
                   className={`
-                    absolute w-3 h-3 rounded-full border-2 border-background
-                    hover:scale-150 transition-transform cursor-pointer z-10
+                    absolute w-6 h-6 rounded-full border-4 border-background
+                    hover:scale-125 transition-transform cursor-pointer z-10
                     ${dotColor}
-                    ${selectedEvent === event ? 'ring-2 ring-primary ring-offset-2 scale-150' : ''}
+                    ${selectedEvent === event ? 'ring-4 ring-primary ring-offset-2 scale-125' : ''}
                   `}
                   style={{
                     left: `${x}%`,
                     top: `${y}px`,
                     transform: 'translate(-50%, -50%)'
                   }}
-                  title={`${event.eventType} - ${formatTime(event.timestamp)}`}
+                  aria-label={`${event.eventType} - ${formatTime(event.timestamp)}`}
                 />
               );
             })}
