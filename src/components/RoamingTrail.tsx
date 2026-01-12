@@ -274,12 +274,13 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 'bg-red-500';
 
               return (
-                <button
+                <div
                   key={idx}
                   onClick={() => setSelectedEvent(event)}
                   className={`
                     absolute w-6 h-6 rounded-full border-4 border-background
                     hover:scale-125 transition-transform cursor-pointer z-10
+                    overflow-hidden
                     ${dotColor}
                     ${selectedEvent === event ? 'ring-4 ring-primary ring-offset-2 scale-125' : ''}
                   `}
@@ -288,7 +289,13 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                     top: `${y}px`,
                     transform: 'translate(-50%, -50%)'
                   }}
-                  aria-label={`${event.eventType} - ${formatTime(event.timestamp)}`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setSelectedEvent(event);
+                    }
+                  }}
                 />
               );
             })}
