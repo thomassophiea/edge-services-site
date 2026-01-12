@@ -913,10 +913,11 @@ export default function App() {
                 <NotificationsMenu />
                 
                 {/* User Menu */}
-                <UserMenu 
+                <UserMenu
                   onLogout={handleLogout}
                   theme={theme}
                   onThemeToggle={toggleTheme}
+                  userEmail={localStorage.getItem('user_email') || undefined}
                 />
                 
                 {/* Apps Menu */}

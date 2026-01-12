@@ -733,12 +733,13 @@ class ApiService {
         if (response.ok) {
           const authResponse: AuthResponse = await response.json();
           
-          // Store tokens
+          // Store tokens and user info
           this.accessToken = authResponse.access_token;
           this.refreshToken = authResponse.refresh_token;
           localStorage.setItem('access_token', authResponse.access_token);
           localStorage.setItem('refresh_token', authResponse.refresh_token);
           localStorage.setItem('admin_role', authResponse.adminRole);
+          localStorage.setItem('user_email', userId.trim()); // Store the username/email
 
           console.log(`✅ Login successful`);
           return authResponse;
@@ -811,12 +812,13 @@ class ApiService {
       }
     }
 
-    // Clear tokens
+    // Clear tokens and user info
     this.accessToken = null;
     this.refreshToken = null;
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('admin_role');
+    localStorage.removeItem('user_email');
   }
 
   async makeAuthenticatedRequest(

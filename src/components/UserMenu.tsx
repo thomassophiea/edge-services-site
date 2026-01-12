@@ -19,16 +19,44 @@ interface UserMenuProps {
   onLogout: () => void;
   theme: 'light' | 'dark' | 'synthwave' | 'system';
   onThemeToggle: () => void;
+  userEmail?: string;
 }
 
-export function UserMenu({ onLogout, theme, onThemeToggle }: UserMenuProps) {
+export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  // Extract name from email if available
+  const getNameFromEmail = (email: string) => {
+    const username = email.split('@')[0];
+    // Remove +ep1 or similar suffixes and convert to title case
+    const cleanName = username.split('+')[0].replace(/[._-]/g, ' ');
+    return cleanName.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Get initials from email
+  const getInitialsFromEmail = (email: string) => {
+    const name = getNameFromEmail(email);
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[1][0];
+    }
+    return parts[0][0] + parts[0][1];
+  };
+
+  // Get organization from email domain
+  const getOrganizationFromEmail = (email: string) => {
+    const domain = email.split('@')[1] || '';
+    const orgName = domain.split('.')[0];
+    return orgName.charAt(0).toUpperCase() + orgName.slice(1);
+  };
+
   const userInfo = {
-    name: 'Thomas Sophiea',
-    email: 'tsophiea+ep1@extremenet',
-    organization: 'Extreme Networks',
-    initials: 'TS'
+    name: userEmail ? getNameFromEmail(userEmail) : 'User',
+    email: userEmail || 'user@example.com',
+    organization: userEmail ? getOrganizationFromEmail(userEmail) : 'Organization',
+    initials: userEmail ? getInitialsFromEmail(userEmail) : 'U'
   };
 
   const menuItems = [
