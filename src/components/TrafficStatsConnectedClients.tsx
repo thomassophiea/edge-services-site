@@ -696,7 +696,9 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
                         <TableCell className="p-1">
                           <div>
                             <div className="flex items-center gap-1 mb-0.5">
-                              <span className="font-mono text-[12px] leading-none">{station.macAddress}</span>
+                              <span className="font-medium text-[12px] leading-none">
+                                {station.hostName || station.macAddress}
+                              </span>
                               {isRandomizedMac(station.macAddress) && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -709,14 +711,14 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
                                 </Tooltip>
                               )}
                             </div>
-                            <div className="font-mono text-[12px] text-muted-foreground leading-none mb-0.5">
-                              {station.ipAddress || 'No IP'}
-                            </div>
                             {station.hostName && (
-                              <div className="text-[8px] text-muted-foreground truncate leading-none">
-                                {station.hostName}
+                              <div className="font-mono text-[10px] text-muted-foreground leading-none mb-0.5">
+                                {station.macAddress}
                               </div>
                             )}
+                            <div className="font-mono text-[10px] text-muted-foreground leading-none">
+                              {station.ipAddress || 'No IP'}
+                            </div>
                           </div>
                         </TableCell>
                         

@@ -320,7 +320,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-12">
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">Signal Quality:</span>
             <div className="flex items-center gap-2">
@@ -455,7 +455,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                     x2={`${x2}%`}
                     y2={y2}
                     stroke={isBandSteering ? '#3b82f6' : 'currentColor'}
-                    strokeWidth="6"
+                    strokeWidth="3"
                     strokeDasharray={isBandSteering ? '8,4' : 'none'}
                     className={isBandSteering ? '' : 'text-primary/40'}
                     style={{ cursor: 'pointer' }}
