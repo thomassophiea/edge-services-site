@@ -99,6 +99,9 @@ export class ChatbotService {
         case 'client_search':
           response = await this.handleClientSearchQuery(normalizedQuery, intent);
           break;
+        case 'roaming_info':
+          response = await this.handleRoamingQuery(normalizedQuery, intent);
+          break;
         case 'network_settings':
           response = await this.handleNetworkSettingsQuery(normalizedQuery, intent);
           break;
@@ -159,6 +162,15 @@ export class ChatbotService {
         /client\s+.+/,  // "client John's iPhone"
         /device\s+.+/,  // "device 192.168.1.50"
         /station\s+.+/  // "station aa:bb:cc:dd:ee:ff"
+      ],
+      roaming_info: [
+        /roam(ing)?\s+(of|for|history|trail|events?)/,
+        /roam(ing)?\s+.+/,  // "roaming iPhone" or "roaming aa:bb:cc"
+        /show\s+(me\s+)?roam/,
+        /client\s+roam/,
+        /where\s+(has|did)\s+.+\s+(roam|move|connect)/,
+        /movement\s+(of|for)/,
+        /connection\s+history/
       ],
       network_settings: [
         /settings?|config|configuration/,
@@ -448,6 +460,163 @@ ${clientList}${matchingClients.length > 8 ? `\n\n...and ${matchingClients.length
     return cleanedQuery;
   }
 
+  private extractRoamingSearchTerm(query: string): string {
+    // Remove roaming-related prefixes to extract the client identifier
+    const cleanedQuery = query
+      .replace(/^(show\s+(me\s+)?)?roam(ing)?\s*(of|for|history|trail|events?)?\s*/i, '')
+      .replace(/^(client\s+roam(ing)?|connection\s+history|movement)\s*(of|for)?\s*/i, '')
+      .replace(/^(where\s+(has|did))\s*/i, '')
+      .replace(/\s*(roam|move|connect).*$/i, '')
+      .trim();
+
+    return cleanedQuery;
+  }
+
+  private async handleRoamingQuery(query: string, intent: any): Promise<string> {
+    const stations = this.context.stations || [];
+
+    // Extract client identifier from query
+    const searchTerm = this.extractRoamingSearchTerm(query);
+
+    if (!searchTerm) {
+      return `📍 **Client Roaming**
+
+Please specify a client to see their roaming history. You can search by:
+• **Name/Hostname** - e.g., "roaming of iPhone"
+• **MAC Address** - e.g., "roaming aa:bb:cc:dd:ee:ff"
+• **IP Address** - e.g., "roaming history 192.168.1.50"
+
+Example: "roaming of John's MacBook" or "show roaming aa:bb:cc:dd:ee:ff"`;
+    }
+
+    const searchLower = searchTerm.toLowerCase();
+
+    // Find matching client(s)
+    const matchingClients = stations.filter(station => {
+      return (
+        station.macAddress?.toLowerCase().includes(searchLower) ||
+        station.ipAddress?.toLowerCase().includes(searchLower) ||
+        station.hostName?.toLowerCase().includes(searchLower) ||
+        station.deviceType?.toLowerCase().includes(searchLower)
+      );
+    });
+
+    if (matchingClients.length === 0) {
+      return `❌ **No client found matching "${searchTerm}"**
+
+Try searching by:
+• Hostname (e.g., "roaming of iPhone")
+• MAC address (e.g., "roaming aa:bb:cc:dd:ee:ff")
+• IP address (e.g., "roaming 192.168.1.50")`;
+    }
+
+    // If multiple matches, ask user to be more specific
+    if (matchingClients.length > 1) {
+      const clientList = matchingClients.slice(0, 5).map(client => {
+        const name = client.hostName || client.macAddress;
+        return `• **${name}** (${client.macAddress})`;
+      }).join('\n');
+
+      return `🔍 **Multiple clients found matching "${searchTerm}":**
+
+${clientList}${matchingClients.length > 5 ? `\n...and ${matchingClients.length - 5} more` : ''}
+
+Please specify the exact MAC address for roaming history.
+Example: "roaming ${matchingClients[0].macAddress}"`;
+    }
+
+    // Single match - fetch roaming events
+    const client = matchingClients[0];
+    const macAddress = client.macAddress;
+
+    try {
+      // Fetch roaming events from API
+      const events = await apiService.fetchStationEvents(macAddress);
+
+      if (!events || events.length === 0) {
+        return `📍 **Roaming History for ${client.hostName || macAddress}**
+
+**Current Connection:**
+• **Access Point**: ${client.apName || client.apSerial || 'Unknown'}
+• **Site**: ${client.siteName || 'Unknown'}
+• **Network**: ${client.network || 'Unknown'}
+• **Signal**: ${client.rss || client.signalStrength || 'N/A'} dBm
+
+ℹ️ No roaming events found in the last 30 days. This client may have stayed connected to the same AP.`;
+      }
+
+      // Process roaming events
+      const roamingTypes = ['Roam', 'Registration', 'Associate', 'Disassociate', 'State Change'];
+      const roamingEvents = events.filter(e => roamingTypes.includes(e.eventType));
+
+      // Get unique APs
+      const uniqueAPs = new Set<string>();
+      roamingEvents.forEach(e => {
+        if (e.apName) uniqueAPs.add(e.apName);
+      });
+
+      // Count events by type
+      const eventCounts: Record<string, number> = {};
+      roamingEvents.forEach(e => {
+        eventCounts[e.eventType] = (eventCounts[e.eventType] || 0) + 1;
+      });
+
+      // Get recent events (last 5)
+      const recentEvents = roamingEvents
+        .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+        .slice(0, 5);
+
+      const recentList = recentEvents.map(e => {
+        const time = new Date(parseInt(e.timestamp)).toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        const icon = e.eventType === 'Roam' ? '🔄' :
+                     e.eventType === 'Associate' || e.eventType === 'Registration' ? '✅' :
+                     e.eventType === 'Disassociate' || e.eventType === 'De-registration' ? '❌' : '📍';
+        return `${icon} ${time} - ${e.eventType} → ${e.apName || 'Unknown AP'}`;
+      }).join('\n');
+
+      // Build event type summary
+      const eventSummary = Object.entries(eventCounts)
+        .map(([type, count]) => `• **${type}**: ${count}`)
+        .join('\n');
+
+      return `📍 **Roaming History for ${client.hostName || macAddress}**
+
+**Summary (Last 30 Days):**
+• **Total Events**: ${roamingEvents.length}
+• **Unique APs Visited**: ${uniqueAPs.size}
+• **Roams**: ${eventCounts['Roam'] || 0}
+
+**Event Breakdown:**
+${eventSummary}
+
+**Current Connection:**
+• **AP**: ${client.apName || client.apSerial || 'Unknown'}
+• **Site**: ${client.siteName || 'Unknown'}
+• **Signal**: ${client.rss || client.signalStrength || 'N/A'} dBm
+
+**Recent Activity:**
+${recentList}
+
+💡 **Tip**: Open the client details page to see the full Roaming Trail visualization.`;
+
+    } catch (error) {
+      console.error('Error fetching roaming events:', error);
+      return `📍 **Roaming for ${client.hostName || macAddress}**
+
+**Current Connection:**
+• **Access Point**: ${client.apName || client.apSerial || 'Unknown'}
+• **Site**: ${client.siteName || 'Unknown'}
+• **Signal**: ${client.rss || client.signalStrength || 'N/A'} dBm
+
+⚠️ Unable to fetch detailed roaming history at this time. Please check the client details page for the full Roaming Trail.`;
+    }
+  }
+
   private async handleNetworkSettingsQuery(query: string, intent: any): Promise<string> {
     try {
       // Try to get services/network configurations
@@ -709,6 +878,11 @@ I can help you with information about your AURA network:
 • "Search device [IP]" - Search by IP address
 • "Find client [MAC]" - Search by MAC address
 • "Search for iPhone" - Search by device type
+
+**📍 Roaming History:**
+• "Roaming of [client]" - View client roaming history
+• "Roaming [MAC address]" - Roaming events by MAC
+• "Connection history [name]" - Where client has connected
 
 **⚙️ Network Settings:**  
 • "SSIDs" or "Network names" - View wireless networks

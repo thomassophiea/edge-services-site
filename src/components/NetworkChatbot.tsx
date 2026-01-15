@@ -190,7 +190,7 @@ export function NetworkChatbot({ isOpen = false, onToggle, className = '' }: Net
     "How many access points are online?",
     "Show me connected clients",
     "Find client by name or MAC",
-    "What are my network SSIDs?",
+    "Roaming history of a client",
     "Are there any offline devices?",
     "Show me site health status"
   ];
