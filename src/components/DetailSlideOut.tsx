@@ -31,10 +31,11 @@ export function DetailSlideOut({
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent 
-        side="right" 
+    <Sheet open={isOpen} onOpenChange={onClose} modal={false}>
+      <SheetContent
+        side="right"
         className={`${widthClasses[width]} w-full p-0 flex flex-col`}
+        onInteractOutside={(e) => e.preventDefault()}
       >
         <SheetHeader className="px-6 py-4 border-b border-border">
           <div className="flex items-center justify-between">
