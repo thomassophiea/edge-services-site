@@ -5,18 +5,21 @@ import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
-import { 
-  MessageCircle, 
-  Send, 
-  Mic, 
-  MicOff, 
-  RefreshCw, 
-  Bot, 
-  User, 
+import {
+  MessageCircle,
+  Send,
+  Mic,
+  MicOff,
+  RefreshCw,
+  Bot,
+  User,
   Sparkles,
   HelpCircle,
   Minimize2,
-  Maximize2
+  Maximize2,
+  Expand,
+  Shrink,
+  X
 } from 'lucide-react';
 import { chatbotService, ChatMessage } from '../services/chatbot';
 import { toast } from 'sonner';
@@ -37,6 +40,7 @@ export function NetworkChatbot({ isOpen = false, onToggle, className = '' }: Net
   const [isInitializing, setIsInitializing] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -185,10 +189,10 @@ export function NetworkChatbot({ isOpen = false, onToggle, className = '' }: Net
   const getSuggestedQuestions = () => [
     "How many access points are online?",
     "Show me connected clients",
+    "Find client by name or MAC",
     "What are my network SSIDs?",
     "Are there any offline devices?",
-    "Show me site health status",
-    "Help with troubleshooting"
+    "Show me site health status"
   ];
 
   const formatMessageContent = (content: string) => {
@@ -268,6 +272,215 @@ export function NetworkChatbot({ isOpen = false, onToggle, className = '' }: Net
     return chatbotButton;
   }
 
+  // Fullscreen mode renders as a full page overlay
+  if (isFullScreen) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 99999,
+          backgroundColor: 'var(--background)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 py-4 px-6 border-b border-border">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <Bot className="h-6 w-6 text-primary" />
+              <Sparkles className="h-3 w-3 text-secondary absolute -top-1 -right-1" />
+            </div>
+            <CardTitle className="text-lg font-semibold">Network Assistant</CardTitle>
+            {isInitializing && (
+              <Badge variant="secondary" className="text-xs">
+                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                Initializing
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefreshContext}
+              className="h-8 w-8"
+              title="Refresh network data"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsFullScreen(false)}
+              className="h-8 w-8"
+              title="Exit full screen"
+            >
+              <Shrink className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setIsFullScreen(false);
+                onToggle?.();
+              }}
+              className="h-8 w-8"
+              title="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* Main chat area */}
+          <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+            <ScrollArea className="flex-1 p-6">
+              <div className="space-y-4">
+                {messages.length === 0 && !isLoading && (
+                  <div className="text-center py-12">
+                    <Bot className="h-16 w-16 mx-auto mb-4 text-primary opacity-50" />
+                    <h3 className="text-xl font-semibold mb-2">Network Assistant</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Ask me anything about your network infrastructure
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
+                      {getSuggestedQuestions().map((question, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="h-auto py-3 px-4 text-sm text-left whitespace-normal"
+                          onClick={() => setInputValue(question)}
+                        >
+                          {question}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[70%] rounded-lg px-4 py-3 ${
+                        message.type === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'surface-1dp border border-border'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        {message.type === 'bot' && (
+                          <Bot className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                        )}
+                        {message.type === 'user' && (
+                          <User className="h-5 w-5 text-primary-foreground mt-0.5 flex-shrink-0" />
+                        )}
+                        <div className="flex-1 space-y-1">
+                          <div className="whitespace-pre-wrap">
+                            {formatMessageContent(message.content)}
+                          </div>
+                          <div className={`text-xs opacity-70 ${
+                            message.type === 'user' ? 'text-primary-foreground' : 'text-muted-foreground'
+                          }`}>
+                            {message.timestamp.toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[70%] surface-1dp border border-border rounded-lg px-4 py-3">
+                      <div className="flex items-center space-x-3">
+                        <Bot className="h-5 w-5 text-primary" />
+                        <div className="flex space-x-1">
+                          <div className="h-2 w-2 bg-primary rounded-full animate-bounce"></div>
+                          <div className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div ref={messagesEndRef} />
+            </ScrollArea>
+
+            <div className="border-t border-border p-4">
+              <div className="flex items-center space-x-3 max-w-3xl mx-auto">
+                <div className="flex-1 relative">
+                  <Input
+                    ref={inputRef}
+                    placeholder="Ask about your network..."
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading || isInitializing}
+                    className="pr-10 h-12 text-base"
+                  />
+                  {isListening && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleVoiceInput}
+                  disabled={isLoading || isInitializing}
+                  className={`h-12 w-12 ${isListening ? 'text-red-500' : ''}`}
+                  title="Voice input"
+                >
+                  {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                </Button>
+
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isLoading || isInitializing}
+                  size="icon"
+                  className="h-12 w-12"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between mt-3 max-w-3xl mx-auto">
+                <div className="text-sm text-muted-foreground">
+                  Press Enter to send • Shift+Enter for new line
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setInputValue('help');
+                    setTimeout(() => handleSendMessage(), 100);
+                  }}
+                  className="text-sm"
+                >
+                  <HelpCircle className="h-4 w-4 mr-1" />
+                  Help
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {chatbotButton}
@@ -319,18 +532,37 @@ export function NetworkChatbot({ isOpen = false, onToggle, className = '' }: Net
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsMinimized(!isMinimized)}
+              onClick={() => {
+                setIsFullScreen(!isFullScreen);
+                setIsMinimized(false);
+              }}
               className="h-6 w-6"
+              title={isFullScreen ? "Exit full screen" : "Full screen"}
             >
-              {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
+              {isFullScreen ? <Shrink className="h-3 w-3" /> : <Expand className="h-3 w-3" />}
             </Button>
+            {!isFullScreen && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="h-6 w-6"
+                title={isMinimized ? "Expand" : "Minimize"}
+              >
+                {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              onClick={onToggle}
+              onClick={() => {
+                setIsFullScreen(false);
+                onToggle?.();
+              }}
               className="h-6 w-6"
+              title="Close"
             >
-              ×
+              <X className="h-3 w-3" />
             </Button>
           </div>
         </CardHeader>

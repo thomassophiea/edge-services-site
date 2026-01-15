@@ -96,6 +96,9 @@ export class ChatbotService {
         case 'connected_clients':
           response = await this.handleConnectedClientsQuery(normalizedQuery, intent);
           break;
+        case 'client_search':
+          response = await this.handleClientSearchQuery(normalizedQuery, intent);
+          break;
         case 'network_settings':
           response = await this.handleNetworkSettingsQuery(normalizedQuery, intent);
           break;
@@ -140,11 +143,22 @@ export class ChatbotService {
         /ap\s+health|access\s+point\s+health/
       ],
       connected_clients: [
-        /client|station|device/,
         /how\s+many\s+clients?/,
         /connected\s+users?/,
         /client\s+count|device\s+count/,
-        /wireless\s+clients?/
+        /wireless\s+clients?/,
+        /^clients?$/,
+        /^show\s+(me\s+)?clients?$/
+      ],
+      client_search: [
+        /find\s+(client|device|station)/,
+        /search\s+(for\s+)?(client|device|station)/,
+        /look\s*(ing)?\s*(for|up)\s+(client|device|station)?/,
+        /where\s+is\s+(client|device)?/,
+        /locate\s+(client|device|station)/,
+        /client\s+.+/,  // "client John's iPhone"
+        /device\s+.+/,  // "device 192.168.1.50"
+        /station\s+.+/  // "station aa:bb:cc:dd:ee:ff"
       ],
       network_settings: [
         /settings?|config|configuration/,
@@ -337,6 +351,101 @@ ${siteInfo}
 **Recent Activity**: ${this.getRecentActivitySummary(stations)}
 
 Need details about a specific client? Provide the MAC address!`;
+  }
+
+  private async handleClientSearchQuery(query: string, intent: any): Promise<string> {
+    const stations = this.context.stations || [];
+
+    if (stations.length === 0) {
+      return "I couldn't retrieve client information at the moment. Please check your permissions and try again.";
+    }
+
+    // Extract search term from query
+    const searchTerm = this.extractSearchTerm(query);
+
+    if (!searchTerm) {
+      return `🔍 **Client Search**
+
+Please provide a search term. You can search by:
+• **Name/Hostname** - e.g., "find client John's iPhone"
+• **MAC Address** - e.g., "search client aa:bb:cc:dd:ee:ff"
+• **IP Address** - e.g., "find device 192.168.1.50"
+• **Device Type** - e.g., "search for iPhone"
+• **Site** - e.g., "find clients at HQ"
+
+Example: "find client MacBook" or "search device 192.168.1.100"`;
+    }
+
+    const searchLower = searchTerm.toLowerCase();
+
+    // Search across multiple fields (similar to ConnectedClients.tsx filtering)
+    const matchingClients = stations.filter(station => {
+      return (
+        station.macAddress?.toLowerCase().includes(searchLower) ||
+        station.ipAddress?.toLowerCase().includes(searchLower) ||
+        station.hostName?.toLowerCase().includes(searchLower) ||
+        station.apName?.toLowerCase().includes(searchLower) ||
+        station.apSerial?.toLowerCase().includes(searchLower) ||
+        station.username?.toLowerCase().includes(searchLower) ||
+        station.siteName?.toLowerCase().includes(searchLower) ||
+        station.network?.toLowerCase().includes(searchLower) ||
+        station.manufacturer?.toLowerCase().includes(searchLower) ||
+        station.deviceType?.toLowerCase().includes(searchLower)
+      );
+    });
+
+    if (matchingClients.length === 0) {
+      return `❌ **No clients found matching "${searchTerm}"**
+
+Try searching by:
+• Hostname (e.g., "iPhone", "MacBook")
+• MAC address (e.g., "aa:bb:cc:dd:ee:ff")
+• IP address (e.g., "192.168.1.50")
+• Device type (e.g., "laptop", "phone")
+• Site name`;
+    }
+
+    if (matchingClients.length === 1) {
+      const client = matchingClients[0];
+      return `📱 **Client Found**: ${client.hostName || client.macAddress}
+
+**Status**: ${client.status || 'Unknown'}
+**MAC Address**: ${client.macAddress || 'N/A'}
+**IP Address**: ${client.ipAddress || 'Not assigned'}
+**Device Type**: ${client.deviceType || 'Unknown'}
+**Manufacturer**: ${client.manufacturer || 'Unknown'}
+**Access Point**: ${client.apName || client.apSerial || 'Unknown'}
+**Site**: ${client.siteName || 'Unknown'}
+**Network/SSID**: ${client.network || 'Unknown'}
+**Signal Strength**: ${client.rss || client.signalStrength || 'N/A'} dBm
+**Connected Since**: ${client.firstSeen || 'Unknown'}`;
+    }
+
+    // Multiple matches - show summary list
+    const displayClients = matchingClients.slice(0, 8);
+    const clientList = displayClients.map(client => {
+      const status = client.status?.toLowerCase() === 'connected' ? '🟢' : '⚪';
+      const name = client.hostName || client.macAddress;
+      const site = client.siteName || 'Unknown Site';
+      const ip = client.ipAddress || 'No IP';
+      return `${status} **${name}** - ${ip} (${site})`;
+    }).join('\n');
+
+    return `🔍 **Found ${matchingClients.length} clients matching "${searchTerm}":**
+
+${clientList}${matchingClients.length > 8 ? `\n\n...and ${matchingClients.length - 8} more matches` : ''}
+
+**Tip**: Search with a more specific term (MAC address or full hostname) to see detailed info for a single client.`;
+  }
+
+  private extractSearchTerm(query: string): string {
+    // Remove common command prefixes to extract the search term
+    const cleanedQuery = query
+      .replace(/^(find|search|look\s*(for|up)?|where\s+is|locate)\s*/i, '')
+      .replace(/^(client|device|station|for)\s*/i, '')
+      .trim();
+
+    return cleanedQuery;
   }
 
   private async handleNetworkSettingsQuery(query: string, intent: any): Promise<string> {
@@ -594,6 +703,12 @@ I can help you with information about your AURA network:
 • "How many clients?" - Client count and breakdown
 • "Client [MAC address]" - Specific client details
 • "Device types" - Connected device categories
+
+**🔍 Search Clients:**
+• "Find client [name]" - Search by hostname
+• "Search device [IP]" - Search by IP address
+• "Find client [MAC]" - Search by MAC address
+• "Search for iPhone" - Search by device type
 
 **⚙️ Network Settings:**  
 • "SSIDs" or "Network names" - View wireless networks
