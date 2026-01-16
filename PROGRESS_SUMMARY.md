@@ -220,7 +220,7 @@ edge-services-site-main/
       ┌────────┴─────────┐
       │  Railway Web     │
       │  (FREE TIER)     │
-      │  - AURA UI       │
+      │  - EDGE UI       │
       │  - Network Rewind│
       └──────────────────┘
                ▲

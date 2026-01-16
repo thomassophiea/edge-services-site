@@ -67,11 +67,11 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenu
   const menuItems = [
     {
       type: 'item',
-      label: 'About AURA Platform',
+      label: 'About EDGE Platform',
       icon: null,
       action: () => {
         // Handle about action
-        console.log('About AURA Platform');
+        console.log('About EDGE Platform');
       }
     },
     {

@@ -1,6 +1,6 @@
 /**
- * Unified UI Constants for AURA Platform Management Dashboard
- * Autonomous Unified Radio Agent
+ * Unified UI Constants for EDGE Platform Management Dashboard
+ * Edge Data Gateway Engine
  * Ensures consistency across all pages
  */
 

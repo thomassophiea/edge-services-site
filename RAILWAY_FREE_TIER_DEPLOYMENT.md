@@ -82,7 +82,7 @@ This is the **best free solution**:
          ┌─────────┴────────┐
          │  Railway Web     │
          │  (Free Tier)     │
-         │  - AURA UI       │
+         │  - EDGE UI       │
          │  - Network Rewind│
          └──────────────────┘
 ```
@@ -263,7 +263,7 @@ SELECT * FROM service_metrics; -- Run as authenticated user
    - Current usage: ~60 minutes/month
    - Plenty of headroom
 
-2. **Railway Web** (AURA app):
+2. **Railway Web** (EDGE app):
    - Keep traffic moderate
    - Use efficient build (Vite is already optimized)
    - Monitor monthly usage

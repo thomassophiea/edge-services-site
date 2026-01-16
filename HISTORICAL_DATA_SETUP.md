@@ -1,6 +1,6 @@
 # Historical Data Setup Guide
 
-Complete guide to setting up a 7+ day historical database for your AURA network monitoring platform.
+Complete guide to setting up a 7+ day historical database for your EDGE network monitoring platform.
 
 ## Table of Contents
 
@@ -642,7 +642,7 @@ You now have a production-ready historical database that:
 ✅ **Scales efficiently** (well within free tier limits)
 ✅ **Enables powerful analytics** (pre-built views and queries)
 
-Your AURA platform can now provide:
+Your EDGE platform can now provide:
 - Network Rewind (time-travel debugging)
 - Historical performance analysis
 - Client troubleshooting

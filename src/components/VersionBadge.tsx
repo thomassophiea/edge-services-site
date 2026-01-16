@@ -136,7 +136,7 @@ export function VersionBadge() {
 
           <div className="pt-2 border-t">
             <p className="text-xs text-muted-foreground">
-              AURA (Autonomous Unified Radio Agent) v500
+              EDGE (Edge Data Gateway Engine) v500
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-# AURA Development Session Summary
+# EDGE Development Session Summary
 **Date:** December 13, 2025
 **Session Focus:** UI Improvements & WiFi QR Code Feature
 **Final Commit:** `4d3d314` - Fix blank screen crash on Create WLAN dialog open
@@ -7,7 +7,7 @@
 
 ## Project Overview
 
-**AURA (Autonomous Unified Radio Agent) v500**
+**EDGE (Edge Data Gateway Engine) v500**
 - **Total Lines of Code:** 64,347 lines
 - **Components:** 124 files (45,429 lines)
 - **Services:** 19 files (8,860 lines)

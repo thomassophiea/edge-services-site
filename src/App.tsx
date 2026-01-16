@@ -62,7 +62,7 @@ const pageInfo = {
   'network-visualization': { title: 'Network Visualization', description: 'Visualize network topology and connections' },
   'report-widgets': { title: 'Report Widgets', description: 'Real-time analytics and monitoring widgets' },
   'administration': { title: 'Administration', description: 'System administration, users, applications, and licensing' },
-  'api-test': { title: 'API Test Tool', description: 'Test and explore AURA API endpoints' },
+  'api-test': { title: 'API Test Tool', description: 'Test and explore EDGE API endpoints' },
   'configure-sites': { title: 'Sites', description: 'Manage and configure network sites and locations' },
   'configure-networks': { title: 'Configure Networks', description: 'Set up and manage network configurations' },
 };

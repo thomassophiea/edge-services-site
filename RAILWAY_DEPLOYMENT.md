@@ -1,11 +1,11 @@
 # Railway Deployment Guide - Network Metrics Collection
 
-This guide shows you how to deploy the AURA application with continuous network metrics collection on Railway.
+This guide shows you how to deploy the EDGE application with continuous network metrics collection on Railway.
 
 ## Overview
 
 Your Railway deployment will include:
-- **Web Service**: The main AURA web application
+- **Web Service**: The main EDGE web application
 - **Worker Service**: Background metrics collector (runs 24/7 in the cloud)
 
 Both services share the same environment variables and database, with zero local setup required.

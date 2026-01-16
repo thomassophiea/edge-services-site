@@ -248,7 +248,7 @@ GitHub Actions will now:
 
 ### View Historical Data in UI
 
-1. Open your AURA app
+1. Open your EDGE app
 2. Go to Service Levels page
 3. Select a service
 4. After 30-60 minutes of collection:

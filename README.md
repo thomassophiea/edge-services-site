@@ -1,7 +1,7 @@
 
-  # AURA (Autonomous Unified Radio Agent) v500 (w/3rd party)
+  # EDGE (Edge Data Gateway Engine) v500 (w/3rd party)
 
-  This is a code bundle for AURA (Autonomous Unified Radio Agent) v500 (w/3rd party). The original project is available at https://www.figma.com/design/PON5nGOoAuCSZGt3PoWPPf/AURA--Autonomous-Unified-Radio-Agent--v500--w-3rd-party-.
+  This is a code bundle for EDGE (Edge Data Gateway Engine) v500 (w/3rd party). The original project is available at https://www.figma.com/design/PON5nGOoAuCSZGt3PoWPPf/AURA--Autonomous-Unified-Radio-Agent--v500--w-3rd-party-.
 
   ## Running the code
 

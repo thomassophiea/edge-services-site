@@ -1,6 +1,6 @@
 # ✅ Network Rewind - Ready to Deploy!
 
-Your AURA application is now ready to deploy with the Network Rewind feature, **completely free** using Railway + GitHub Actions.
+Your EDGE application is now ready to deploy with the Network Rewind feature, **completely free** using Railway + GitHub Actions.
 
 ## 🎯 What Was Done
 
@@ -109,7 +109,7 @@ This step-by-step checklist walks you through:
          │   Railway Web App    │
          │   (Free Tier)        │
          │                      │
-         │  - AURA UI           │
+         │  - EDGE UI           │
          │  - Network Rewind    │
          │  - Time Slider       │
          └──────────────────────┘
@@ -129,7 +129,7 @@ This step-by-step checklist walks you through:
 
 ### Immediate (After deploying to Railway):
 - ✅ Web app is live and accessible
-- ✅ Users can access AURA interface
+- ✅ Users can access EDGE interface
 - ✅ Network Rewind component visible (shows "No Data" initially)
 
 ### After 30 minutes:

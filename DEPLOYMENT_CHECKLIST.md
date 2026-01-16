@@ -1,6 +1,6 @@
 # 🚀 Quick Deployment Checklist (100% Free)
 
-Follow this checklist to deploy AURA with Network Rewind feature completely free using Railway + GitHub Actions.
+Follow this checklist to deploy EDGE with Network Rewind feature completely free using Railway + GitHub Actions.
 
 ## ✅ Pre-Deployment
 

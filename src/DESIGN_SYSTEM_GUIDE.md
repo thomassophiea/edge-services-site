@@ -1,8 +1,8 @@
-# AURA Platform Management Dashboard - Design System Guide
-## Autonomous Unified Radio Agent
+# EDGE Platform Management Dashboard - Design System Guide
+## Edge Data Gateway Engine
 
 ## Overview
-This guide ensures consistency across all pages of the AURA Platform Management Dashboard using Material Design principles with authentic colors (#BB86FC primary, #03DAC5 secondary, #121212 background), Roboto typography, proper elevation shadows, and interaction states.
+This guide ensures consistency across all pages of the EDGE Platform Management Dashboard using Material Design principles with authentic colors (#BB86FC primary, #03DAC5 secondary, #121212 background), Roboto typography, proper elevation shadows, and interaction states.
 
 ## Quick Reference
 
