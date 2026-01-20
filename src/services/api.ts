@@ -3289,7 +3289,7 @@ class ApiService {
         // Convert audit logs to station event format
         return stationLogs.map(log => ({
           id: log.id,
-          timestamp: String(log.timestamp || log.time || Date.now()),
+          timestamp: this.normalizeTimestamp(log.timestamp || log.time),
           eventType: this.normalizeEventType(log.action || log.actionType || 'audit'),
           macAddress: macAddress,
           description: log.description || log.message,
@@ -3309,12 +3309,39 @@ class ApiService {
   }
 
   /**
+   * Normalize timestamp to milliseconds
+   * Handles seconds (10 digits), milliseconds (13 digits), and ISO strings
+   */
+  private normalizeTimestamp(timestamp: any): string {
+    if (!timestamp) return String(Date.now());
+
+    // If it's a string that looks like an ISO date, convert it
+    if (typeof timestamp === 'string' && timestamp.includes('T')) {
+      const parsed = Date.parse(timestamp);
+      if (!isNaN(parsed)) return String(parsed);
+    }
+
+    // Convert to number
+    const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
+    if (isNaN(ts)) return String(Date.now());
+
+    // If timestamp is less than 10^10, it's in seconds - convert to milliseconds
+    // Unix timestamp in seconds: ~1.7 billion (10 digits)
+    // Unix timestamp in milliseconds: ~1.7 trillion (13 digits)
+    if (ts < 10000000000) {
+      return String(ts * 1000);
+    }
+
+    return String(ts);
+  }
+
+  /**
    * Normalize station events to consistent format
    */
   private normalizeStationEvents(events: any[]): StationEvent[] {
     return events.map(event => ({
       id: event.id || event.eventId || String(Math.random()),
-      timestamp: String(event.timestamp || event.time || event.eventTime || Date.now()),
+      timestamp: this.normalizeTimestamp(event.timestamp || event.time || event.eventTime),
       eventType: this.normalizeEventType(event.eventType || event.type || event.action || 'Unknown'),
       macAddress: event.macAddress || event.mac || event.clientMac || '',
       ipAddress: event.ipAddress || event.ip || event.clientIp,
