@@ -409,8 +409,8 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
     );
   }
 
-  const TIMELINE_HEIGHT = 120;
-  const CHART_HEIGHT = uniqueAPs.length * TIMELINE_HEIGHT + 120;
+  // Calculate row height based on number of APs (will be applied via CSS)
+  const AP_ROW_HEIGHT = Math.max(80, Math.min(120, 400 / uniqueAPs.length));
 
   return (
     <div className="flex flex-col h-full">
@@ -681,10 +681,10 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
       </div>
 
       {/* Main timeline view */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex min-h-0">
         {/* AP Names sidebar */}
-        <div className="w-72 border-r bg-muted/20 overflow-y-auto">
-          <div className="sticky top-0 bg-muted/40 border-b p-3 font-semibold text-sm">
+        <div className="w-60 border-r bg-muted/20 flex-shrink-0">
+          <div className="bg-muted/40 border-b px-3 py-2 font-semibold text-xs" style={{ height: '40px', display: 'flex', alignItems: 'center' }}>
             Access Points ({uniqueAPs.length})
           </div>
           {uniqueAPs.map((ap) => {
@@ -695,17 +695,17 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
             return (
               <div
                 key={ap}
-                className="p-3 border-b flex items-center gap-3 hover:bg-accent/50 transition-colors"
-                style={{ height: `${TIMELINE_HEIGHT}px` }}
+                className="px-3 py-2 border-b flex items-center gap-2 hover:bg-accent/50 transition-colors"
+                style={{ height: `${AP_ROW_HEIGHT}px` }}
               >
-                <Radio className="h-5 w-5 text-primary flex-shrink-0" />
+                <Radio className="h-4 w-4 text-primary flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{ap}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="font-medium text-xs truncate">{ap}</div>
+                  <div className="text-[10px] text-muted-foreground">
                     {apEvents.length} events
                   </div>
                   {totalDwell > 0 && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-[10px] text-muted-foreground">
                       Dwell: {formatDuration(totalDwell)}
                     </div>
                   )}
@@ -717,12 +717,11 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
 
         {/* Timeline chart */}
         <div
-          className="flex-1 overflow-auto relative"
+          className="flex-1 relative"
           onClick={() => setSelectedEvent(null)}
         >
           <div
-            className="relative min-w-full"
-            style={{ height: `${CHART_HEIGHT}px`, minWidth: '1000px' }}
+            className="relative w-full h-full"
           >
             {/* Time grid lines */}
             {[0, 25, 50, 75, 100].map(percent => (
@@ -731,7 +730,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 className="absolute top-0 bottom-0 border-l border-border/40"
                 style={{ left: `${percent}%` }}
               >
-                <div className="sticky top-0 text-xs text-muted-foreground p-2 bg-background/90">
+                <div className="text-[10px] text-muted-foreground px-1 py-2 bg-background/90 whitespace-nowrap" style={{ height: '40px', display: 'flex', alignItems: 'center' }}>
                   {formatTimeShort(timeRange.min + (timeRange.max - timeRange.min) * (percent / 100))}
                 </div>
               </div>
@@ -743,8 +742,8 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 key={ap}
                 className="absolute left-0 right-0 border-b border-border/30"
                 style={{
-                  top: `${idx * TIMELINE_HEIGHT + 50}px`,
-                  height: `${TIMELINE_HEIGHT}px`
+                  top: `${idx * AP_ROW_HEIGHT + 40}px`,
+                  height: `${AP_ROW_HEIGHT}px`
                 }}
               />
             ))}
@@ -755,9 +754,9 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
               const nextEvent = roamingEvents[idx + 1];
 
               const x1 = getTimelinePosition(event.timestamp);
-              const y1 = getAPRow(event.apName) * TIMELINE_HEIGHT + 80;
+              const y1 = getAPRow(event.apName) * AP_ROW_HEIGHT + 40 + AP_ROW_HEIGHT / 2;
               const x2 = getTimelinePosition(nextEvent.timestamp);
-              const y2 = getAPRow(nextEvent.apName) * TIMELINE_HEIGHT + 80;
+              const y2 = getAPRow(nextEvent.apName) * AP_ROW_HEIGHT + 40 + AP_ROW_HEIGHT / 2;
 
               const isBandSteering = nextEvent.isBandSteering;
               const isFailedConnection = nextEvent.isFailedRoam;
@@ -800,7 +799,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
             {/* Event dots */}
             {roamingEvents.map((event, idx) => {
               const x = getTimelinePosition(event.timestamp);
-              const y = getAPRow(event.apName) * TIMELINE_HEIGHT + 80;
+              const y = getAPRow(event.apName) * AP_ROW_HEIGHT + 40 + AP_ROW_HEIGHT / 2;
 
               const dotColor = event.isFailedRoam ? 'bg-red-500 ring-2 ring-red-300' :
                 event.isLateRoam ? 'bg-orange-500 ring-2 ring-orange-300' :
@@ -854,7 +853,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                       className="absolute z-20 cursor-pointer"
                       style={{
                         left: `${x}%`,
-                        top: `${y + 12}px`,
+                        top: `${y + 10}px`,
                         transform: 'translate(-50%, 0)'
                       }}
                       onClick={(e) => {
@@ -876,7 +875,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
         {/* Event details sidebar */}
         {selectedEvent && (
           <div
-            className="w-80 border-l bg-muted/20 p-4 overflow-y-auto"
+            className="w-80 border-l bg-muted/20 p-4 flex-shrink-0"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
