@@ -26,7 +26,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { apiService, Station, StationEvent } from '../services/api';
+import { apiService, Station, StationEvent, APEvent, RRMEvent } from '../services/api';
 import { RoamingTrail } from './RoamingTrail';
 import { trafficService, StationTrafficStats } from '../services/traffic';
 import { siteMappingService } from '../services/siteMapping';
@@ -53,6 +53,8 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
 
   // Station Events state
   const [stationEvents, setStationEvents] = useState<StationEvent[]>([]);
+  const [apEvents, setApEvents] = useState<APEvent[]>([]);
+  const [rrmEvents, setRrmEvents] = useState<RRMEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
   const [showRoamingTrail, setShowRoamingTrail] = useState(false);
@@ -200,10 +202,20 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
   const loadStationEvents = async () => {
     try {
       setIsLoadingEvents(true);
-      console.log('[ClientDetail] Loading station events for:', macAddress);
-      const events = await apiService.fetchStationEvents(macAddress);
-      console.log('[ClientDetail] Loaded station events:', events);
-      setStationEvents(events);
+      console.log('[ClientDetail] Loading station events with correlation for:', macAddress);
+
+      // Try to fetch correlated events (station + AP + RRM)
+      const correlatedEvents = await apiService.fetchStationEventsWithCorrelation(macAddress, '24H');
+
+      console.log('[ClientDetail] Loaded correlated events:', {
+        station: correlatedEvents.stationEvents.length,
+        ap: correlatedEvents.apEvents.length,
+        rrm: correlatedEvents.smartRfEvents.length
+      });
+
+      setStationEvents(correlatedEvents.stationEvents);
+      setApEvents(correlatedEvents.apEvents);
+      setRrmEvents(correlatedEvents.smartRfEvents);
     } catch (error) {
       console.warn('Failed to load station events:', error);
       // Don't show error toast for events as it's supplementary data
@@ -1164,6 +1176,8 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
             <div className="flex-1 overflow-hidden">
               <RoamingTrail
                 events={stationEvents}
+                apEvents={apEvents}
+                rrmEvents={rrmEvents}
                 macAddress={macAddress}
                 hostName={clientDetails?.hostName}
               />

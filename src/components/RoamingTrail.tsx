@@ -20,12 +20,14 @@ import {
   PanelRightClose,
   PanelRightOpen
 } from 'lucide-react';
-import { StationEvent } from '../services/api';
+import { StationEvent, APEvent, RRMEvent } from '../services/api';
 import { getReasonCodeInfo, isFailureReasonCode, ROAMING_ISSUES, ISSUE_DESCRIPTIONS, type RoamingIssue } from '../lib/wifi-codes';
 import { formatCompactNumber } from '../lib/units';
 
 interface RoamingTrailProps {
   events: StationEvent[];
+  apEvents?: APEvent[];       // AP Events for correlation
+  rrmEvents?: RRMEvent[];     // RRM Events (formerly SmartRF) for correlation
   macAddress: string;
   hostName?: string;
 }
@@ -112,8 +114,9 @@ type AlertFilter = {
   apPair?: { ap1: string; ap2: string };
 };
 
-export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
+export function RoamingTrail({ events, apEvents = [], rrmEvents = [], macAddress }: RoamingTrailProps) {
   const [selectedEvent, setSelectedEvent] = useState<RoamingEvent | null>(null);
+  const [selectedCorrelationEvent, setSelectedCorrelationEvent] = useState<APEvent | RRMEvent | null>(null);
   const [filterType, setFilterType] = useState<FilterType>('time');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('24h');
   const [countFilter, setCountFilter] = useState<CountFilter>(50);
@@ -122,6 +125,9 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
   const [showLegend, setShowLegend] = useState(true);
   const [showDetails, setShowDetails] = useState(true);
   const [alertFilter, setAlertFilter] = useState<AlertFilter>({ type: 'none' });
+  // Event correlation toggles
+  const [showAPEvents, setShowAPEvents] = useState(true);
+  const [showRRMEvents, setShowRRMEvents] = useState(true);
 
   // Process and filter roaming events
   const roamingEvents = useMemo(() => {
@@ -393,14 +399,75 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
     };
   }, [roamingEvents]);
 
-  // Get unique APs and time range
+  // Process and filter AP Events
+  const filteredAPEvents = useMemo(() => {
+    if (!showAPEvents || apEvents.length === 0) return [];
+
+    let filtered = [...apEvents];
+
+    // Apply time filtering to AP events
+    if (filterType === 'time' && timeFilter !== 'all') {
+      const now = Date.now();
+      const timeLimit =
+        timeFilter === '1h' ? now - 3600000 :
+        timeFilter === '24h' ? now - 86400000 :
+        timeFilter === '7d' ? now - 604800000 :
+        0;
+      filtered = filtered.filter(event => parseInt(event.timestamp) >= timeLimit);
+    }
+
+    return filtered.map(event => ({
+      ...event,
+      timestamp: parseInt(event.timestamp)
+    }));
+  }, [apEvents, showAPEvents, filterType, timeFilter]);
+
+  // Process and filter RRM Events
+  const filteredRRMEvents = useMemo(() => {
+    if (!showRRMEvents || rrmEvents.length === 0) return [];
+
+    let filtered = [...rrmEvents];
+
+    // Apply time filtering to RRM events
+    if (filterType === 'time' && timeFilter !== 'all') {
+      const now = Date.now();
+      const timeLimit =
+        timeFilter === '1h' ? now - 3600000 :
+        timeFilter === '24h' ? now - 86400000 :
+        timeFilter === '7d' ? now - 604800000 :
+        0;
+      filtered = filtered.filter(event => parseInt(event.timestamp) >= timeLimit);
+    }
+
+    return filtered.map(event => ({
+      ...event,
+      timestamp: parseInt(event.timestamp)
+    }));
+  }, [rrmEvents, showRRMEvents, filterType, timeFilter]);
+
+  // Get unique APs and time range (includes correlation events)
   const { uniqueAPs, timeRange } = useMemo(() => {
     const apSet = new Set<string>();
     let minTime = Infinity;
     let maxTime = -Infinity;
 
+    // Include roaming events
     roamingEvents.forEach(event => {
       apSet.add(event.apName);
+      minTime = Math.min(minTime, event.timestamp);
+      maxTime = Math.max(maxTime, event.timestamp);
+    });
+
+    // Include AP events
+    filteredAPEvents.forEach(event => {
+      if (event.apName) apSet.add(event.apName);
+      minTime = Math.min(minTime, event.timestamp);
+      maxTime = Math.max(maxTime, event.timestamp);
+    });
+
+    // Include RRM events
+    filteredRRMEvents.forEach(event => {
+      if (event.apName) apSet.add(event.apName);
       minTime = Math.min(minTime, event.timestamp);
       maxTime = Math.max(maxTime, event.timestamp);
     });
@@ -409,7 +476,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
       uniqueAPs: Array.from(apSet),
       timeRange: { min: minTime, max: maxTime }
     };
-  }, [roamingEvents]);
+  }, [roamingEvents, filteredAPEvents, filteredRRMEvents]);
 
   const formatTime = (timestamp: number) => {
     return new Date(timestamp).toLocaleString('en-US', {
@@ -557,6 +624,38 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
             {stats.interbandRoams > 0 && (
               <span className="text-red-500"><strong>{stats.interbandRoams}</strong> interband</span>
             )}
+          </div>
+
+          {/* Event Correlation Toggles */}
+          <div className="flex items-center gap-3 border-l pl-3 ml-1">
+            <label className="flex items-center gap-1.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={showAPEvents}
+                onChange={(e) => setShowAPEvents(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <span className="text-xs text-blue-600 group-hover:text-blue-700 font-medium whitespace-nowrap">
+                AP Events
+              </span>
+              {filteredAPEvents.length > 0 && (
+                <span className="text-[10px] text-blue-500">({filteredAPEvents.length})</span>
+              )}
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={showRRMEvents}
+                onChange={(e) => setShowRRMEvents(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+              />
+              <span className="text-xs text-purple-600 group-hover:text-purple-700 font-medium whitespace-nowrap">
+                RRM Events
+              </span>
+              {filteredRRMEvents.length > 0 && (
+                <span className="text-[10px] text-purple-500">({filteredRRMEvents.length})</span>
+              )}
+            </label>
           </div>
 
           {/* Right: Controls */}
@@ -791,6 +890,11 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
               Interband
             </span>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Correlation:</span>
+            <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-sm bg-blue-500" />AP Event</span>
+            <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 bg-purple-500" style={{ transform: 'rotate(45deg)' }} />RRM Event</span>
+          </div>
         </div>
       )}
 
@@ -983,12 +1087,83 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 </React.Fragment>
               );
             })}
+
+            {/* AP Events (blue squares) */}
+            {showAPEvents && filteredAPEvents.map((event, idx) => {
+              const x = getTimelinePosition(event.timestamp);
+              const apRow = event.apName ? getAPRow(event.apName) : 0;
+              const y = apRow * AP_ROW_HEIGHT + 40 + AP_ROW_HEIGHT / 2;
+
+              // Skip if AP not in our list (event outside visible APs)
+              if (apRow < 0) return null;
+
+              return (
+                <div
+                  key={`ap-${idx}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCorrelationEvent(event);
+                    setSelectedEvent(null);
+                    setShowDetails(true);
+                  }}
+                  className={`
+                    absolute w-3.5 h-3.5 rounded-sm border-2 border-background bg-blue-500
+                    hover:scale-125 transition-all cursor-pointer z-10
+                    ${selectedCorrelationEvent === event ? 'ring-2 ring-blue-400 ring-offset-1 scale-125' : ''}
+                  `}
+                  style={{
+                    left: `${x}%`,
+                    top: `${y - 12}px`,
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                  title={`AP Event: ${event.eventType || 'Unknown'} at ${event.apName || 'Unknown AP'}`}
+                  role="button"
+                  tabIndex={0}
+                />
+              );
+            })}
+
+            {/* RRM Events (purple diamonds) */}
+            {showRRMEvents && filteredRRMEvents.map((event, idx) => {
+              const x = getTimelinePosition(event.timestamp);
+              const apRow = event.apName ? getAPRow(event.apName) : 0;
+              const y = apRow * AP_ROW_HEIGHT + 40 + AP_ROW_HEIGHT / 2;
+
+              // Skip if AP not in our list (event outside visible APs)
+              if (apRow < 0) return null;
+
+              return (
+                <div
+                  key={`rrm-${idx}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCorrelationEvent(event);
+                    setSelectedEvent(null);
+                    setShowDetails(true);
+                  }}
+                  className={`
+                    absolute w-3.5 h-3.5 bg-purple-500 border-2 border-background
+                    hover:scale-125 transition-all cursor-pointer z-10
+                    ${selectedCorrelationEvent === event ? 'ring-2 ring-purple-400 ring-offset-1 scale-125' : ''}
+                  `}
+                  style={{
+                    left: `${x}%`,
+                    top: `${y + 12}px`,
+                    transform: 'translate(-50%, -50%) rotate(45deg)'
+                  }}
+                  title={`RRM Event: ${event.eventType || 'Unknown'} at ${event.apName || 'Unknown AP'}`}
+                  role="button"
+                  tabIndex={0}
+                />
+              );
+            })}
           </div>
         </div>
 
         {/* Event details sidebar */}
         {showDetails && selectedEvent && (
           <div
+            key={selectedEvent.timestamp}
             className="w-72 border-l bg-background p-3 flex-shrink-0 z-20 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -1222,6 +1397,138 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Correlation Event details sidebar (AP Events and RRM Events) */}
+        {showDetails && selectedCorrelationEvent && !selectedEvent && (
+          <div
+            key={selectedCorrelationEvent.timestamp}
+            className="w-72 border-l bg-background p-3 flex-shrink-0 z-20 overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-sm">
+                  {'channel' in selectedCorrelationEvent ? 'RRM Event' : 'AP Event'}
+                </h4>
+                <button
+                  onClick={() => setSelectedCorrelationEvent(null)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <Badge
+                className={'channel' in selectedCorrelationEvent
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-blue-500 text-white'
+                }
+              >
+                {selectedCorrelationEvent.eventType || 'Event'}
+              </Badge>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              {/* Timestamp */}
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Time</span>
+                </div>
+                <div className="ml-6 text-muted-foreground text-xs">
+                  {new Date(parseInt(selectedCorrelationEvent.timestamp)).toLocaleString()}
+                </div>
+              </div>
+
+              {/* AP Info */}
+              {selectedCorrelationEvent.apName && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Radio className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Access Point</span>
+                  </div>
+                  <div className="ml-6 text-muted-foreground">{selectedCorrelationEvent.apName}</div>
+                  {selectedCorrelationEvent.apSerial && (
+                    <div className="ml-6 text-xs text-muted-foreground font-mono">{selectedCorrelationEvent.apSerial}</div>
+                  )}
+                </div>
+              )}
+
+              {/* RRM-specific: Channel info */}
+              {'channel' in selectedCorrelationEvent && selectedCorrelationEvent.channel && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="h-4 w-4 text-purple-500" />
+                    <span className="font-medium">Channel</span>
+                  </div>
+                  <div className="ml-6 text-muted-foreground">
+                    {(selectedCorrelationEvent as RRMEvent).previousChannel && (
+                      <span className="text-red-500">{(selectedCorrelationEvent as RRMEvent).previousChannel} → </span>
+                    )}
+                    <span className="text-green-600 font-medium">{selectedCorrelationEvent.channel}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* RRM-specific: Power info */}
+              {'txPower' in selectedCorrelationEvent && (selectedCorrelationEvent as RRMEvent).txPower && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Signal className="h-4 w-4 text-purple-500" />
+                    <span className="font-medium">Tx Power</span>
+                  </div>
+                  <div className="ml-6 text-muted-foreground">
+                    {(selectedCorrelationEvent as RRMEvent).previousTxPower && (
+                      <span className="text-red-500">{(selectedCorrelationEvent as RRMEvent).previousTxPower} dBm → </span>
+                    )}
+                    <span className="text-green-600 font-medium">{(selectedCorrelationEvent as RRMEvent).txPower} dBm</span>
+                  </div>
+                </div>
+              )}
+
+              {/* RRM-specific: Band */}
+              {'band' in selectedCorrelationEvent && (selectedCorrelationEvent as RRMEvent).band && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground">Band:</span>
+                  <span className="font-medium">{(selectedCorrelationEvent as RRMEvent).band}</span>
+                </div>
+              )}
+
+              {/* RRM-specific: Reason */}
+              {'reason' in selectedCorrelationEvent && (selectedCorrelationEvent as RRMEvent).reason && (
+                <div className="p-2 bg-purple-500/10 border border-purple-500/30 rounded text-xs">
+                  <div className="font-medium text-purple-700 dark:text-purple-400">Reason</div>
+                  <div className="text-purple-600/80 dark:text-purple-400/80 mt-1">
+                    {(selectedCorrelationEvent as RRMEvent).reason}
+                  </div>
+                </div>
+              )}
+
+              {/* Details */}
+              {selectedCorrelationEvent.details && (
+                <div>
+                  <div className="font-medium mb-1 text-xs text-muted-foreground">Details</div>
+                  <div className="text-xs text-muted-foreground font-mono bg-background/50 p-2 rounded break-words">
+                    {selectedCorrelationEvent.details}
+                  </div>
+                </div>
+              )}
+
+              {/* Level/Severity */}
+              {selectedCorrelationEvent.level && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground">Level:</span>
+                  <Badge variant={
+                    selectedCorrelationEvent.level.toLowerCase() === 'error' ? 'destructive' :
+                    selectedCorrelationEvent.level.toLowerCase() === 'warning' ? 'secondary' :
+                    'outline'
+                  }>
+                    {selectedCorrelationEvent.level}
+                  </Badge>
                 </div>
               )}
             </div>

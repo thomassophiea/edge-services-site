@@ -187,6 +187,46 @@ export interface StationTrafficStats {
   [key: string]: any;
 }
 
+// AP Event - events from the Access Point perspective
+export interface APEvent {
+  timestamp: string;           // Unix timestamp in milliseconds as string
+  eventType: string;           // Event type
+  apName?: string;             // Access Point name
+  apSerial?: string;           // Access Point serial number
+  details?: string;            // Event details
+  type?: string;               // Event category
+  level?: string;              // Severity level
+  category?: string;           // Event category
+  context?: string;            // Event context
+  id?: string;                 // Event ID
+}
+
+// RRM Event (formerly SmartRF) - Radio Resource Management events
+export interface RRMEvent {
+  timestamp: string;           // Unix timestamp in milliseconds as string
+  eventType: string;           // Event type (channel change, power adjustment, etc.)
+  apName?: string;             // Access Point name
+  apSerial?: string;           // Access Point serial number
+  radio?: string;              // Radio identifier
+  channel?: number;            // WiFi channel
+  previousChannel?: number;    // Previous channel (for channel changes)
+  txPower?: number;            // Transmit power
+  previousTxPower?: number;    // Previous transmit power
+  band?: string;               // Frequency band
+  reason?: string;             // Reason for the change
+  details?: string;            // Event details
+  type?: string;               // Event category
+  level?: string;              // Severity level
+  id?: string;                 // Event ID
+}
+
+// Combined station events response from muEvent widget
+export interface StationEventsResponse {
+  stationEvents: StationEvent[];
+  apEvents: APEvent[];
+  smartRfEvents: RRMEvent[];  // API returns as smartRfEvents, we display as RRM Events
+}
+
 export interface APRadio {
   radioName: string;
   radioIndex: number;
@@ -3397,6 +3437,95 @@ class ApiService {
 
     // Return original with first letter capitalized if no match
     return eventType.charAt(0).toUpperCase() + eventType.slice(1);
+  }
+
+  /**
+   * Fetch combined station events including AP events and RRM (SmartRF) events
+   * This provides event correlation data for the Roaming Trail view
+   * Endpoint: GET /v1/report/stations/{macAddress}?widgetList=muEvent
+   */
+  async fetchStationEventsWithCorrelation(
+    macAddress: string,
+    duration: string = '24H',
+    resolution: number = 15
+  ): Promise<StationEventsResponse> {
+    const emptyResponse: StationEventsResponse = {
+      stationEvents: [],
+      apEvents: [],
+      smartRfEvents: []
+    };
+
+    try {
+      const noCache = Date.now();
+      const endpoint = `/v1/report/stations/${encodeURIComponent(macAddress)}?noCache=${noCache}&duration=${duration}&resolution=${resolution}&widgetList=muEvent`;
+
+      console.log(`[API] Fetching correlated events for MAC: ${macAddress}`);
+      const response = await this.makeAuthenticatedRequest(endpoint, {}, 15000);
+
+      if (!response.ok) {
+        console.warn(`[API] Correlated events API returned ${response.status}`);
+        // Fall back to regular station events
+        const stationEvents = await this.fetchStationEvents(macAddress);
+        return { ...emptyResponse, stationEvents };
+      }
+
+      const data = await response.json();
+
+      // Normalize station events
+      const stationEvents = this.normalizeStationEvents(
+        data.stationEvents || []
+      );
+
+      // Normalize AP events
+      const apEvents: APEvent[] = (data.apEvents || []).map((event: any) => ({
+        id: event.id || event.eventId || String(Math.random()),
+        timestamp: this.normalizeTimestamp(event.timestamp || event.time),
+        eventType: event.eventType || event.type || 'AP Event',
+        apName: event.apName || event.ap || '',
+        apSerial: event.apSerial || event.serialNumber || '',
+        details: event.details || event.description || event.message || '',
+        type: event.type || event.category,
+        level: event.level || event.severity,
+        category: event.category,
+        context: event.context
+      }));
+
+      // Normalize RRM events (API calls them smartRfEvents)
+      const smartRfEvents: RRMEvent[] = (data.smartRfEvents || []).map((event: any) => ({
+        id: event.id || event.eventId || String(Math.random()),
+        timestamp: this.normalizeTimestamp(event.timestamp || event.time),
+        eventType: event.eventType || event.type || 'RRM Event',
+        apName: event.apName || event.ap || '',
+        apSerial: event.apSerial || event.serialNumber || '',
+        radio: event.radio || event.radioName,
+        channel: event.channel || event.newChannel,
+        previousChannel: event.previousChannel || event.oldChannel,
+        txPower: event.txPower || event.power || event.newPower,
+        previousTxPower: event.previousTxPower || event.oldPower,
+        band: event.band || event.frequency,
+        reason: event.reason || event.triggerReason,
+        details: event.details || event.description || event.message || '',
+        type: event.type || event.category,
+        level: event.level || event.severity
+      }));
+
+      console.log(`[API] ✓ Loaded ${stationEvents.length} station, ${apEvents.length} AP, ${smartRfEvents.length} RRM events`);
+
+      return {
+        stationEvents,
+        apEvents,
+        smartRfEvents
+      };
+    } catch (error) {
+      console.error(`[API] Failed to fetch correlated events for ${macAddress}:`, error);
+      // Fall back to regular station events
+      try {
+        const stationEvents = await this.fetchStationEvents(macAddress);
+        return { ...emptyResponse, stationEvents };
+      } catch {
+        return emptyResponse;
+      }
+    }
   }
 
   // ==================== PHASE 1: STATE & ANALYTICS APIs ====================

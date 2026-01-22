@@ -18,7 +18,7 @@ import { AlertCircle, Users, Search, RefreshCw, Filter, Wifi, Activity, Timer, S
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Alert, AlertDescription } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
-import { apiService, Station, type StationEvent } from '../services/api';
+import { apiService, Station, type StationEvent, type APEvent, type RRMEvent } from '../services/api';
 import { RoamingTrail } from './RoamingTrail';
 import { identifyClient, lookupVendor, suggestDeviceType } from '../services/ouiLookup';
 import { toast } from 'sonner';
@@ -48,6 +48,8 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
   const [groupId, setGroupId] = useState<string>('');
   const [siteId, setSiteId] = useState<string>('');
   const [stationEvents, setStationEvents] = useState<StationEvent[]>([]);
+  const [apEvents, setApEvents] = useState<APEvent[]>([]);
+  const [rrmEvents, setRrmEvents] = useState<RRMEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
   const [stationTrafficData, setStationTrafficData] = useState<Map<string, any>>(new Map());
@@ -241,16 +243,27 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
   const loadStationEvents = async (macAddress: string) => {
     if (!macAddress) return;
 
-    console.log(`[ConnectedClients] Loading station events for client:`, macAddress);
+    console.log(`[ConnectedClients] Loading station events with correlation for client:`, macAddress);
     setIsLoadingEvents(true);
     setEventTypeFilter('all'); // Reset filter when loading new events
     try {
-      const events = await apiService.fetchStationEvents(macAddress);
-      console.log(`[ConnectedClients] Received ${events.length} events:`, events.slice(0, 3));
-      setStationEvents(events);
+      // Fetch correlated events (station + AP + RRM)
+      const correlatedEvents = await apiService.fetchStationEventsWithCorrelation(macAddress, '24H');
+
+      console.log(`[ConnectedClients] Received correlated events:`, {
+        station: correlatedEvents.stationEvents.length,
+        ap: correlatedEvents.apEvents.length,
+        rrm: correlatedEvents.smartRfEvents.length
+      });
+
+      setStationEvents(correlatedEvents.stationEvents);
+      setApEvents(correlatedEvents.apEvents);
+      setRrmEvents(correlatedEvents.smartRfEvents);
     } catch (err) {
       console.error('[ConnectedClients] Failed to load station events:', err);
       setStationEvents([]);
+      setApEvents([]);
+      setRrmEvents([]);
       toast.error('Failed to load station events');
     } finally {
       setIsLoadingEvents(false);
@@ -1140,6 +1153,8 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
             <div className="flex-1 overflow-hidden">
               <RoamingTrail
                 events={stationEvents}
+                apEvents={apEvents}
+                rrmEvents={rrmEvents}
                 macAddress={selectedStation.macAddress}
                 hostName={selectedStation.hostName}
               />
