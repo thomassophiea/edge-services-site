@@ -49,7 +49,6 @@ import { FilterBar } from './FilterBar';
 import { VersionBadge } from './VersionBadge';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
 import { VenueStatisticsWidget } from './VenueStatisticsWidget';
-import { SwitchesWidget } from './SwitchesWidget';
 import { ConfigurationProfilesWidget } from './ConfigurationProfilesWidget';
 import { AuditLogsWidget } from './AuditLogsWidget';
 import { BestPracticesWidget } from './BestPracticesWidget';
@@ -2130,8 +2129,6 @@ function DashboardEnhancedComponent() {
         <AuditLogsWidget />
       </div>
 
-      {/* Network Switches Widget - Moved to Bottom */}
-      <SwitchesWidget siteId={filters.site} />
 
       {/* Client Detail Dialog */}
       <DetailSlideOut
