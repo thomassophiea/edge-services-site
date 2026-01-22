@@ -164,6 +164,7 @@ export const ROAMING_ISSUES = {
   AUTH_FAILURE: 'auth-failure',
   POOR_HANDOFF: 'poor-handoff',
   BAND_BOUNCE: 'band-bounce',
+  INTERBAND_ROAM: 'interband-roam',
 } as const;
 
 export type RoamingIssue = typeof ROAMING_ISSUES[keyof typeof ROAMING_ISSUES];
@@ -201,5 +202,10 @@ export const ISSUE_DESCRIPTIONS: Record<RoamingIssue, { title: string; descripti
     title: 'Band Bounce',
     description: 'Client is frequently switching between frequency bands (2.4/5/6 GHz)',
     severity: 'info',
+  },
+  [ROAMING_ISSUES.INTERBAND_ROAM]: {
+    title: 'Interband Roaming',
+    description: 'Client changed frequency bands on the same access point. This indicates band steering issues, poor 5GHz coverage, or interference causing the client to fall back to a less optimal band.',
+    severity: 'error',
   },
 };

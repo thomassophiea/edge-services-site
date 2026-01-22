@@ -68,6 +68,7 @@ interface RoamingStats {
   totalRoams: number;
   failedRoams: number;
   bandSteers: number;
+  interbandRoams: number; // Same-AP band changes (especially bad)
   avgDwellTime: number;
   minDwellTime: number;
   maxDwellTime: number;
@@ -100,7 +101,7 @@ type AlertFilter = {
 export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
   const [selectedEvent, setSelectedEvent] = useState<RoamingEvent | null>(null);
   const [filterType, setFilterType] = useState<FilterType>('time');
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('7d');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('24h');
   const [countFilter, setCountFilter] = useState<CountFilter>(50);
   const [showStats, setShowStats] = useState(true);
   const [showAlerts, setShowAlerts] = useState(true);
@@ -270,6 +271,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
 
     const failedRoams = roamingEvents.filter(e => e.isFailedRoam).length;
     const bandSteers = roamingEvents.filter(e => e.isBandSteering).length;
+    const interbandRoams = bandSteers; // Same-AP band changes are interband roams
 
     // Calculate dwell times (exclude first event which has no dwell)
     const dwellTimes = roamingEvents.slice(1).map(e => e.dwell || 0).filter(d => d > 0);
@@ -328,6 +330,11 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
       issues.push(ROAMING_ISSUES.AUTH_FAILURE);
     }
 
+    // Interband roaming detection (same-AP band changes - especially bad)
+    if (interbandRoams > 0) {
+      issues.push(ROAMING_ISSUES.INTERBAND_ROAM);
+    }
+
     // Band bounce detection (frequent band changes)
     if (bandSteers >= 3) {
       issues.push(ROAMING_ISSUES.BAND_BOUNCE);
@@ -347,6 +354,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
       totalRoams: roamEvents.length,
       failedRoams,
       bandSteers,
+      interbandRoams,
       avgDwellTime,
       minDwellTime,
       maxDwellTime,
@@ -417,6 +425,8 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
         case ROAMING_ISSUES.AUTH_FAILURE:
           return event.isFailedRoam === true;
         case ROAMING_ISSUES.BAND_BOUNCE:
+          return event.isBandSteering === true;
+        case ROAMING_ISSUES.INTERBAND_ROAM:
           return event.isBandSteering === true;
         case ROAMING_ISSUES.STICKY_CLIENT:
           return (event.dwell && event.dwell > 600000 && event.previousRssi && event.previousRssi < -75) === true;
@@ -516,8 +526,8 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
             {stats.failedRoams > 0 && (
               <span className="text-red-500"><strong>{stats.failedRoams}</strong> failed</span>
             )}
-            {stats.bandSteers > 0 && (
-              <span className="text-blue-500"><strong>{stats.bandSteers}</strong> band steers</span>
+            {stats.interbandRoams > 0 && (
+              <span className="text-red-500"><strong>{stats.interbandRoams}</strong> interband</span>
             )}
           </div>
 
@@ -631,6 +641,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
               if (issue === ROAMING_ISSUES.LATE_ROAM) return e.isLateRoam;
               if (issue === ROAMING_ISSUES.AUTH_FAILURE) return e.isFailedRoam;
               if (issue === ROAMING_ISSUES.BAND_BOUNCE) return e.isBandSteering;
+              if (issue === ROAMING_ISSUES.INTERBAND_ROAM) return e.isBandSteering;
               if (issue === ROAMING_ISSUES.STICKY_CLIENT) return e.dwell && e.dwell > 600000 && e.previousRssi && e.previousRssi < -75;
               return false;
             }).length;
@@ -748,8 +759,8 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
               Roam
             </span>
             <span className="flex items-center gap-1">
-              <svg width="16" height="2" viewBox="0 0 16 2"><line x1="0" y1="1" x2="16" y2="1" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3,2" /></svg>
-              Band Steer
+              <svg width="16" height="2" viewBox="0 0 16 2"><line x1="0" y1="1" x2="16" y2="1" stroke="#ef4444" strokeWidth="2" strokeDasharray="3,2" /></svg>
+              Interband
             </span>
           </div>
         </div>
@@ -851,7 +862,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                     y1={y1}
                     x2={`${x2}%`}
                     y2={y2}
-                    stroke={isFailedConnection ? '#ef4444' : isBandSteering ? '#3b82f6' : 'currentColor'}
+                    stroke={isFailedConnection ? '#ef4444' : isBandSteering ? '#ef4444' : 'currentColor'}
                     strokeWidth="2"
                     strokeDasharray={isBandSteering ? '6,3' : isFailedConnection ? '3,3' : 'none'}
                     className={!isBandSteering && !isFailedConnection ? 'text-primary/40' : ''}
@@ -918,7 +929,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                       <X className="h-3 w-3 text-white" />
                     </div>
                   )}
-                  {/* Band steering indicator */}
+                  {/* Interband roaming indicator */}
                   {event.isBandSteering && (
                     <div
                       className="absolute z-20 cursor-pointer"
@@ -933,7 +944,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                       }}
                     >
                       <svg width="12" height="8" viewBox="0 0 12 8">
-                        <path d="M 6 0 L 11 7 L 1 7 Z" fill="#3b82f6" stroke="#fff" strokeWidth="1" />
+                        <path d="M 6 0 L 11 7 L 1 7 Z" fill="#ef4444" stroke="#fff" strokeWidth="1" />
                       </svg>
                     </div>
                   )}
@@ -977,7 +988,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                   <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-700">Late Roam</Badge>
                 )}
                 {selectedEvent.isBandSteering && (
-                  <Badge className="bg-blue-500 text-white text-xs">Band Steer</Badge>
+                  <Badge className="bg-red-500 text-white text-xs">Interband</Badge>
                 )}
               </div>
             </div>
@@ -1032,15 +1043,18 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 <div className="ml-6 text-muted-foreground">{selectedEvent.ssid}</div>
               </div>
 
-              {/* Band Steering Info */}
+              {/* Interband Roaming Info */}
               {selectedEvent.isBandSteering && (
-                <div className="p-3 bg-blue-50 dark:bg-blue-950 border-l-4 border-blue-500 rounded">
+                <div className="p-3 bg-red-50 dark:bg-red-950 border-l-4 border-red-500 rounded">
                   <div className="flex items-center gap-2 mb-1">
-                    <Activity className="h-4 w-4 text-blue-500" />
-                    <span className="font-semibold text-blue-700 dark:text-blue-300">Band Steering</span>
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    <span className="font-semibold text-red-700 dark:text-red-300">Interband Roaming (Same AP)</span>
                   </div>
                   <div className="text-sm">
                     {selectedEvent.bandSteeringFrom} → {selectedEvent.bandSteeringTo}
+                  </div>
+                  <div className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+                    Band change on the same AP indicates poor band steering configuration or interference issues.
                   </div>
                 </div>
               )}
@@ -1151,11 +1165,20 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                       </div>
                     )}
                     {selectedEvent.isBandSteering && (
-                      <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs">
-                        <div className="font-medium text-blue-700 dark:text-blue-400">Band Steering Event</div>
-                        <div className="text-blue-600/80 dark:text-blue-400/80 mt-1">
-                          Client moved from {selectedEvent.bandSteeringFrom || selectedEvent.previousFrequency || 'unknown band'} to {selectedEvent.bandSteeringTo || selectedEvent.frequency || 'unknown band'} on <strong>{selectedEvent.apName}</strong>. Frequent band changes may indicate coverage or interference issues.
+                      <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-xs">
+                        <div className="font-medium text-red-700 dark:text-red-400">Interband Roaming (Same AP)</div>
+                        <div className="text-red-600/80 dark:text-red-400/80 mt-1">
+                          Client changed bands from {selectedEvent.bandSteeringFrom || selectedEvent.previousFrequency || 'unknown band'} to {selectedEvent.bandSteeringTo || selectedEvent.frequency || 'unknown band'} on <strong>{selectedEvent.apName}</strong>.
                         </div>
+                        <div className="text-red-600/80 dark:text-red-400/80 mt-2 font-medium">
+                          This is especially problematic because:
+                        </div>
+                        <ul className="text-red-600/80 dark:text-red-400/80 mt-1 ml-3 list-disc space-y-0.5">
+                          <li>The client couldn't maintain connection on the preferred band</li>
+                          <li>May indicate interference, poor signal, or band steering misconfiguration</li>
+                          <li>If falling to 2.4GHz: likely 5GHz coverage/interference issues</li>
+                          <li>Consider adjusting band steering thresholds or AP radio power</li>
+                        </ul>
                       </div>
                     )}
                     {selectedEvent.dwell && selectedEvent.dwell > 600000 && selectedEvent.previousRssi && selectedEvent.previousRssi < -75 && (
