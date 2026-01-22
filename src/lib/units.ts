@@ -97,3 +97,19 @@ export function getThroughputUnit(mbps: number): 'Mbps' | 'Gbps' {
 export function getDataVolumeUnit(mb: number): 'MB' | 'GB' {
   return mb >= 1000 ? 'GB' : 'MB';
 }
+
+/**
+ * Format large numbers compactly (e.g., 4,041,861 -> "4.04M")
+ * Rules:
+ * - >= 1 billion → B with up to 2 decimals
+ * - >= 1 million → M with up to 2 decimals
+ * - >= 1 thousand → K with up to 1 decimal
+ * - < 1000 → full number with locale formatting
+ */
+export function formatCompactNumber(num: number | undefined | null): string {
+  if (num === undefined || num === null) return 'N/A';
+  if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2).replace(/\.?0+$/, '') + 'B';
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(2).replace(/\.?0+$/, '') + 'M';
+  if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.?0+$/, '') + 'K';
+  return num.toLocaleString();
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Doughnut, Bar } from 'react-chartjs-2';
+import { formatCompactNumber } from '../../lib/units';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -211,11 +212,6 @@ export const DistributionWidget: React.FC<DistributionWidgetProps> = ({
 };
 
 /**
- * Format values
+ * Format values - use shared utility
  */
-function formatValue(value: number): string {
-  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
-  return value.toLocaleString();
-}
+const formatValue = formatCompactNumber;

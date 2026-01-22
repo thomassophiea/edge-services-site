@@ -4,6 +4,7 @@ import * as React from "react";
 import * as RechartsPrimitive from "recharts@2.15.2";
 
 import { cn } from "./utils";
+import { formatCompactNumber } from "../../lib/units";
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
@@ -234,7 +235,7 @@ function ChartTooltipContent({
                     </div>
                     {item.value && (
                       <span className="text-foreground font-mono font-medium tabular-nums">
-                        {item.value.toLocaleString()}
+                        {formatCompactNumber(item.value)}
                       </span>
                     )}
                   </div>

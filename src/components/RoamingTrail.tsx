@@ -1,7 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
-import { ScrollArea } from './ui/scroll-area';
 import {
   MapPin,
   Radio,
@@ -9,9 +7,18 @@ import {
   Wifi,
   Activity,
   Signal,
-  X
+  X,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  TrendingUp,
+  Timer,
+  ArrowLeftRight,
+  Info
 } from 'lucide-react';
 import { StationEvent } from '../services/api';
+import { getReasonCodeInfo, isFailureReasonCode, ROAMING_ISSUES, ISSUE_DESCRIPTIONS, type RoamingIssue } from '../lib/wifi-codes';
+import { formatCompactNumber } from '../lib/units';
 
 interface RoamingTrailProps {
   events: StationEvent[];
@@ -33,33 +40,62 @@ interface RoamingEvent {
   status: 'good' | 'warning' | 'bad';
   code?: string;
   statusCode?: string;
+  reasonCode?: number;
   channel?: string;
   band?: string;
   radio?: string;
-  frequency?: string; // 2.4GHz, 5GHz, or 6GHz
+  frequency?: string;
   ipAddress?: string;
   ipv6Address?: string;
   authMethod?: string;
-  isBandSteering?: boolean; // True if roaming on same AP (different radio)
-  bandSteeringFrom?: string; // Previous band for band steering
-  bandSteeringTo?: string; // New band for band steering
-  previousApName?: string; // Previous AP name for regular roaming
-  previousFrequency?: string; // Previous frequency for showing roaming context
+  isBandSteering?: boolean;
+  bandSteeringFrom?: string;
+  bandSteeringTo?: string;
+  previousApName?: string;
+  previousFrequency?: string;
+  previousRssi?: number;
+  dwell?: number; // Time spent at previous AP in ms
+  isFailedRoam?: boolean;
+  isLateRoam?: boolean; // Roamed at very weak signal
+}
+
+interface RoamingStats {
+  totalEvents: number;
+  totalRoams: number;
+  failedRoams: number;
+  bandSteers: number;
+  avgDwellTime: number;
+  minDwellTime: number;
+  maxDwellTime: number;
+  roamsPerHour: number;
+  signalQuality: { good: number; warning: number; bad: number };
+  pingPongPairs: Array<{ ap1: string; ap2: string; count: number }>;
+  issues: RoamingIssue[];
 }
 
 type FilterType = 'time' | 'count';
 type TimeFilter = '1h' | '24h' | '7d' | 'all';
 type CountFilter = 10 | 20 | 50 | 100 | 'all';
 
+// Format duration in human readable format
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+  if (ms < 3600000) return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+  const hours = Math.floor(ms / 3600000);
+  const mins = Math.floor((ms % 3600000) / 60000);
+  return `${hours}h ${mins}m`;
+}
+
 export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
   const [selectedEvent, setSelectedEvent] = useState<RoamingEvent | null>(null);
   const [filterType, setFilterType] = useState<FilterType>('time');
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('24h');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('7d');
   const [countFilter, setCountFilter] = useState<CountFilter>(50);
+  const [showStats, setShowStats] = useState(true);
 
   // Process and filter roaming events
   const roamingEvents = useMemo(() => {
-    // Include all roaming-related event types (case-insensitive matching)
     const isRoamingEvent = (eventType: string) => {
       const type = (eventType || '').toLowerCase();
       return (
@@ -81,7 +117,6 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
       );
     };
 
-    // Apply time or count filtering first
     let filteredByScope = events.filter(event => isRoamingEvent(event.eventType));
 
     if (filterType === 'time' && timeFilter !== 'all') {
@@ -91,10 +126,8 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
         timeFilter === '24h' ? now - 86400000 :
         timeFilter === '7d' ? now - 604800000 :
         0;
-
       filteredByScope = filteredByScope.filter(event => parseInt(event.timestamp) >= timeLimit);
     } else if (filterType === 'count' && countFilter !== 'all') {
-      // Sort by timestamp descending and take the most recent N events
       filteredByScope = filteredByScope
         .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
         .slice(0, countFilter);
@@ -116,14 +149,17 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
 
         // Parse RSSI/signal strength
         const rssiStr = parsedDetails.Signal || parsedDetails.RSS || parsedDetails.RSSI;
-        const rssi = rssiStr ? parseInt(rssiStr) : undefined;
+        const rssi = rssiStr ? parseInt(rssiStr) : (event.rssi || undefined);
+
+        // Parse reason code
+        const reasonCodeStr = parsedDetails.Reason || parsedDetails.ReasonCode || parsedDetails.Code;
+        const reasonCode = reasonCodeStr ? parseInt(reasonCodeStr) : (event.reasonCode || undefined);
 
         // Parse channel and determine frequency
-        const channel = parsedDetails.Channel;
+        const channel = parsedDetails.Channel || (event.channel ? String(event.channel) : undefined);
         const radio = parsedDetails.Radio;
-        let frequency = parsedDetails.Band;
+        let frequency = parsedDetails.Band || event.band;
 
-        // Determine frequency from channel if not explicitly provided
         if (channel && !frequency) {
           const channelNum = parseInt(channel);
           if (channelNum >= 1 && channelNum <= 14) {
@@ -131,14 +167,20 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
           } else if (channelNum >= 36 && channelNum <= 165) {
             frequency = '5GHz';
           } else if (channelNum >= 1 && channelNum <= 233) {
-            // 6GHz uses UNII-5 through UNII-8 bands
             frequency = '6GHz';
           }
         }
 
-        // Determine status based on RSSI and event type
+        // Determine if this is a failed roam based on event type and reason code
+        const eventTypeLower = (event.eventType || '').toLowerCase();
+        const isDisconnect = eventTypeLower.includes('disassoc') ||
+                            eventTypeLower.includes('deauth') ||
+                            eventTypeLower.includes('de-reg');
+        const isFailedRoam = isDisconnect && isFailureReasonCode(reasonCode);
+
+        // Determine status based on RSSI, event type, and failure
         let status: 'good' | 'warning' | 'bad' = 'good';
-        if (event.eventType === 'De-registration' || event.eventType === 'Disassociate') {
+        if (isFailedRoam || event.eventType === 'De-registration' || event.eventType === 'Disassociate') {
           status = 'bad';
         } else if (rssi) {
           if (rssi >= -60) status = 'good';
@@ -146,7 +188,9 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
           else status = 'bad';
         }
 
-        // Get SSID from event or parsed details (Network field is the SSID)
+        // Late roam detection (roaming at very weak signal)
+        const isLateRoam = rssi !== undefined && rssi < -75 && eventTypeLower.includes('roam');
+
         const ssid = event.ssid || parsedDetails.SSID || parsedDetails.Ssid || parsedDetails.Network || 'N/A';
 
         return {
@@ -160,29 +204,34 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
           reason: parsedDetails.Reason,
           code: parsedDetails.Code,
           statusCode: parsedDetails.Status,
+          reasonCode,
           channel,
           band: parsedDetails.Band,
           radio,
           frequency,
-          authMethod: parsedDetails.Auth || parsedDetails.AuthMethod,
+          authMethod: parsedDetails.Auth || parsedDetails.AuthMethod || event.authMethod,
           ipAddress: event.ipAddress,
           ipv6Address: event.ipv6Address,
           rssi,
-          status
+          status,
+          isFailedRoam,
+          isLateRoam
         } as RoamingEvent;
       })
       .sort((a, b) => a.timestamp - b.timestamp);
 
-    // Detect band steering and capture previous AP/frequency context
+    // Calculate dwell times, detect band steering, and capture previous context
     for (let i = 1; i < filtered.length; i++) {
       const prev = filtered[i - 1];
       const curr = filtered[i];
 
-      // Always store previous AP and frequency for context
+      // Calculate dwell time at previous AP
+      curr.dwell = curr.timestamp - prev.timestamp;
       curr.previousApName = prev.apName;
       curr.previousFrequency = prev.frequency || prev.band || '';
+      curr.previousRssi = prev.rssi;
 
-      // Check if same AP (by name or serial) but different frequency/radio
+      // Detect band steering (same AP, different frequency)
       const sameAP = (prev.apName === curr.apName || prev.apSerial === curr.apSerial);
       const differentFrequency = prev.frequency !== curr.frequency && prev.frequency && curr.frequency;
       const differentRadio = prev.radio !== curr.radio && prev.radio && curr.radio;
@@ -190,7 +239,6 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
 
       if (sameAP && (differentFrequency || differentRadio || differentBand)) {
         curr.isBandSteering = true;
-        // Store from/to information for display - use frequency only
         curr.bandSteeringFrom = prev.frequency || prev.band || '';
         curr.bandSteeringTo = curr.frequency || curr.band || '';
       }
@@ -198,6 +246,102 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
 
     return filtered;
   }, [events, filterType, timeFilter, countFilter]);
+
+  // Calculate roaming statistics
+  const stats = useMemo((): RoamingStats => {
+    const roamEvents = roamingEvents.filter(e =>
+      e.eventType.toLowerCase().includes('roam') ||
+      (e.previousApName && e.previousApName !== e.apName)
+    );
+
+    const failedRoams = roamingEvents.filter(e => e.isFailedRoam).length;
+    const bandSteers = roamingEvents.filter(e => e.isBandSteering).length;
+
+    // Calculate dwell times (exclude first event which has no dwell)
+    const dwellTimes = roamingEvents.slice(1).map(e => e.dwell || 0).filter(d => d > 0);
+    const avgDwellTime = dwellTimes.length > 0 ? dwellTimes.reduce((a, b) => a + b, 0) / dwellTimes.length : 0;
+    const minDwellTime = dwellTimes.length > 0 ? Math.min(...dwellTimes) : 0;
+    const maxDwellTime = dwellTimes.length > 0 ? Math.max(...dwellTimes) : 0;
+
+    // Calculate roams per hour
+    const timeSpan = roamingEvents.length > 1
+      ? roamingEvents[roamingEvents.length - 1].timestamp - roamingEvents[0].timestamp
+      : 0;
+    const hoursSpan = timeSpan / 3600000;
+    const roamsPerHour = hoursSpan > 0 ? roamEvents.length / hoursSpan : 0;
+
+    // Signal quality distribution
+    const signalQuality = {
+      good: roamingEvents.filter(e => e.status === 'good').length,
+      warning: roamingEvents.filter(e => e.status === 'warning').length,
+      bad: roamingEvents.filter(e => e.status === 'bad').length
+    };
+
+    // Detect ping-pong patterns (roaming back and forth between same APs)
+    const apPairs: Record<string, number> = {};
+    for (let i = 1; i < roamingEvents.length; i++) {
+      const prev = roamingEvents[i - 1];
+      const curr = roamingEvents[i];
+      if (prev.apName !== curr.apName) {
+        const pairKey = [prev.apName, curr.apName].sort().join('|');
+        apPairs[pairKey] = (apPairs[pairKey] || 0) + 1;
+      }
+    }
+
+    const pingPongPairs = Object.entries(apPairs)
+      .filter(([_, count]) => count >= 3) // At least 3 transitions between same pair
+      .map(([pair, count]) => {
+        const [ap1, ap2] = pair.split('|');
+        return { ap1, ap2, count };
+      })
+      .sort((a, b) => b.count - a.count);
+
+    // Detect issues
+    const issues: RoamingIssue[] = [];
+
+    // Ping-pong detection
+    if (pingPongPairs.length > 0) {
+      issues.push(ROAMING_ISSUES.PING_PONG);
+    }
+
+    // Late roam detection
+    if (roamingEvents.some(e => e.isLateRoam)) {
+      issues.push(ROAMING_ISSUES.LATE_ROAM);
+    }
+
+    // Auth failure detection
+    if (failedRoams > 0) {
+      issues.push(ROAMING_ISSUES.AUTH_FAILURE);
+    }
+
+    // Band bounce detection (frequent band changes)
+    if (bandSteers >= 3) {
+      issues.push(ROAMING_ISSUES.BAND_BOUNCE);
+    }
+
+    // Sticky client detection (very long dwell with poor signal)
+    const stickyEvents = roamingEvents.filter(e =>
+      e.dwell && e.dwell > 600000 && // More than 10 minutes
+      e.previousRssi && e.previousRssi < -75 // Poor signal
+    );
+    if (stickyEvents.length > 0) {
+      issues.push(ROAMING_ISSUES.STICKY_CLIENT);
+    }
+
+    return {
+      totalEvents: roamingEvents.length,
+      totalRoams: roamEvents.length,
+      failedRoams,
+      bandSteers,
+      avgDwellTime,
+      minDwellTime,
+      maxDwellTime,
+      roamsPerHour,
+      signalQuality,
+      pingPongPairs,
+      issues
+    };
+  }, [roamingEvents]);
 
   // Get unique APs and time range
   const { uniqueAPs, timeRange } = useMemo(() => {
@@ -236,13 +380,11 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
     });
   };
 
-  // Calculate position on timeline (0-100%)
   const getTimelinePosition = (timestamp: number) => {
     if (timeRange.max === timeRange.min) return 50;
     return ((timestamp - timeRange.min) / (timeRange.max - timeRange.min)) * 100;
   };
 
-  // Get AP row index
   const getAPRow = (apName: string) => {
     return uniqueAPs.indexOf(apName);
   };
@@ -267,12 +409,12 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
     );
   }
 
-  const TIMELINE_HEIGHT = 120; // Height per AP row
+  const TIMELINE_HEIGHT = 120;
   const CHART_HEIGHT = uniqueAPs.length * TIMELINE_HEIGHT + 120;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header with legend */}
+      {/* Header with filters */}
       <div className="p-6 border-b space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -284,6 +426,15 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
 
           {/* Filter Controls */}
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                showStats ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {showStats ? 'Hide' : 'Show'} Stats
+            </button>
+
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Filter by:</span>
               <div className="flex gap-1 bg-muted rounded-lg p-1">
@@ -310,7 +461,6 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
               </div>
             </div>
 
-            {/* Time Filter Options */}
             {filterType === 'time' && (
               <div className="flex gap-1 bg-muted rounded-lg p-1">
                 {(['1h', '24h', '7d', 'all'] as TimeFilter[]).map((filter) => (
@@ -323,16 +473,15 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {filter === '1h' ? 'Last Hour' :
-                     filter === '24h' ? 'Last 24h' :
-                     filter === '7d' ? 'Last 7 Days' :
+                    {filter === '1h' ? '1 Hour' :
+                     filter === '24h' ? '24 Hours' :
+                     filter === '7d' ? '7 Days' :
                      'All Time'}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Count Filter Options */}
             {filterType === 'count' && (
               <div className="flex gap-1 bg-muted rounded-lg p-1">
                 {([10, 20, 50, 100, 'all'] as CountFilter[]).map((filter) => (
@@ -353,45 +502,179 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
           </div>
         </div>
 
+        {/* Stats Panel */}
+        {showStats && (
+          <div className="space-y-4">
+            {/* Issues/Alerts */}
+            {stats.issues.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {stats.issues.map((issue) => {
+                  const info = ISSUE_DESCRIPTIONS[issue];
+                  return (
+                    <div
+                      key={issue}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                        info.severity === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400' :
+                        info.severity === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400' :
+                        'bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-400'
+                      }`}
+                    >
+                      {info.severity === 'error' ? <XCircle className="h-4 w-4" /> :
+                       info.severity === 'warning' ? <AlertTriangle className="h-4 w-4" /> :
+                       <Info className="h-4 w-4" />}
+                      <span className="text-sm font-medium">{info.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Ping-pong alerts */}
+            {stats.pingPongPairs.length > 0 && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <ArrowLeftRight className="h-4 w-4 text-amber-600" />
+                  <span className="font-medium text-amber-700 dark:text-amber-400">Ping-Pong Detected</span>
+                </div>
+                <div className="text-sm text-amber-700 dark:text-amber-400 space-y-1">
+                  {stats.pingPongPairs.slice(0, 3).map((pair, idx) => (
+                    <div key={idx}>
+                      {pair.ap1} ↔ {pair.ap2}: <strong>{pair.count} transitions</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Activity className="h-4 w-4" />
+                  <span className="text-xs">Total Events</span>
+                </div>
+                <div className="text-xl font-bold">{stats.totalEvents}</div>
+              </div>
+
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Radio className="h-4 w-4" />
+                  <span className="text-xs">AP Roams</span>
+                </div>
+                <div className="text-xl font-bold">{stats.totalRoams}</div>
+              </div>
+
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-xs">Roams/Hour</span>
+                </div>
+                <div className="text-xl font-bold">{stats.roamsPerHour.toFixed(1)}</div>
+              </div>
+
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Timer className="h-4 w-4" />
+                  <span className="text-xs">Avg Dwell</span>
+                </div>
+                <div className="text-xl font-bold">{formatDuration(stats.avgDwellTime)}</div>
+              </div>
+
+              {stats.failedRoams > 0 && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-600 mb-1">
+                    <XCircle className="h-4 w-4" />
+                    <span className="text-xs">Failed</span>
+                  </div>
+                  <div className="text-xl font-bold text-red-600">{stats.failedRoams}</div>
+                </div>
+              )}
+
+              {stats.bandSteers > 0 && (
+                <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-600 mb-1">
+                    <Wifi className="h-4 w-4" />
+                    <span className="text-xs">Band Steers</span>
+                  </div>
+                  <div className="text-xl font-bold text-blue-600">{stats.bandSteers}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Signal Quality Bar */}
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">Signal Quality:</span>
+              <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden flex">
+                {stats.signalQuality.good > 0 && (
+                  <div
+                    className="h-full bg-green-500"
+                    style={{ width: `${(stats.signalQuality.good / stats.totalEvents) * 100}%` }}
+                    title={`Good: ${stats.signalQuality.good}`}
+                  />
+                )}
+                {stats.signalQuality.warning > 0 && (
+                  <div
+                    className="h-full bg-orange-500"
+                    style={{ width: `${(stats.signalQuality.warning / stats.totalEvents) * 100}%` }}
+                    title={`Warning: ${stats.signalQuality.warning}`}
+                  />
+                )}
+                {stats.signalQuality.bad > 0 && (
+                  <div
+                    className="h-full bg-red-500"
+                    style={{ width: `${(stats.signalQuality.bad / stats.totalEvents) * 100}%` }}
+                    title={`Bad: ${stats.signalQuality.bad}`}
+                  />
+                )}
+              </div>
+              <div className="flex gap-3 text-xs">
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  {Math.round((stats.signalQuality.good / stats.totalEvents) * 100)}%
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-orange-500" />
+                  {Math.round((stats.signalQuality.warning / stats.totalEvents) * 100)}%
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  {Math.round((stats.signalQuality.bad / stats.totalEvents) * 100)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Legend */}
-        <div className="flex items-center gap-12">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Signal Quality:</span>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-sm font-medium">Good</span>
+            <span className="text-sm text-muted-foreground">Signal:</span>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-sm mr-2">Good</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-              <span className="text-sm font-medium">Warning</span>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-orange-500" />
+              <span className="text-sm mr-2">Warning</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span className="text-sm font-medium">Bad</span>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="text-sm">Bad/Failed</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Connection:</span>
-            <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Lines:</span>
+            <div className="flex items-center gap-1">
               <svg width="24" height="3" viewBox="0 0 24 3">
                 <line x1="0" y1="1.5" x2="24" y2="1.5" stroke="currentColor" strokeWidth="3" className="text-primary/40" />
               </svg>
-              <span className="text-sm font-medium">AP Roam</span>
+              <span className="text-sm mr-2">AP Roam</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <svg width="24" height="3" viewBox="0 0 24 3">
                 <line x1="0" y1="1.5" x2="24" y2="1.5" stroke="#3b82f6" strokeWidth="3" strokeDasharray="4,2" />
               </svg>
-              <span className="text-sm font-medium">Interband Roam</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Indicator:</span>
-            <div className="flex items-center gap-2">
-              <svg width="12" height="10" viewBox="0 0 12 10">
-                <path d="M 1.5 0 L 10.5 0 L 6 8 Z" fill="#3b82f6" stroke="#ffffff" strokeWidth="1" />
-              </svg>
-              <span className="text-sm font-medium">Interband Roam Event</span>
+              <span className="text-sm">Band Steer</span>
             </div>
           </div>
         </div>
@@ -400,25 +683,36 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
       {/* Main timeline view */}
       <div className="flex-1 flex overflow-hidden">
         {/* AP Names sidebar */}
-        <div className="w-80 border-r bg-muted/20 overflow-y-auto">
-          <div className="sticky top-0 bg-muted/40 border-b p-4 font-semibold text-base">
-            Associated APs
+        <div className="w-72 border-r bg-muted/20 overflow-y-auto">
+          <div className="sticky top-0 bg-muted/40 border-b p-3 font-semibold text-sm">
+            Access Points ({uniqueAPs.length})
           </div>
-          {uniqueAPs.map((ap, idx) => (
-            <div
-              key={ap}
-              className="p-4 border-b flex items-center gap-3 hover:bg-accent/50 transition-colors"
-              style={{ height: `${TIMELINE_HEIGHT}px` }}
-            >
-              <Radio className="h-6 w-6 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-base truncate">{ap}</div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {roamingEvents.filter(e => e.apName === ap).length} events
+          {uniqueAPs.map((ap) => {
+            const apEvents = roamingEvents.filter(e => e.apName === ap);
+            const apDwellTimes = apEvents.filter(e => e.dwell).map(e => e.dwell || 0);
+            const totalDwell = apDwellTimes.reduce((a, b) => a + b, 0);
+
+            return (
+              <div
+                key={ap}
+                className="p-3 border-b flex items-center gap-3 hover:bg-accent/50 transition-colors"
+                style={{ height: `${TIMELINE_HEIGHT}px` }}
+              >
+                <Radio className="h-5 w-5 text-primary flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">{ap}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {apEvents.length} events
+                  </div>
+                  {totalDwell > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Dwell: {formatDuration(totalDwell)}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Timeline chart */}
@@ -428,56 +722,51 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
         >
           <div
             className="relative min-w-full"
-            style={{ height: `${CHART_HEIGHT}px`, minWidth: '1200px' }}
+            style={{ height: `${CHART_HEIGHT}px`, minWidth: '1000px' }}
           >
-            {/* Vertical time grid lines */}
+            {/* Time grid lines */}
             {[0, 25, 50, 75, 100].map(percent => (
               <div
                 key={percent}
-                className="absolute top-0 bottom-0 border-l-2 border-border/40"
+                className="absolute top-0 bottom-0 border-l border-border/40"
                 style={{ left: `${percent}%` }}
               >
-                <div className="sticky top-0 text-sm font-medium text-muted-foreground p-2 bg-background/90">
+                <div className="sticky top-0 text-xs text-muted-foreground p-2 bg-background/90">
                   {formatTimeShort(timeRange.min + (timeRange.max - timeRange.min) * (percent / 100))}
                 </div>
               </div>
             ))}
 
-            {/* Horizontal AP row lines */}
+            {/* AP row lines */}
             {uniqueAPs.map((ap, idx) => (
               <div
                 key={ap}
                 className="absolute left-0 right-0 border-b border-border/30"
                 style={{
-                  top: `${idx * TIMELINE_HEIGHT + 60}px`,
+                  top: `${idx * TIMELINE_HEIGHT + 50}px`,
                   height: `${TIMELINE_HEIGHT}px`
                 }}
               />
             ))}
 
-            {/* Connection lines between events */}
+            {/* Connection lines */}
             {roamingEvents.map((event, idx) => {
               if (idx === roamingEvents.length - 1) return null;
               const nextEvent = roamingEvents[idx + 1];
 
               const x1 = getTimelinePosition(event.timestamp);
-              const y1 = getAPRow(event.apName) * TIMELINE_HEIGHT + 90;
+              const y1 = getAPRow(event.apName) * TIMELINE_HEIGHT + 80;
               const x2 = getTimelinePosition(nextEvent.timestamp);
-              const y2 = getAPRow(nextEvent.apName) * TIMELINE_HEIGHT + 90;
+              const y2 = getAPRow(nextEvent.apName) * TIMELINE_HEIGHT + 80;
 
-              // Check if next event is band steering
               const isBandSteering = nextEvent.isBandSteering;
+              const isFailedConnection = nextEvent.isFailedRoam;
 
               return (
                 <svg
                   key={`line-${idx}`}
-                  className="absolute cursor-pointer z-5"
-                  style={{
-                    left: 0,
-                    top: 0,
-                    width: '100%',
-                    height: '100%'
-                  }}
+                  className="absolute cursor-pointer"
+                  style={{ left: 0, top: 0, width: '100%', height: '100%', zIndex: 5 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedEvent(nextEvent);
@@ -488,12 +777,22 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                     y1={y1}
                     x2={`${x2}%`}
                     y2={y2}
-                    stroke={isBandSteering ? '#3b82f6' : 'currentColor'}
-                    strokeWidth="3"
-                    strokeDasharray={isBandSteering ? '8,4' : 'none'}
-                    className={isBandSteering ? '' : 'text-primary/40'}
-                    style={{ cursor: 'pointer' }}
+                    stroke={isFailedConnection ? '#ef4444' : isBandSteering ? '#3b82f6' : 'currentColor'}
+                    strokeWidth="2"
+                    strokeDasharray={isBandSteering ? '6,3' : isFailedConnection ? '3,3' : 'none'}
+                    className={!isBandSteering && !isFailedConnection ? 'text-primary/40' : ''}
                   />
+                  {/* Dwell time label */}
+                  {nextEvent.dwell && nextEvent.dwell > 60000 && (
+                    <text
+                      x={`${(x1 + x2) / 2}%`}
+                      y={(y1 + y2) / 2 - 8}
+                      textAnchor="middle"
+                      className="fill-muted-foreground text-[10px]"
+                    >
+                      {formatDuration(nextEvent.dwell)}
+                    </text>
+                  )}
                 </svg>
               );
             })}
@@ -501,9 +800,10 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
             {/* Event dots */}
             {roamingEvents.map((event, idx) => {
               const x = getTimelinePosition(event.timestamp);
-              const y = getAPRow(event.apName) * TIMELINE_HEIGHT + 90;
+              const y = getAPRow(event.apName) * TIMELINE_HEIGHT + 80;
 
-              const dotColor =
+              const dotColor = event.isFailedRoam ? 'bg-red-500 ring-2 ring-red-300' :
+                event.isLateRoam ? 'bg-orange-500 ring-2 ring-orange-300' :
                 event.status === 'good' ? 'bg-green-500' :
                 event.status === 'warning' ? 'bg-orange-500' :
                 'bg-red-500';
@@ -518,7 +818,6 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                     className={`
                       absolute w-4 h-4 rounded-full border-2 border-background
                       hover:scale-125 transition-transform cursor-pointer z-10
-                      overflow-hidden
                       ${dotColor}
                       ${selectedEvent === event ? 'ring-2 ring-primary ring-offset-1 scale-125' : ''}
                     `}
@@ -536,13 +835,26 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                       }
                     }}
                   />
+                  {/* Failed roam X marker */}
+                  {event.isFailedRoam && (
+                    <div
+                      className="absolute z-20 pointer-events-none"
+                      style={{
+                        left: `${x}%`,
+                        top: `${y}px`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                    >
+                      <X className="h-3 w-3 text-white" />
+                    </div>
+                  )}
                   {/* Band steering indicator */}
                   {event.isBandSteering && (
                     <div
                       className="absolute z-20 cursor-pointer"
                       style={{
                         left: `${x}%`,
-                        top: `${y + 14}px`,
+                        top: `${y + 12}px`,
                         transform: 'translate(-50%, 0)'
                       }}
                       onClick={(e) => {
@@ -550,13 +862,8 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                         setSelectedEvent(event);
                       }}
                     >
-                      <svg width="14" height="10" viewBox="0 0 14 10">
-                        <path
-                          d="M 7 0 L 13 9 L 1 9 Z"
-                          fill="#3b82f6"
-                          stroke="#ffffff"
-                          strokeWidth="1.5"
-                        />
+                      <svg width="12" height="8" viewBox="0 0 12 8">
+                        <path d="M 6 0 L 11 7 L 1 7 Z" fill="#3b82f6" stroke="#fff" strokeWidth="1" />
                       </svg>
                     </div>
                   )}
@@ -569,7 +876,7 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
         {/* Event details sidebar */}
         {selectedEvent && (
           <div
-            className="w-96 border-l bg-muted/20 p-4 overflow-y-auto"
+            className="w-80 border-l bg-muted/20 p-4 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -579,16 +886,16 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                   <button
                     onClick={() => setSelectedEvent(null)}
                     className="text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Close event details"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">{formatTime(selectedEvent.timestamp)}</p>
               </div>
-              <div className="flex flex-col gap-2 items-end">
+              <div className="flex flex-col gap-1 items-end">
                 <Badge
                   variant={
+                    selectedEvent.isFailedRoam ? 'destructive' :
                     selectedEvent.eventType === 'Registration' || selectedEvent.eventType === 'Associate' ? 'default' :
                     selectedEvent.eventType === 'De-registration' || selectedEvent.eventType === 'Disassociate' ? 'destructive' :
                     'secondary'
@@ -596,15 +903,45 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 >
                   {selectedEvent.eventType}
                 </Badge>
+                {selectedEvent.isFailedRoam && (
+                  <Badge variant="destructive" className="text-xs">Failed</Badge>
+                )}
+                {selectedEvent.isLateRoam && (
+                  <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-700">Late Roam</Badge>
+                )}
                 {selectedEvent.isBandSteering && (
-                  <Badge className="bg-blue-500 text-white">
-                    Interband Roam
-                  </Badge>
+                  <Badge className="bg-blue-500 text-white text-xs">Band Steer</Badge>
                 )}
               </div>
             </div>
 
             <div className="space-y-3 text-sm">
+              {/* Dwell time */}
+              {selectedEvent.dwell && (
+                <div className="p-2 bg-muted/50 rounded flex items-center gap-2">
+                  <Timer className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Dwell at previous AP:</span>
+                  <span className="font-medium">{formatDuration(selectedEvent.dwell)}</span>
+                </div>
+              )}
+
+              {/* Reason code interpretation */}
+              {selectedEvent.reasonCode && (() => {
+                const info = getReasonCodeInfo(selectedEvent.reasonCode);
+                if (!info) return null;
+                return (
+                  <div className={`p-3 rounded border-l-4 ${
+                    info.severity === 'error' ? 'bg-red-500/10 border-red-500' :
+                    info.severity === 'warning' ? 'bg-amber-500/10 border-amber-500' :
+                    'bg-blue-500/10 border-blue-500'
+                  }`}>
+                    <div className="font-medium text-sm">Reason Code {selectedEvent.reasonCode}: {info.short}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{info.description}</div>
+                  </div>
+                );
+              })()}
+
+              {/* AP Info */}
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <MapPin className="h-4 w-4 text-primary" />
@@ -612,8 +949,14 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 </div>
                 <div className="ml-6 text-muted-foreground">{selectedEvent.apName}</div>
                 <div className="ml-6 text-xs text-muted-foreground font-mono">{selectedEvent.apSerial}</div>
+                {selectedEvent.previousApName && selectedEvent.previousApName !== selectedEvent.apName && (
+                  <div className="ml-6 text-xs text-muted-foreground mt-1">
+                    From: {selectedEvent.previousApName}
+                  </div>
+                )}
               </div>
 
+              {/* SSID */}
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <Wifi className="h-4 w-4 text-primary" />
@@ -622,42 +965,20 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 <div className="ml-6 text-muted-foreground">{selectedEvent.ssid}</div>
               </div>
 
-              {/* Band Steering Information */}
-              {selectedEvent.isBandSteering && (selectedEvent.bandSteeringFrom || selectedEvent.bandSteeringTo) && (
+              {/* Band Steering Info */}
+              {selectedEvent.isBandSteering && (
                 <div className="p-3 bg-blue-50 dark:bg-blue-950 border-l-4 border-blue-500 rounded">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Activity className="h-4 w-4 text-blue-500" />
-                    <span className="font-semibold text-blue-700 dark:text-blue-300">Interband Roam</span>
-                  </div>
-                  <div className="ml-6 space-y-1 text-sm">
-                    {selectedEvent.bandSteeringFrom && (
-                      <div>
-                        <span className="text-muted-foreground">From: </span>
-                        <span className="font-medium">{selectedEvent.bandSteeringFrom}</span>
-                      </div>
-                    )}
-                    {selectedEvent.bandSteeringTo && (
-                      <div>
-                        <span className="text-muted-foreground">To: </span>
-                        <span className="font-medium">{selectedEvent.bandSteeringTo}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {selectedEvent.frequency && !selectedEvent.isBandSteering && (
-                <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Activity className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Frequency</span>
+                    <Activity className="h-4 w-4 text-blue-500" />
+                    <span className="font-semibold text-blue-700 dark:text-blue-300">Band Steering</span>
                   </div>
-                  <div className="ml-6 text-muted-foreground">
-                    {selectedEvent.frequency}
+                  <div className="text-sm">
+                    {selectedEvent.bandSteeringFrom} → {selectedEvent.bandSteeringTo}
                   </div>
                 </div>
               )}
 
+              {/* Signal */}
               {selectedEvent.rssi && (
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -665,32 +986,44 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                     <span className="font-medium">Signal Strength</span>
                   </div>
                   <div className="ml-6 flex items-center gap-2">
-                    <span className="text-muted-foreground">{selectedEvent.rssi} dBm</span>
-                    <Badge variant={
-                      selectedEvent.status === 'good' ? 'default' :
-                      selectedEvent.status === 'warning' ? 'secondary' :
-                      'destructive'
-                    } className="text-xs">
-                      {selectedEvent.status}
-                    </Badge>
+                    <span className={`font-mono ${
+                      selectedEvent.rssi >= -60 ? 'text-green-600' :
+                      selectedEvent.rssi >= -70 ? 'text-orange-500' :
+                      'text-red-500'
+                    }`}>{selectedEvent.rssi} dBm</span>
+                    {selectedEvent.previousRssi && (
+                      <span className="text-xs text-muted-foreground">
+                        (was {selectedEvent.previousRssi} dBm)
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
 
-              {(selectedEvent.channel || selectedEvent.band) && (
+              {/* Channel/Band */}
+              {(selectedEvent.channel || selectedEvent.frequency) && (
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Activity className="h-4 w-4 text-primary" />
                     <span className="font-medium">Channel/Band</span>
                   </div>
                   <div className="ml-6 text-muted-foreground">
-                    {selectedEvent.channel && `Channel ${selectedEvent.channel}`}
-                    {selectedEvent.channel && selectedEvent.band && ' - '}
-                    {selectedEvent.band && `${selectedEvent.band}`}
+                    {selectedEvent.channel && `Ch ${selectedEvent.channel}`}
+                    {selectedEvent.channel && selectedEvent.frequency && ' • '}
+                    {selectedEvent.frequency}
                   </div>
                 </div>
               )}
 
+              {/* Auth method */}
+              {selectedEvent.authMethod && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground">Auth:</span>
+                  <span className="font-medium">{selectedEvent.authMethod}</span>
+                </div>
+              )}
+
+              {/* IP Address */}
               {(selectedEvent.ipAddress || selectedEvent.ipv6Address) && (
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -701,114 +1034,16 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                     <div className="ml-6 text-muted-foreground font-mono text-xs">{selectedEvent.ipAddress}</div>
                   )}
                   {selectedEvent.ipv6Address && (
-                    <div className="ml-6 text-muted-foreground font-mono text-xs">{selectedEvent.ipv6Address}</div>
+                    <div className="ml-6 text-muted-foreground font-mono text-xs truncate">{selectedEvent.ipv6Address}</div>
                   )}
                 </div>
               )}
 
-              {selectedEvent.authMethod && (
-                <div>
-                  <span className="font-medium">Auth Method: </span>
-                  <span className="text-muted-foreground">{selectedEvent.authMethod}</span>
-                </div>
-              )}
-
-              {selectedEvent.cause && (
-                <div>
-                  <span className="font-medium">Cause: </span>
-                  <span className="text-muted-foreground">{selectedEvent.cause}</span>
-                </div>
-              )}
-
-              {selectedEvent.reason && (
-                <div>
-                  <span className="font-medium">Reason: </span>
-                  <span className="text-muted-foreground">{selectedEvent.reason}</span>
-                </div>
-              )}
-
-              {(selectedEvent.code || selectedEvent.statusCode) && (
-                <div>
-                  <span className="font-medium">
-                    {selectedEvent.code ? 'Code: ' : 'Status Code: '}
-                  </span>
-                  <span className="text-muted-foreground font-mono">
-                    {selectedEvent.code || selectedEvent.statusCode}
-                  </span>
-                </div>
-              )}
-
-              {/* Simplified Summary */}
-              {selectedEvent.details && (() => {
-                const parseDetails = (details: string) => {
-                  const parsed: Record<string, string> = {};
-                  const regex = /(\w+)\[([^\]]+)\]/g;
-                  let match;
-                  while ((match = regex.exec(details)) !== null) {
-                    parsed[match[1]] = match[2];
-                  }
-                  return parsed;
-                };
-
-                const parsed = parseDetails(selectedEvent.details);
-                const parts: string[] = [];
-
-                // Build summary based on available information
-                if (selectedEvent.isBandSteering) {
-                  // Interband roam: same AP, different frequency
-                  const summary = `Interband roam on ${selectedEvent.apName}`;
-                  if (selectedEvent.bandSteeringFrom && selectedEvent.bandSteeringTo) {
-                    parts.push(`${summary}: ${selectedEvent.bandSteeringFrom} → ${selectedEvent.bandSteeringTo}`);
-                  } else {
-                    parts.push(summary);
-                  }
-                } else if (selectedEvent.previousApName) {
-                  // Regular roaming: different AP
-                  const apChange = `${selectedEvent.previousApName} → ${selectedEvent.apName}`;
-                  if (selectedEvent.previousFrequency && selectedEvent.frequency) {
-                    parts.push(`Roamed from ${apChange} (${selectedEvent.previousFrequency} → ${selectedEvent.frequency})`);
-                  } else {
-                    parts.push(`Roamed from ${apChange}`);
-                  }
-                } else if (parsed.from || parsed.From) {
-                  // Fallback to parsing from details
-                  const fromAP = parsed.from || parsed.From;
-                  parts.push(`Roamed from ${fromAP} to ${selectedEvent.apName}`);
-                }
-
-                if (parsed.Network) {
-                  parts.push(`Network: ${parsed.Network}`);
-                }
-
-                if (parsed.DevFamily || parsed.DevType) {
-                  const device = parsed.DevFamily || parsed.DevType;
-                  parts.push(`Device: ${device}`);
-                }
-
-                if (parsed.Hostname && parsed.Hostname !== selectedEvent.apName) {
-                  parts.push(`Hostname: ${parsed.Hostname}`);
-                }
-
-                if (parsed.FT && parsed.FT !== 'None') {
-                  parts.push(`Fast Transition: ${parsed.FT}`);
-                }
-
-                return parts.length > 0 ? (
-                  <div className="p-3 bg-accent/50 rounded border border-border">
-                    <div className="font-medium mb-2 text-foreground">Summary</div>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      {parts.map((part, idx) => (
-                        <div key={idx}>{part}</div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null;
-              })()}
-
+              {/* Raw details */}
               {selectedEvent.details && (
                 <div>
-                  <div className="font-medium mb-1">Raw Details</div>
-                  <div className="ml-0 text-xs text-muted-foreground font-mono bg-background/50 p-2 rounded break-words">
+                  <div className="font-medium mb-1 text-xs text-muted-foreground">Raw Details</div>
+                  <div className="text-xs text-muted-foreground font-mono bg-background/50 p-2 rounded break-words">
                     {selectedEvent.details}
                   </div>
                 </div>

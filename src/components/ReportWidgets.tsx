@@ -4,14 +4,15 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { 
-  Activity, 
-  Signal, 
-  Users, 
-  Wifi, 
-  Shield, 
-  TrendingUp, 
-  AlertTriangle, 
+import { formatCompactNumber } from '../lib/units';
+import {
+  Activity,
+  Signal,
+  Users,
+  Wifi,
+  Shield,
+  TrendingUp,
+  AlertTriangle,
   BarChart3,
   RefreshCw,
   Search,
@@ -595,7 +596,7 @@ export function ReportWidgets() {
                 <div className="space-y-3">
                   <div className="flex items-baseline space-x-2">
                     <span className="text-2xl font-semibold text-foreground">
-                      {typeof widget.value === 'number' ? widget.value.toLocaleString() : widget.value}
+                      {typeof widget.value === 'number' ? formatCompactNumber(widget.value) : widget.value}
                     </span>
                     {widget.unit && (
                       <span className="text-sm text-muted-foreground">{widget.unit}</span>

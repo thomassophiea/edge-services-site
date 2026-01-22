@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { BarChart3, TrendingUp, Users, Activity, Download, Upload } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { apiService } from '../services/api';
+import { formatCompactNumber } from '../lib/units';
 
 interface VenueStatisticsWidgetProps {
   siteId: string;
@@ -156,7 +157,7 @@ export function VenueStatisticsWidget({ siteId, duration = '24H' }: VenueStatist
                 <Users className="h-4 w-4 text-blue-500" />
                 <div className="text-sm font-medium text-muted-foreground">Total Clients</div>
               </div>
-              <div className="text-2xl font-bold">{stats.uniqueClientsTotalScorecard.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{formatCompactNumber(stats.uniqueClientsTotalScorecard)}</div>
             </div>
           )}
 
@@ -167,7 +168,7 @@ export function VenueStatisticsWidget({ siteId, duration = '24H' }: VenueStatist
                 <TrendingUp className="h-4 w-4 text-green-500" />
                 <div className="text-sm font-medium text-muted-foreground">Peak Clients</div>
               </div>
-              <div className="text-2xl font-bold">{stats.uniqueClientsPeakScorecard.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{formatCompactNumber(stats.uniqueClientsPeakScorecard)}</div>
             </div>
           )}
 

@@ -11,6 +11,7 @@
 import { ColumnConfig } from '@/types/table';
 import { Station } from '@/services/api';
 import { Badge } from '@/components/ui/badge';
+import { formatCompactNumber } from '@/lib/units';
 import {
   CheckCircle,
   AlertCircle,
@@ -364,7 +365,7 @@ export const CLIENTS_TABLE_COLUMNS: ColumnConfig<Station>[] = [
     fieldPath: 'inPackets',
     defaultVisible: false,
     sortable: true,
-    renderCell: (station) => station.inPackets?.toLocaleString() || '0'
+    renderCell: (station) => formatCompactNumber(station.inPackets) || '0'
   },
 
   {
@@ -375,7 +376,7 @@ export const CLIENTS_TABLE_COLUMNS: ColumnConfig<Station>[] = [
     fieldPath: 'outPackets',
     defaultVisible: false,
     sortable: true,
-    renderCell: (station) => station.outPackets?.toLocaleString() || '0'
+    renderCell: (station) => formatCompactNumber(station.outPackets) || '0'
   },
 
   {

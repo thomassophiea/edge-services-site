@@ -163,6 +163,17 @@ export interface StationEvent {
   category?: string;           // Event category
   context?: string;            // Event context
   id?: string;                 // Event ID
+  // Additional troubleshooting fields
+  channel?: number;            // WiFi channel
+  band?: string;               // Frequency band (2.4GHz, 5GHz, 6GHz)
+  rssi?: number;               // Signal strength in dBm
+  snr?: number;                // Signal-to-noise ratio in dB
+  dataRate?: number;           // PHY data rate in Mbps
+  previousAp?: string;         // Previous AP name (for roaming)
+  previousApSerial?: string;   // Previous AP serial (for roaming)
+  reasonCode?: number;         // 802.11 reason code
+  statusCode?: number;         // 802.11 status code
+  authMethod?: string;         // Authentication method used
 }
 
 export interface StationTrafficStats {
@@ -3353,7 +3364,18 @@ class ApiService {
       type: event.type || event.category,
       level: event.level || event.severity,
       category: event.category,
-      context: event.context
+      context: event.context,
+      // Additional troubleshooting fields
+      channel: event.channel || event.radioChannel,
+      band: event.band || event.frequency || event.radio,
+      rssi: event.rssi || event.signalStrength || event.signal || event.rss,
+      snr: event.snr || event.signalToNoise,
+      dataRate: event.dataRate || event.phyRate || event.rate,
+      previousAp: event.previousAp || event.fromAp || event.prevAp,
+      previousApSerial: event.previousApSerial || event.fromApSerial,
+      reasonCode: event.reasonCode || event.reason,
+      statusCode: event.statusCode || event.status,
+      authMethod: event.authMethod || event.auth || event.authentication
     } as StationEvent));
   }
 

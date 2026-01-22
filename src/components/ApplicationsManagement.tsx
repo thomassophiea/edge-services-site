@@ -10,6 +10,7 @@ import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Skeleton } from './ui/skeleton';
 import { Alert, AlertDescription } from './ui/alert';
+import { formatCompactNumber } from '../lib/units';
 import {
   Package,
   Plus,
@@ -488,7 +489,7 @@ export function ApplicationsManagement() {
                     </Button>
                   </TableCell>
                   <TableCell className="text-sm">
-                    {app.requestCount.toLocaleString()}
+                    {formatCompactNumber(app.requestCount)}
                   </TableCell>
                   <TableCell className="text-sm">
                     {app.lastUsed ? new Date(app.lastUsed).toLocaleString() : 'Never'}

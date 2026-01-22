@@ -1,5 +1,6 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Activity, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { formatCompactNumber } from '../../lib/units';
 
 interface ScoreCardProps {
   title: string;
@@ -141,8 +142,8 @@ function formatValue(value: number, unit?: string): string {
     return `${value.toFixed(0)} B`;
   }
 
-  if (unit === 'users' || unit === 'count' || unit === 'clients') {
-    return value.toLocaleString();
+  if (unit === 'users' || unit === 'count' || unit === 'clients' || unit === 'packets') {
+    return formatCompactNumber(value);
   }
 
   if (unit === '%' || unit === 'percent') {

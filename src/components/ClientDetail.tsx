@@ -32,6 +32,7 @@ import { trafficService, StationTrafficStats } from '../services/traffic';
 import { siteMappingService } from '../services/siteMapping';
 import { simpleServiceMapping } from '../services/simpleServiceMapping';
 import { toast } from 'sonner';
+import { formatCompactNumber } from '../lib/units';
 
 interface ClientDetailProps {
   macAddress: string;
@@ -669,7 +670,7 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
                 <div className="flex justify-between">
                   <span className="text-xs text-muted-foreground">Packets:</span>
                   <span className="font-medium">
-                    {(trafficStats?.outPackets || clientDetails.outPackets)?.toLocaleString() || 'N/A'}
+                    {formatCompactNumber(trafficStats?.outPackets || clientDetails.outPackets)}
                   </span>
                 </div>
               </div>
@@ -693,7 +694,7 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
                 <div className="flex justify-between">
                   <span className="text-xs text-muted-foreground">Packets:</span>
                   <span className="font-medium">
-                    {(trafficStats?.packets || clientDetails.packets)?.toLocaleString() || 'N/A'}
+                    {formatCompactNumber(trafficStats?.packets || clientDetails.packets)}
                   </span>
                 </div>
               </div>
@@ -708,7 +709,7 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
                   <span className="text-muted-foreground">Total Data:</span>
                   <span className="font-medium">
                     {formatBytes(
-                      (trafficStats.txBytes || trafficStats.outBytes || 0) + 
+                      (trafficStats.txBytes || trafficStats.outBytes || 0) +
                       (trafficStats.rxBytes || trafficStats.inBytes || 0)
                     )}
                   </span>
@@ -716,7 +717,7 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Packets:</span>
                   <span className="font-medium">
-                    {((trafficStats.outPackets || 0) + (trafficStats.packets || 0)).toLocaleString() || 'N/A'}
+                    {formatCompactNumber((trafficStats.outPackets || 0) + (trafficStats.packets || 0))}
                   </span>
                 </div>
                 {trafficStats.rss && (
@@ -915,6 +916,59 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
                                       <span className="font-medium">{parsedDetails.FT}</span>
                                     </div>
                                   )}
+                                  {/* Signal strength with color indicator */}
+                                  {(parsedDetails.Signal || parsedDetails.RSS || parsedDetails.RSSI) && (() => {
+                                    const rssi = parseInt(parsedDetails.Signal || parsedDetails.RSS || parsedDetails.RSSI);
+                                    const color = rssi >= -60 ? 'text-green-600' : rssi >= -70 ? 'text-orange-500' : 'text-red-500';
+                                    return (
+                                      <div>
+                                        <span className="text-muted-foreground">Signal: </span>
+                                        <span className={`font-medium ${color}`}>{rssi} dBm</span>
+                                      </div>
+                                    );
+                                  })()}
+                                  {/* Channel info */}
+                                  {parsedDetails.Channel && (
+                                    <div>
+                                      <span className="text-muted-foreground">Channel: </span>
+                                      <span className="font-medium">{parsedDetails.Channel}</span>
+                                    </div>
+                                  )}
+                                  {/* Band/Radio frequency */}
+                                  {(parsedDetails.Band || parsedDetails.Radio) && (
+                                    <div>
+                                      <span className="text-muted-foreground">Band: </span>
+                                      <span className="font-medium">{parsedDetails.Band || parsedDetails.Radio}</span>
+                                    </div>
+                                  )}
+                                  {/* Auth method */}
+                                  {(parsedDetails.Auth || parsedDetails.AuthMethod) && (
+                                    <div>
+                                      <span className="text-muted-foreground">Auth: </span>
+                                      <span className="font-medium">{parsedDetails.Auth || parsedDetails.AuthMethod}</span>
+                                    </div>
+                                  )}
+                                  {/* Previous AP for roaming context */}
+                                  {(parsedDetails.From || parsedDetails.FromAP || parsedDetails.PrevAP) && (
+                                    <div>
+                                      <span className="text-muted-foreground">From AP: </span>
+                                      <span className="font-medium">{parsedDetails.From || parsedDetails.FromAP || parsedDetails.PrevAP}</span>
+                                    </div>
+                                  )}
+                                  {/* SNR if available */}
+                                  {parsedDetails.SNR && (
+                                    <div>
+                                      <span className="text-muted-foreground">SNR: </span>
+                                      <span className="font-medium">{parsedDetails.SNR} dB</span>
+                                    </div>
+                                  )}
+                                  {/* Data rate */}
+                                  {(parsedDetails.Rate || parsedDetails.DataRate || parsedDetails.PhyRate) && (
+                                    <div>
+                                      <span className="text-muted-foreground">Rate: </span>
+                                      <span className="font-medium">{parsedDetails.Rate || parsedDetails.DataRate || parsedDetails.PhyRate} Mbps</span>
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <p className="text-sm text-foreground mb-2">{event.details}</p>
@@ -977,6 +1031,51 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
                             <div>
                               <span className="text-muted-foreground">Context: </span>
                               <span className="font-medium">{event.context}</span>
+                            </div>
+                          )}
+                          {/* Direct API fields for troubleshooting */}
+                          {event.rssi && (
+                            <div>
+                              <span className="text-muted-foreground">Signal: </span>
+                              <span className={`font-medium ${event.rssi >= -60 ? 'text-green-600' : event.rssi >= -70 ? 'text-orange-500' : 'text-red-500'}`}>
+                                {event.rssi} dBm
+                              </span>
+                            </div>
+                          )}
+                          {event.channel && (
+                            <div>
+                              <span className="text-muted-foreground">Channel: </span>
+                              <span className="font-medium">{event.channel}</span>
+                            </div>
+                          )}
+                          {event.band && (
+                            <div>
+                              <span className="text-muted-foreground">Band: </span>
+                              <span className="font-medium">{event.band}</span>
+                            </div>
+                          )}
+                          {event.dataRate && (
+                            <div>
+                              <span className="text-muted-foreground">Rate: </span>
+                              <span className="font-medium">{event.dataRate} Mbps</span>
+                            </div>
+                          )}
+                          {event.previousAp && (
+                            <div>
+                              <span className="text-muted-foreground">From AP: </span>
+                              <span className="font-medium">{event.previousAp}</span>
+                            </div>
+                          )}
+                          {event.authMethod && (
+                            <div>
+                              <span className="text-muted-foreground">Auth: </span>
+                              <span className="font-medium">{event.authMethod}</span>
+                            </div>
+                          )}
+                          {event.reasonCode && (
+                            <div>
+                              <span className="text-muted-foreground">Reason Code: </span>
+                              <span className="font-mono font-medium">{event.reasonCode}</span>
                             </div>
                           )}
                           {event.id && (

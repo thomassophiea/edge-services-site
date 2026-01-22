@@ -6,6 +6,7 @@ import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
+import { formatCompactNumber } from '../lib/units';
 import {
   Database,
   Download,
@@ -499,7 +500,7 @@ export function SystemUtilities() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Records</p>
-                  <p className="text-lg font-semibold">{dbStats.records.toLocaleString()}</p>
+                  <p className="text-lg font-semibold">{formatCompactNumber(dbStats.records)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Last Optimized</p>
