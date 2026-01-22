@@ -987,11 +987,18 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
         </div>
 
         {/* Event details sidebar */}
-        {showDetails && selectedEvent && (
+        {showDetails && (
           <div
             className="w-72 border-l bg-background p-3 flex-shrink-0 z-20 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
+            {!selectedEvent ? (
+              <div className="flex flex-col items-center justify-center h-32 text-center">
+                <Info className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">Click an event to view details</p>
+              </div>
+            ) : (
+            <>
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
                 <h4 className="font-semibold text-sm">Event Details</h4>
@@ -1225,6 +1232,8 @@ export function RoamingTrail({ events, macAddress }: RoamingTrailProps) {
                 </div>
               )}
             </div>
+            </>
+            )}
           </div>
         )}
       </div>
