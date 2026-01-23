@@ -116,24 +116,31 @@ export function PacketCapture() {
     let cancelled = false;
 
     const loadInitialData = async () => {
+      if (cancelled) return;
       setLoading(true);
       setError(null);
 
       try {
         // Load access points for wireless capture
-        const apResponse = await apiService.makeAuthenticatedRequest('/v1/accesspoints', {}, 10000);
-        if (!cancelled && apResponse.ok) {
-          const data = await apResponse.json();
-          const apList = Array.isArray(data) ? data : (data.accessPoints || []);
-          setAccessPoints(apList);
+        try {
+          const apResponse = await apiService.makeAuthenticatedRequest('/v1/accesspoints', {}, 10000);
+          if (!cancelled && apResponse.ok) {
+            const data = await apResponse.json();
+            const apList = Array.isArray(data) ? data : (data.accessPoints || []);
+            setAccessPoints(apList);
+          }
+        } catch (apErr) {
+          console.warn('[PacketCapture] Failed to load APs:', apErr);
         }
 
-        // Load capture files
+        if (cancelled) return;
+
+        // Load capture files - these endpoints likely don't exist yet, so just skip silently
         const fileEndpoints = ['/v1/packetcapture/files', '/v1/pcap/files', '/v1/capture/files'];
         for (const endpoint of fileEndpoints) {
           if (cancelled) break;
           try {
-            const response = await apiService.makeAuthenticatedRequest(endpoint, {}, 10000);
+            const response = await apiService.makeAuthenticatedRequest(endpoint, {}, 5000);
             if (response.ok) {
               const data = await response.json();
               const files = Array.isArray(data) ? data : (data.files || []);
@@ -150,16 +157,19 @@ export function PacketCapture() {
               break;
             }
           } catch {
+            // Expected - endpoint may not exist
             continue;
           }
         }
 
-        // Load active captures
+        if (cancelled) return;
+
+        // Load active captures - these endpoints likely don't exist yet, so just skip silently
         const captureEndpoints = ['/v1/packetcapture/active', '/v1/pcap/active', '/v1/capture/active'];
         for (const endpoint of captureEndpoints) {
           if (cancelled) break;
           try {
-            const response = await apiService.makeAuthenticatedRequest(endpoint, {}, 10000);
+            const response = await apiService.makeAuthenticatedRequest(endpoint, {}, 5000);
             if (response.ok) {
               const data = await response.json();
               const captures = Array.isArray(data) ? data : (data.captures || []);
@@ -177,10 +187,12 @@ export function PacketCapture() {
               break;
             }
           } catch {
+            // Expected - endpoint may not exist
             continue;
           }
         }
       } catch (err) {
+        console.error('[PacketCapture] Error loading data:', err);
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load packet capture data');
         }
@@ -517,7 +529,7 @@ export function PacketCapture() {
 
   if (loading) {
     return (
-      <div className="h-full overflow-auto">
+      <div className="h-full min-h-0 overflow-y-auto">
         <div className="container mx-auto p-6 space-y-6">
           <Skeleton className="h-10 w-64" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -531,7 +543,7 @@ export function PacketCapture() {
   }
 
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full min-h-0 overflow-y-auto">
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
