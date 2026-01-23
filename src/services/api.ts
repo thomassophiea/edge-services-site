@@ -300,6 +300,41 @@ export interface APInsightsResponse {
   apQoE?: any[];
 }
 
+// Client Insights - App Group data for donut chart
+export interface ClientAppGroupData {
+  name: string;
+  value: number;
+  percentage?: number;
+}
+
+// Client Insights - Full response
+export interface ClientInsightsResponse {
+  macAddress: string;
+  ipAddress: string;
+  manufacturer?: string;
+  osType?: string;
+  deviceFamily?: string;
+  deviceType?: string;
+  ssid?: string;
+  // Default view reports
+  throughputReport?: APInsightsReport[];
+  rfQuality?: APInsightsReport[];
+  topAppGroupsByThroughputReport?: Array<{
+    reportName: string;
+    statistics: ClientAppGroupData[];
+    totalThroughput?: number;
+  }>;
+  appGroupsThroughputDetails?: APInsightsReport[];
+  // Expert view reports
+  baseliningRFQI?: APInsightsReport[];
+  baseliningWirelessRTT?: APInsightsReport[];
+  baseliningNetworkRTT?: APInsightsReport[];
+  baseliningRss?: APInsightsReport[];
+  baseliningRxRate?: APInsightsReport[];
+  baseliningTxRate?: APInsightsReport[];
+  muEvent?: APInsightsReport[];
+}
+
 export interface APRadio {
   radioName: string;
   radioIndex: number;
@@ -1838,6 +1873,69 @@ class ApiService {
       return data;
     } catch (error) {
       console.error('[API] Error fetching AP insights:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Client Insights data including throughput, RF quality, app groups, etc.
+   * Endpoint: GET /v1/report/stations/{macAddress}
+   * @param macAddress Client MAC address
+   * @param duration Duration string (3H, 24H, 7D, 30D)
+   * @param resolution Data resolution in minutes (15 for 3H, 60 for 24H, etc.)
+   * @param mode 'default' for basic metrics, 'expert' for advanced metrics, 'all' for both
+   */
+  async getClientInsights(
+    macAddress: string,
+    duration: string = '3H',
+    resolution: number = 15,
+    mode: 'default' | 'expert' | 'all' = 'all'
+  ): Promise<ClientInsightsResponse> {
+    const noCache = Date.now();
+
+    // Default view widgets
+    const defaultWidgets = [
+      'throughputReport|all',
+      'rfQuality|all',
+      'topAppGroupsByThroughputReport',
+      'appGroupsThroughputDetails'
+    ];
+
+    // Expert view widgets
+    const expertWidgets = [
+      'baseliningRFQI',
+      'baseliningWirelessRTT',
+      'baseliningNetworkRTT',
+      'baseliningRss',
+      'baseliningRxRate',
+      'baseliningTxRate',
+      'muEvent'
+    ];
+
+    let widgets: string[];
+    if (mode === 'default') {
+      widgets = defaultWidgets;
+    } else if (mode === 'expert') {
+      widgets = expertWidgets;
+    } else {
+      widgets = [...defaultWidgets, ...expertWidgets];
+    }
+
+    const widgetList = encodeURIComponent(widgets.join(','));
+    const endpoint = `/v1/report/stations/${encodeURIComponent(macAddress)}?noCache=${noCache}&duration=${duration}&resolution=${resolution}&widgetList=${widgetList}`;
+
+    console.log('[API] Fetching Client insights:', { macAddress, duration, resolution, mode });
+
+    try {
+      const response = await this.makeAuthenticatedRequest(endpoint);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Client insights: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log('[API] Client insights data received');
+      return data;
+    } catch (error) {
+      console.error('[API] Error fetching Client insights:', error);
       throw error;
     }
   }

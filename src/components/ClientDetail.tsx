@@ -28,6 +28,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { apiService, Station, StationEvent, APEvent, RRMEvent } from '../services/api';
 import { RoamingTrail } from './RoamingTrail';
+import { ClientInsights, ClientInsightsFullScreen } from './ClientInsights';
 import { trafficService, StationTrafficStats } from '../services/traffic';
 import { siteMappingService } from '../services/siteMapping';
 import { simpleServiceMapping } from '../services/simpleServiceMapping';
@@ -58,6 +59,7 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
   const [showRoamingTrail, setShowRoamingTrail] = useState(false);
+  const [showClientInsights, setShowClientInsights] = useState(false);
 
   const loadClientDetails = async () => {
     try {
@@ -506,6 +508,13 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Client Insights */}
+      <ClientInsights
+        macAddress={macAddress}
+        clientName={clientDetails.hostName || macAddress}
+        onOpenFullScreen={() => setShowClientInsights(true)}
+      />
 
       {/* Device Information */}
       <Card>
@@ -1143,6 +1152,15 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Client Insights Full Screen */}
+      {showClientInsights && (
+        <ClientInsightsFullScreen
+          macAddress={macAddress}
+          clientName={clientDetails?.hostName || macAddress}
+          onClose={() => setShowClientInsights(false)}
+        />
+      )}
 
       {/* Roaming Trail Full Page */}
       {showRoamingTrail && (
