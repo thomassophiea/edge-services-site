@@ -113,41 +113,90 @@ export function PacketCapture() {
   ];
 
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    let cancelled = false;
 
-  const loadInitialData = async () => {
-    setLoading(true);
-    setError(null);
+    const loadInitialData = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      // Load access points for wireless capture
-      await loadAccessPoints();
+      try {
+        // Load access points for wireless capture
+        const apResponse = await apiService.makeAuthenticatedRequest('/v1/accesspoints', {}, 10000);
+        if (!cancelled && apResponse.ok) {
+          const data = await apResponse.json();
+          const apList = Array.isArray(data) ? data : (data.accessPoints || []);
+          setAccessPoints(apList);
+        }
 
-      // Load capture files and active captures
-      await Promise.all([
-        loadCaptureFiles(),
-        loadActiveCaptures()
-      ]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load packet capture data');
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Load capture files
+        const fileEndpoints = ['/v1/packetcapture/files', '/v1/pcap/files', '/v1/capture/files'];
+        for (const endpoint of fileEndpoints) {
+          if (cancelled) break;
+          try {
+            const response = await apiService.makeAuthenticatedRequest(endpoint, {}, 10000);
+            if (response.ok) {
+              const data = await response.json();
+              const files = Array.isArray(data) ? data : (data.files || []);
+              if (!cancelled) {
+                setCaptureFiles(files.map((f: any, idx: number) => ({
+                  id: f.id || `file-${idx}`,
+                  filename: f.filename || f.name || `capture-${idx}.pcap`,
+                  size: f.size || 0,
+                  date: f.date || f.created || new Date(f.timestamp || Date.now()).toISOString(),
+                  timestamp: f.timestamp || Date.now(),
+                  status: f.status
+                })));
+              }
+              break;
+            }
+          } catch {
+            continue;
+          }
+        }
 
-  const loadAccessPoints = async () => {
-    try {
-      const response = await apiService.makeAuthenticatedRequest('/v1/accesspoints', {}, 10000);
-      if (response.ok) {
-        const data = await response.json();
-        const apList = Array.isArray(data) ? data : (data.accessPoints || []);
-        setAccessPoints(apList);
+        // Load active captures
+        const captureEndpoints = ['/v1/packetcapture/active', '/v1/pcap/active', '/v1/capture/active'];
+        for (const endpoint of captureEndpoints) {
+          if (cancelled) break;
+          try {
+            const response = await apiService.makeAuthenticatedRequest(endpoint, {}, 10000);
+            if (response.ok) {
+              const data = await response.json();
+              const captures = Array.isArray(data) ? data : (data.captures || []);
+              if (!cancelled) {
+                setActiveCaptures(captures.map((c: any, idx: number) => ({
+                  id: c.id || `capture-${idx}`,
+                  location: c.location || c.interface || 'unknown',
+                  direction: c.direction || 'both',
+                  duration: c.duration || 0,
+                  startTime: c.startTime || Date.now(),
+                  filters: c.filters || [],
+                  status: c.status || 'running'
+                })));
+              }
+              break;
+            }
+          } catch {
+            continue;
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load packet capture data');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      console.warn('Failed to load access points:', err);
-    }
-  };
+    };
+
+    loadInitialData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loadCaptureFiles = async () => {
     try {
@@ -218,9 +267,14 @@ export function PacketCapture() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadInitialData();
-    setRefreshing(false);
-    toast.success('Packet capture data refreshed');
+    try {
+      await Promise.all([loadCaptureFiles(), loadActiveCaptures()]);
+      toast.success('Packet capture data refreshed');
+    } catch (err) {
+      toast.error('Failed to refresh data');
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const addFilter = () => {
