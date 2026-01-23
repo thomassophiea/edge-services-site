@@ -133,20 +133,31 @@ export function APInsights({ serialNumber, apName, onOpenFullScreen }: APInsight
 
   const durationOption = DURATION_OPTIONS.find(d => d.value === duration) || DURATION_OPTIONS[0];
 
-  const loadInsights = async () => {
-    try {
-      setIsLoading(true);
-      const data = await apiService.getAccessPointInsights(serialNumber, duration, durationOption.resolution);
-      setInsights(data);
-    } catch (error) {
-      console.error('Failed to load AP insights:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadInsights();
+    let cancelled = false;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const resolution = DURATION_OPTIONS.find(d => d.value === duration)?.resolution || 15;
+        const data = await apiService.getAccessPointInsights(serialNumber, duration, resolution);
+        if (!cancelled) {
+          setInsights(data);
+        }
+      } catch (error) {
+        console.error('Failed to load AP insights:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [serialNumber, duration]);
 
   // Calculate summary stats - only return valid data
@@ -295,24 +306,38 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
   const [insights, setInsights] = useState<APInsightsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [duration, setDuration] = useState('3H');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const durationOption = DURATION_OPTIONS.find(d => d.value === duration) || DURATION_OPTIONS[0];
 
-  const loadInsights = async () => {
-    try {
-      setIsLoading(true);
-      const data = await apiService.getAccessPointInsights(serialNumber, duration, durationOption.resolution);
-      setInsights(data);
-    } catch (error) {
-      console.error('Failed to load AP insights:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleRefresh = () => setRefreshKey(k => k + 1);
 
   useEffect(() => {
-    loadInsights();
-  }, [serialNumber, duration]);
+    let cancelled = false;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const resolution = DURATION_OPTIONS.find(d => d.value === duration)?.resolution || 15;
+        const data = await apiService.getAccessPointInsights(serialNumber, duration, resolution);
+        if (!cancelled) {
+          setInsights(data);
+        }
+      } catch (error) {
+        console.error('Failed to load AP insights:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [serialNumber, duration, refreshKey]);
 
   // Transform data for each chart
   const throughputData = useMemo(() => {
@@ -595,7 +620,7 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={loadInsights} disabled={isLoading}>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>

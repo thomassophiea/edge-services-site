@@ -144,20 +144,31 @@ export function ClientInsights({ macAddress, clientName, onOpenFullScreen }: Cli
 
   const durationOption = DURATION_OPTIONS.find(d => d.value === duration) || DURATION_OPTIONS[0];
 
-  const loadInsights = async () => {
-    try {
-      setIsLoading(true);
-      const data = await apiService.getClientInsights(macAddress, duration, durationOption.resolution, 'default');
-      setInsights(data);
-    } catch (error) {
-      console.error('Failed to load Client insights:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadInsights();
+    let cancelled = false;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const resolution = DURATION_OPTIONS.find(d => d.value === duration)?.resolution || 15;
+        const data = await apiService.getClientInsights(macAddress, duration, resolution, 'default');
+        if (!cancelled) {
+          setInsights(data);
+        }
+      } catch (error) {
+        console.error('Failed to load Client insights:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [macAddress, duration]);
 
   // Calculate summary stats - only return valid data
@@ -306,24 +317,38 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
   const [insights, setInsights] = useState<ClientInsightsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [duration, setDuration] = useState('3H');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const durationOption = DURATION_OPTIONS.find(d => d.value === duration) || DURATION_OPTIONS[0];
 
-  const loadInsights = async () => {
-    try {
-      setIsLoading(true);
-      const data = await apiService.getClientInsights(macAddress, duration, durationOption.resolution, 'all');
-      setInsights(data);
-    } catch (error) {
-      console.error('Failed to load Client insights:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleRefresh = () => setRefreshKey(k => k + 1);
 
   useEffect(() => {
-    loadInsights();
-  }, [macAddress, duration]);
+    let cancelled = false;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const resolution = DURATION_OPTIONS.find(d => d.value === duration)?.resolution || 15;
+        const data = await apiService.getClientInsights(macAddress, duration, resolution, 'all');
+        if (!cancelled) {
+          setInsights(data);
+        }
+      } catch (error) {
+        console.error('Failed to load Client insights:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [macAddress, duration, refreshKey]);
 
   // Transform data for all charts
   const throughputData = useMemo(() => {
@@ -864,7 +889,7 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={loadInsights} disabled={isLoading}>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
