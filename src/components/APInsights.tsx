@@ -628,7 +628,7 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <div className="p-6 space-y-6 pb-12">
             {isLoading ? (
               <div className="grid grid-cols-2 gap-6">
@@ -637,9 +637,18 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
                 <Skeleton className="h-64" />
                 <Skeleton className="h-64" />
               </div>
-            ) : (
+            ) : chartConfigs.some(c => c.hasData) ? (
               <div className="grid grid-cols-2 gap-6">
                 {chartConfigs.map(config => renderChart(config))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <BarChart3 className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-medium mb-2">No Insights Data Available</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  No performance data is available for this access point in the selected time period.
+                  Try selecting a different duration or check back later.
+                </p>
               </div>
             )}
           </div>
