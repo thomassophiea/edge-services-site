@@ -26,9 +26,12 @@ import {
   Radio,
   ArrowUpDown,
   Power,
-  Download
+  Download,
+  ArrowLeft,
+  Maximize2
 } from 'lucide-react';
 import { apiService, AccessPoint, APDetails, APStation, APRadio, APAlarm, APAlarmCategory } from '../services/api';
+import { APEventsTimeline } from './APEventsTimeline';
 import { toast } from 'sonner';
 
 interface AccessPointDetailProps {
@@ -49,6 +52,7 @@ export function AccessPointDetail({ serialNumber }: AccessPointDetailProps) {
   const [eventDuration, setEventDuration] = useState<number>(14);
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [showEvents, setShowEvents] = useState(true);
+  const [showEventsTimeline, setShowEventsTimeline] = useState(false);
 
   const loadApDetails = async () => {
     try {
@@ -437,92 +441,6 @@ export function AccessPointDetail({ serialNumber }: AccessPointDetailProps) {
         </Card>
       )}
 
-      {/* Performance Metrics */}
-      {(apDetails.cpuUsage !== undefined || apDetails.memoryUsage !== undefined || apDetails.channelUtilization !== undefined) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Cpu className="h-4 w-4" />
-              <span>Performance Metrics</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {apDetails.cpuUsage !== undefined && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">CPU Usage:</span>
-                <span className="font-medium">{apDetails.cpuUsage}%</span>
-              </div>
-            )}
-            {apDetails.memoryUsage !== undefined && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Memory Usage:</span>
-                <span className="font-medium">{apDetails.memoryUsage}%</span>
-              </div>
-            )}
-            {apDetails.channelUtilization !== undefined && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Channel Utilization:</span>
-                <span className="font-medium">{apDetails.channelUtilization}%</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Connected Clients */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span>Connected Clients</span>
-            </div>
-            <Badge variant="secondary">{stations.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {stations.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No clients currently connected
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {stations.slice(0, 10).map((station, index) => (
-                <div key={station.macAddress || index} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">
-                      {station.hostName || station.macAddress || 'Unknown Client'}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {station.macAddress}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    {station.signalStrength && (
-                      <p className="text-xs text-muted-foreground">
-                        {station.signalStrength} dBm
-                      </p>
-                    )}
-                    {station.dataRate && (
-                      <p className="text-xs text-muted-foreground">
-                        {station.dataRate}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {stations.length > 10 && (
-                <div className="text-center py-2">
-                  <p className="text-xs text-muted-foreground">
-                    ... and {stations.length - 10} more clients
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Events Section */}
       <Card>
         <CardHeader>
@@ -550,6 +468,17 @@ export function AccessPointDetail({ serialNumber }: AccessPointDetailProps) {
                   <SelectItem value="30">Last 30 Days</SelectItem>
                 </SelectContent>
               </Select>
+              {events.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEventsTimeline(true)}
+                  className="h-8 px-2"
+                >
+                  <Maximize2 className="h-4 w-4 mr-1" />
+                  Full View
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -711,6 +640,92 @@ export function AccessPointDetail({ serialNumber }: AccessPointDetailProps) {
         )}
       </Card>
 
+      {/* Performance Metrics */}
+      {(apDetails.cpuUsage !== undefined || apDetails.memoryUsage !== undefined || apDetails.channelUtilization !== undefined) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Cpu className="h-4 w-4" />
+              <span>Performance Metrics</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {apDetails.cpuUsage !== undefined && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">CPU Usage:</span>
+                <span className="font-medium">{apDetails.cpuUsage}%</span>
+              </div>
+            )}
+            {apDetails.memoryUsage !== undefined && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Memory Usage:</span>
+                <span className="font-medium">{apDetails.memoryUsage}%</span>
+              </div>
+            )}
+            {apDetails.channelUtilization !== undefined && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Channel Utilization:</span>
+                <span className="font-medium">{apDetails.channelUtilization}%</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Connected Clients */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Users className="h-4 w-4" />
+              <span>Connected Clients</span>
+            </div>
+            <Badge variant="secondary">{stations.length}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stations.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No clients currently connected
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {stations.slice(0, 10).map((station, index) => (
+                <div key={station.macAddress || index} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">
+                      {station.hostName || station.macAddress || 'Unknown Client'}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {station.macAddress}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {station.signalStrength && (
+                      <p className="text-xs text-muted-foreground">
+                        {station.signalStrength} dBm
+                      </p>
+                    )}
+                    {station.dataRate && (
+                      <p className="text-xs text-muted-foreground">
+                        {station.dataRate}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {stations.length > 10 && (
+                <div className="text-center py-2">
+                  <p className="text-xs text-muted-foreground">
+                    ... and {stations.length - 10} more clients
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Management Actions */}
       <Card>
         <CardHeader>
@@ -736,6 +751,61 @@ export function AccessPointDetail({ serialNumber }: AccessPointDetailProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Full-Screen AP Events Timeline */}
+      {showEventsTimeline && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <div className="h-full flex flex-col">
+            {/* Header */}
+            <div className="border-b bg-background px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEventsTimeline(false)}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                <div>
+                  <h2 className="text-lg font-semibold">AP Events Timeline</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {apDetails.apName} ({serialNumber})
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={String(eventDuration)}
+                  onValueChange={(val) => setEventDuration(parseInt(val))}
+                >
+                  <SelectTrigger className="w-[140px] h-8">
+                    <Clock className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Last 24 Hours</SelectItem>
+                    <SelectItem value="7">Last 7 Days</SelectItem>
+                    <SelectItem value="14">Last 14 Days</SelectItem>
+                    <SelectItem value="30">Last 30 Days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {/* Timeline Content */}
+            <div className="flex-1 overflow-hidden">
+              <APEventsTimeline
+                events={events}
+                categories={eventCategories}
+                apName={apDetails.apName || 'Unknown AP'}
+                serialNumber={serialNumber}
+                onRefresh={loadEvents}
+                isLoading={isLoadingEvents}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
