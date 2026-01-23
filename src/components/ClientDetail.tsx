@@ -1208,7 +1208,7 @@ export function ClientDetail({ macAddress }: ClientDetailProps) {
             </div>
 
             {/* Roaming Trail Content */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-auto">
               <RoamingTrail
                 events={stationEvents}
                 apEvents={apEvents}
