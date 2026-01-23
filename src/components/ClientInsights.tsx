@@ -209,7 +209,7 @@ export function ClientInsights({ macAddress, clientName, onOpenFullScreen }: Cli
             <BarChart3 className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">Client Insights</span>
           </div>
-          <div className="flex items-center gap-1.5 ml-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5 ml-auto mr-1" onClick={(e) => e.stopPropagation()}>
             <Select value={duration} onValueChange={setDuration}>
               <SelectTrigger
                 className="w-[110px] h-7 text-xs"
@@ -872,7 +872,7 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
         </div>
 
         {/* Content - All charts on one page */}
-        <div className="flex-1 scrollbar-auto-hide">
+        <div className="flex-1 overflow-auto scrollbar-auto-hide">
           <div className="p-6 space-y-6 pb-12">
             {isLoading ? (
               <div className="grid grid-cols-2 gap-6">

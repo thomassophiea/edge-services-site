@@ -198,7 +198,7 @@ export function APInsights({ serialNumber, apName, onOpenFullScreen }: APInsight
             <BarChart3 className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">AP Insights</span>
           </div>
-          <div className="flex items-center gap-1.5 ml-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5 ml-auto mr-1" onClick={(e) => e.stopPropagation()}>
             <Select value={duration} onValueChange={setDuration}>
               <SelectTrigger
                 className="w-[110px] h-7 text-xs"
@@ -603,7 +603,7 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
         </div>
 
         {/* Content */}
-        <div className="flex-1 scrollbar-auto-hide">
+        <div className="flex-1 overflow-auto scrollbar-auto-hide">
           <div className="p-6 space-y-6 pb-12">
             {isLoading ? (
               <div className="grid grid-cols-2 gap-6">
