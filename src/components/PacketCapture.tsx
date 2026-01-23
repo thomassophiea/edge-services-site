@@ -78,7 +78,7 @@ export function PacketCapture() {
   const [filters, setFilters] = useState<CaptureFilter[]>([]);
   const [newFilterType, setNewFilterType] = useState<'mac' | 'ip' | 'protocol'>('mac');
   const [newFilterValue, setNewFilterValue] = useState('');
-  const [selectedProtocol, setSelectedProtocol] = useState<string>('');
+  const [selectedProtocol, setSelectedProtocol] = useState<string>('any');
   const [packetDestination, setPacketDestination] = useState<string>('');
 
   // State
@@ -92,7 +92,7 @@ export function PacketCapture() {
 
   // Protocol options
   const protocols = [
-    { value: '', label: 'Any' },
+    { value: 'any', label: 'Any' },
     { value: 'tcp', label: 'TCP' },
     { value: 'udp', label: 'UDP' },
     { value: 'icmp', label: 'ICMP' },
@@ -322,7 +322,7 @@ export function PacketCapture() {
         direction,
         duration: duration * 60, // Convert to seconds
         truncatePackets: truncatePackets > 0 ? truncatePackets : undefined,
-        protocol: selectedProtocol || undefined,
+        protocol: selectedProtocol !== 'any' ? selectedProtocol : undefined,
         destination: packetDestination || undefined,
         filters: filters.map(f => ({ type: f.type, value: f.value }))
       };
