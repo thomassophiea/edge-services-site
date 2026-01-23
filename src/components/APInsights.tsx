@@ -97,6 +97,20 @@ function transformReportData(report: APInsightsReport | undefined, duration: str
   return Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
 }
 
+// Check if chart data has actual values beyond just timestamp/time
+function hasActualChartData(data: any[]): boolean {
+  if (!data || data.length === 0) return false;
+
+  // Check if any entry has values beyond just timestamp/time
+  return data.some(entry => {
+    const keys = Object.keys(entry).filter(k => k !== 'timestamp' && k !== 'time');
+    return keys.some(k => {
+      const value = entry[k];
+      return value !== null && value !== undefined && !isNaN(value) && value !== 0;
+    });
+  });
+}
+
 // Chart colors
 const CHART_COLORS = {
   primary: 'hsl(var(--primary))',
@@ -175,16 +189,16 @@ export function APInsights({ serialNumber, apName, onOpenFullScreen }: APInsight
 
   return (
     <Card
-      className={onOpenFullScreen ? "cursor-pointer hover:border-primary/50 transition-colors" : ""}
+      className={onOpenFullScreen ? "cursor-pointer border-primary/30 hover:border-primary hover:bg-accent/50 hover:shadow-md transition-all" : ""}
       onClick={onOpenFullScreen}
     >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <BarChart3 className="h-4 w-4" />
+            <BarChart3 className="h-4 w-4 text-primary" />
             <span>AP Insights</span>
             {onOpenFullScreen && (
-              <Maximize2 className="h-3 w-3 text-muted-foreground" />
+              <Maximize2 className="h-3 w-3 text-primary" />
             )}
           </div>
           <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
@@ -320,19 +334,19 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
     return transformReportData(report, duration);
   }, [insights, duration]);
 
-  // Define all charts with their data - charts with data appear first, empty charts at bottom
+  // Define all charts with their data - charts with data appear first, empty charts are hidden
   const chartConfigs = useMemo(() => {
     const configs = [
-      { id: 'throughput', title: 'Throughput', data: throughputData, hasData: throughputData.length > 0 },
-      { id: 'power', title: 'Power Consumption', data: powerData, hasData: powerData.length > 0 },
-      { id: 'clients', title: 'Unique Client Count', data: clientData, hasData: clientData.length > 0 },
-      { id: 'rss', title: 'RSS (Signal Strength)', data: rssData, hasData: rssData.length > 0 },
-      { id: 'channelUtil5', title: 'Channel Utilization 5GHz', data: channelUtil5Data, hasData: channelUtil5Data.length > 0 },
-      { id: 'channelUtil24', title: 'Channel Utilization 2.4GHz', data: channelUtil24Data, hasData: channelUtil24Data.length > 0 },
-      { id: 'noise', title: 'Noise Per Channel', data: noiseData, hasData: noiseData.length > 0 },
+      { id: 'throughput', title: 'Throughput', data: throughputData, hasData: hasActualChartData(throughputData) },
+      { id: 'power', title: 'Power Consumption', data: powerData, hasData: hasActualChartData(powerData) },
+      { id: 'clients', title: 'Unique Client Count', data: clientData, hasData: hasActualChartData(clientData) },
+      { id: 'rss', title: 'RSS (Signal Strength)', data: rssData, hasData: hasActualChartData(rssData) },
+      { id: 'channelUtil5', title: 'Channel Utilization 5GHz', data: channelUtil5Data, hasData: hasActualChartData(channelUtil5Data) },
+      { id: 'channelUtil24', title: 'Channel Utilization 2.4GHz', data: channelUtil24Data, hasData: hasActualChartData(channelUtil24Data) },
+      { id: 'noise', title: 'Noise Per Channel', data: noiseData, hasData: hasActualChartData(noiseData) },
     ];
 
-    // Sort: charts with data first, empty charts last
+    // Sort: charts with data first, empty charts last (and will be hidden by renderChart)
     return configs.sort((a, b) => {
       if (a.hasData && !b.hasData) return -1;
       if (!a.hasData && b.hasData) return 1;
@@ -350,7 +364,7 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
     switch (config.id) {
       case 'throughput':
         return (
-          <Card key={config.id}>
+          <Card key={config.id} className="col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
             </CardHeader>

@@ -102,6 +102,20 @@ function transformReportData(report: APInsightsReport | undefined, duration: str
   return Array.from(dataMap.values()).sort((a, b) => a.timestamp - b.timestamp);
 }
 
+// Check if chart data has actual values beyond just timestamp/time
+function hasActualChartData(data: any[]): boolean {
+  if (!data || data.length === 0) return false;
+
+  // Check if any entry has values beyond just timestamp/time
+  return data.some(entry => {
+    const keys = Object.keys(entry).filter(k => k !== 'timestamp' && k !== 'time');
+    return keys.some(k => {
+      const value = entry[k];
+      return value !== null && value !== undefined && !isNaN(value) && value !== 0;
+    });
+  });
+}
+
 // Chart colors
 const CHART_COLORS = {
   primary: 'hsl(var(--primary))',
@@ -186,16 +200,16 @@ export function ClientInsights({ macAddress, clientName, onOpenFullScreen }: Cli
 
   return (
     <Card
-      className={onOpenFullScreen ? "cursor-pointer hover:border-primary/50 transition-colors" : ""}
+      className={onOpenFullScreen ? "cursor-pointer border-primary/30 hover:border-primary hover:bg-accent/50 hover:shadow-md transition-all" : ""}
       onClick={onOpenFullScreen}
     >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <BarChart3 className="h-4 w-4" />
+            <BarChart3 className="h-4 w-4 text-primary" />
             <span>Client Insights</span>
             {onOpenFullScreen && (
-              <Maximize2 className="h-3 w-3 text-muted-foreground" />
+              <Maximize2 className="h-3 w-3 text-primary" />
             )}
           </div>
           <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
@@ -361,25 +375,38 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
   }, [insights, duration]);
 
   // Define all charts with their data and render functions
-  // Charts with data will appear first, empty charts at the bottom
+  // Charts with data will appear first, empty charts are hidden
+  // Some charts rarely have data or require tests, so they go at the bottom
   const chartConfigs = useMemo(() => {
+    // Charts that rarely have data or require tests - always at bottom
+    const bottomCharts = ['rfQuality', 'rfqi', 'wirelessRtt', 'networkRtt'];
+
     const configs = [
-      { id: 'throughput', title: 'Throughput (Band: All)', data: throughputData, hasData: throughputData.length > 0 },
-      { id: 'rfQuality', title: 'RF Quality (Band: All)', data: rfQualityData, hasData: rfQualityData.length > 0 },
-      { id: 'appGroups', title: 'Top Categories by Throughput', data: appGroupsData, hasData: appGroupsData.length > 0 },
-      { id: 'appGroupsDetail', title: 'App Group Detail', data: appGroupsDetailData, hasData: appGroupsDetailData.length > 0 },
-      { id: 'rfqi', title: 'RFQI', data: rfqiData, hasData: rfqiData.length > 0 },
-      { id: 'wirelessRtt', title: 'WirelessRTT', data: wirelessRttData, hasData: wirelessRttData.length > 0 },
-      { id: 'networkRtt', title: 'NetworkRTT', data: networkRttData, hasData: networkRttData.length > 0 },
-      { id: 'rss', title: 'RSS', data: rssData, hasData: rssData.length > 0 },
-      { id: 'rxRate', title: 'RxRate', data: rxRateData, hasData: rxRateData.length > 0 },
-      { id: 'txRate', title: 'TxRate', data: txRateData, hasData: txRateData.length > 0 },
-      { id: 'events', title: 'Events', data: eventsData, hasData: eventsData.length > 0 },
-      { id: 'dlRetries', title: 'DL Retries', data: dlRetriesData, hasData: dlRetriesData.length > 0 },
+      { id: 'throughput', title: 'Throughput (Band: All)', data: throughputData, hasData: hasActualChartData(throughputData) },
+      { id: 'appGroups', title: 'Top Categories by Throughput', data: appGroupsData, hasData: appGroupsData.length > 0 && appGroupsData.some(d => d.value > 0) },
+      { id: 'appGroupsDetail', title: 'App Group Detail', data: appGroupsDetailData, hasData: hasActualChartData(appGroupsDetailData) },
+      { id: 'rss', title: 'RSS', data: rssData, hasData: hasActualChartData(rssData) },
+      { id: 'rxRate', title: 'RxRate', data: rxRateData, hasData: hasActualChartData(rxRateData) },
+      { id: 'txRate', title: 'TxRate', data: txRateData, hasData: hasActualChartData(txRateData) },
+      { id: 'events', title: 'Events', data: eventsData, hasData: hasActualChartData(eventsData) },
+      { id: 'dlRetries', title: 'DL Retries', data: dlRetriesData, hasData: hasActualChartData(dlRetriesData) },
+      // Charts that rarely have data - at bottom
+      { id: 'rfQuality', title: 'RF Quality (Band: All)', data: rfQualityData, hasData: hasActualChartData(rfQualityData) },
+      { id: 'rfqi', title: 'RFQI', data: rfqiData, hasData: hasActualChartData(rfqiData) },
+      { id: 'wirelessRtt', title: 'WirelessRTT (Requires Test)', data: wirelessRttData, hasData: hasActualChartData(wirelessRttData) },
+      { id: 'networkRtt', title: 'NetworkRTT (Requires Test)', data: networkRttData, hasData: hasActualChartData(networkRttData) },
     ];
 
-    // Sort: charts with data first, empty charts last
+    // Sort: charts with data first, but bottom charts always at bottom
     return configs.sort((a, b) => {
+      const aBottom = bottomCharts.includes(a.id);
+      const bBottom = bottomCharts.includes(b.id);
+
+      // Bottom charts go to the bottom
+      if (aBottom && !bBottom) return 1;
+      if (!aBottom && bBottom) return -1;
+
+      // Within same category, sort by hasData
       if (a.hasData && !b.hasData) return -1;
       if (!a.hasData && b.hasData) return 1;
       return 0;
@@ -396,7 +423,7 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
     switch (config.id) {
       case 'throughput':
         return (
-          <Card key={config.id}>
+          <Card key={config.id} className="col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
             </CardHeader>

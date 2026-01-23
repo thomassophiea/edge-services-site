@@ -191,7 +191,7 @@ export function AuditLogsWidget() {
       <CardContent>
         {filteredLogs.length > 0 ? (
           <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-2">
+            <div className="space-y-2 pb-4">
               {filteredLogs.map((log, idx) => {
                 const timestamp = log.timestamp || log.time;
                 const user = log.user || log.userId || log.username;
