@@ -6,7 +6,12 @@ import { AdministratorsManagement } from './AdministratorsManagement';
 import { ApplicationsManagement } from './ApplicationsManagement';
 import { LicenseManagement } from './LicenseManagement';
 
-export function Administration() {
+interface AdministrationProps {
+  networkAssistantEnabled?: boolean;
+  onToggleNetworkAssistant?: (enabled: boolean) => void;
+}
+
+export function Administration({ networkAssistantEnabled = false, onToggleNetworkAssistant }: AdministrationProps) {
   const [activeTab, setActiveTab] = useState('system');
 
   return (
@@ -34,7 +39,10 @@ export function Administration() {
         </div>
 
         <TabsContent value="system" className="m-0 h-[calc(100%-3rem)]">
-          <SystemAdministration />
+          <SystemAdministration
+            networkAssistantEnabled={networkAssistantEnabled}
+            onToggleNetworkAssistant={onToggleNetworkAssistant}
+          />
         </TabsContent>
 
         <TabsContent value="administrators" className="m-0 h-[calc(100%-3rem)]">

@@ -18,7 +18,10 @@ import {
   Shield,
   Globe,
   Server,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles,
+  Bot,
+  ToggleRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '../services/api';
@@ -62,7 +65,12 @@ interface SystemConfig {
   auditSyslogEnabled: boolean;
 }
 
-export function SystemAdministration() {
+interface SystemAdministrationProps {
+  networkAssistantEnabled?: boolean;
+  onToggleNetworkAssistant?: (enabled: boolean) => void;
+}
+
+export function SystemAdministration({ networkAssistantEnabled = false, onToggleNetworkAssistant }: SystemAdministrationProps) {
   const [config, setConfig] = useState<SystemConfig>({
     hostname: 'extreme-controller',
     domain: 'local',
@@ -93,7 +101,7 @@ export function SystemAdministration() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('preferences');
   const [apiNotAvailable, setApiNotAvailable] = useState(false);
 
   useEffect(() => {
@@ -205,6 +213,7 @@ export function SystemAdministration() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="network">Network</TabsTrigger>
           <TabsTrigger value="time">Time & NTP</TabsTrigger>
@@ -212,6 +221,52 @@ export function SystemAdministration() {
           <TabsTrigger value="syslog">Syslog</TabsTrigger>
           <TabsTrigger value="audit">Audit Logs</TabsTrigger>
         </TabsList>
+
+        {/* Preferences */}
+        <TabsContent value="preferences" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Feature Preferences
+              </CardTitle>
+              <CardDescription>Enable or disable optional features</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Network Assistant Toggle */}
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Bot className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <Label htmlFor="network-assistant" className="text-base font-medium">
+                      Network Assistant
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      AI-powered assistant for network queries and troubleshooting.
+                      Use ⌘K to toggle when enabled.
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="network-assistant"
+                  checked={networkAssistantEnabled}
+                  onCheckedChange={(checked) => onToggleNetworkAssistant?.(checked)}
+                />
+              </div>
+
+              {networkAssistantEnabled && (
+                <Alert>
+                  <Bot className="h-4 w-4" />
+                  <AlertDescription>
+                    Network Assistant is enabled. Press <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded">⌘K</kbd> to open it, or click the chat bubble in the bottom-right corner.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* General Settings */}
         <TabsContent value="general" className="space-y-4">

@@ -88,6 +88,10 @@ export default function App() {
     data: null
   });
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [networkAssistantEnabled, setNetworkAssistantEnabled] = useState(() => {
+    // Default to false - hidden by default
+    return localStorage.getItem('networkAssistantEnabled') === 'true';
+  });
   const [isDevModeOpen, setIsDevModeOpen] = useState(false);
   const [apiLogs, setApiLogs] = useState<ApiCallLog[]>([]);
   const [devPanelHeight, setDevPanelHeight] = useState(0);
@@ -734,6 +738,16 @@ export default function App() {
     });
   };
 
+  // Toggle Network Assistant preference
+  const handleToggleNetworkAssistant = (enabled: boolean) => {
+    setNetworkAssistantEnabled(enabled);
+    localStorage.setItem('networkAssistantEnabled', String(enabled));
+    // Close the chatbot if disabling
+    if (!enabled) {
+      setIsChatbotOpen(false);
+    }
+  };
+
   const handleCloseDetailPanel = () => {
     setDetailPanel({ isOpen: false, type: null, data: null });
   };
@@ -830,7 +844,12 @@ export default function App() {
       case 'tools':
         return <Tools />;
       case 'administration':
-        return <Administration />;
+        return (
+          <Administration
+            networkAssistantEnabled={networkAssistantEnabled}
+            onToggleNetworkAssistant={handleToggleNetworkAssistant}
+          />
+        );
       case 'api-test':
         return <ApiTestTool />;
       default:
@@ -986,15 +1005,17 @@ export default function App() {
         {renderDetailPanel()}
       </div>
       
-      {/* Network Assistant Chatbot - Outside main container for proper viewport positioning */}
-      <NetworkChatbot
-        isOpen={isChatbotOpen}
-        onToggle={() => setIsChatbotOpen(!isChatbotOpen)}
-        context={assistantContext}
-        onShowClientDetail={handleShowClientDetail}
-        onShowAccessPointDetail={handleShowAccessPointDetail}
-        onShowSiteDetail={handleShowSiteDetail}
-      />
+      {/* Network Assistant Chatbot - Only render if enabled in preferences */}
+      {networkAssistantEnabled && (
+        <NetworkChatbot
+          isOpen={isChatbotOpen}
+          onToggle={() => setIsChatbotOpen(!isChatbotOpen)}
+          context={assistantContext}
+          onShowClientDetail={handleShowClientDetail}
+          onShowAccessPointDetail={handleShowAccessPointDetail}
+          onShowSiteDetail={handleShowSiteDetail}
+        />
+      )}
 
       {/* Developer Mode Panel */}
       <DevModePanel
