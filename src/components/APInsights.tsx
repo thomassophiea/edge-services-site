@@ -192,16 +192,16 @@ export function APInsights({ serialNumber, apName, onOpenFullScreen }: APInsight
       className={onOpenFullScreen ? "cursor-pointer border-primary/30 hover:border-primary hover:bg-accent/50 hover:shadow-md transition-all" : ""}
       onClick={onOpenFullScreen}
     >
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" />
-            <span>AP Insights</span>
+            <span className="text-sm font-medium">AP Insights</span>
           </div>
-          <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5 ml-auto" onClick={(e) => e.stopPropagation()}>
             <Select value={duration} onValueChange={setDuration}>
               <SelectTrigger
-                className="w-[130px] h-8 text-xs"
+                className="w-[110px] h-7 text-xs"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
@@ -222,10 +222,10 @@ export function APInsights({ serialNumber, apName, onOpenFullScreen }: APInsight
                   e.stopPropagation();
                   onOpenFullScreen();
                 }}
-                className="flex items-center gap-1.5"
+                className="h-7 px-2.5 text-xs flex items-center gap-1"
                 title="Karl Mode"
               >
-                <Maximize2 className="h-3.5 w-3.5" />
+                <Maximize2 className="h-3 w-3" />
                 PRO
               </Button>
             )}
@@ -236,7 +236,7 @@ export function APInsights({ serialNumber, apName, onOpenFullScreen }: APInsight
                 e.stopPropagation();
                 setExpanded(!expanded);
               }}
-              className="h-8 px-2"
+              className="h-7 w-7 p-0"
             >
               {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </Button>
