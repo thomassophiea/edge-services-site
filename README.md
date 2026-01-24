@@ -1,4 +1,4 @@
-# EDGE (Edge Data Gateway Engine) v500
+# Wireless EDGE Services
 
 A comprehensive enterprise wireless network management and monitoring dashboard that integrates with Extreme Networks' Campus Controller. Built with React, TypeScript, and modern web technologies for real-time network visibility, historical analytics, and intelligent automation.
 
@@ -9,7 +9,7 @@ A comprehensive enterprise wireless network management and monitoring dashboard 
 
 ## 🌟 Overview
 
-EDGE v500 is an enterprise-grade network management platform providing comprehensive control over Extreme Networks wireless infrastructure with:
+Wireless EDGE Services is an enterprise-grade network management platform providing comprehensive control over Extreme Networks wireless infrastructure with:
 
 - 🎯 **Real-time Network Monitoring** - Live metrics for 1000+ access points and clients
 - ⏮️ **Network Rewind** - Travel back in time with historical metrics and playback
@@ -467,13 +467,13 @@ See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for detailed instructions.
 
 ```bash
 # Build image
-docker build -t edge-v500 .
+docker build -t wireless-edge-services .
 
 # Run container
 docker run -p 3000:3000 \
   -e CAMPUS_CONTROLLER_URL=https://your-controller.com \
   -e VITE_SUPABASE_URL=your_supabase_url \
-  edge-v500
+  wireless-edge-services
 ```
 
 ### Vercel
@@ -659,11 +659,11 @@ All rights reserved. This software is proprietary to Extreme Networks and may no
 
 ## 🙏 Acknowledgments
 
-- **Design:** [Figma - AURA v500](https://www.figma.com/design/PON5nGOoAuCSZGt3PoWPPf/AURA--Autonomous-Unified-Radio-Agent--v500--w-3rd-party-)
 - **Built for:** Extreme Networks Campus Controller integration
 - **UI Components:** shadcn/ui and Radix UI
 - **Icons:** Lucide Icons
 - **Charts:** Recharts and Chart.js
+- **Database:** Supabase PostgreSQL
 
 ## 📞 Support
 
@@ -677,3 +677,7 @@ For issues, questions, or feature requests:
 **Built with ❤️ by the Extreme Networks team**
 
 **Live Demo:** [https://edge-services-site-production.up.railway.app](https://edge-services-site-production.up.railway.app)
+
+---
+
+*Wireless EDGE Services - Professional network management for the modern enterprise*
