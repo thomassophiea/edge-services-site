@@ -8763,10 +8763,107 @@ class ApiService {
     }
   }
 
+  /**
+   * Get AFC plans
+   * Endpoint: GET /v1/afc/plans
+   */
+  async getAFCPlans(): Promise<any[]> {
+    try {
+      logger.log('[API] Fetching AFC plans');
+      const response = await this.makeAuthenticatedRequest('/v1/afc/plans', {}, 10000);
+
+      if (!response.ok) {
+        logger.warn(`AFC plans API returned ${response.status}`);
+        return [];
+      }
+
+      const data = await response.json();
+      logger.log(`[API] ✓ Loaded ${data?.length || 0} AFC plans`);
+      return data || [];
+    } catch (error) {
+      logger.error('[API] Failed to fetch AFC plans:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Create AFC plan
+   * Endpoint: POST /v1/afc/plans
+   */
+  async createAFCPlan(planData: any): Promise<any> {
+    try {
+      logger.log('[API] Creating AFC plan:', planData.name);
+      const response = await this.makeAuthenticatedRequest('/v1/afc/plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(planData)
+      }, 10000);
+
+      if (!response.ok) {
+        throw new Error(`Failed to create AFC plan: ${response.status}`);
+      }
+
+      const data = await response.json();
+      logger.log('[API] ✓ AFC plan created:', data.id);
+      return data;
+    } catch (error) {
+      logger.error('[API] Failed to create AFC plan:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Run AFC analysis
+   * Endpoint: POST /v1/afc/plans/{id}/analyze
+   */
+  async runAFCAnalysis(planId: string): Promise<any> {
+    try {
+      logger.log('[API] Running AFC analysis for plan:', planId);
+      const endpoint = `/v1/afc/plans/${encodeURIComponent(planId)}/analyze`;
+      const response = await this.makeAuthenticatedRequest(endpoint, {
+        method: 'POST'
+      }, 30000);
+
+      if (!response.ok) {
+        throw new Error(`Failed to run AFC analysis: ${response.status}`);
+      }
+
+      const data = await response.json();
+      logger.log('[API] ✓ AFC analysis completed');
+      return data;
+    } catch (error) {
+      logger.error('[API] Failed to run AFC analysis:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete AFC plan
+   * Endpoint: DELETE /v1/afc/plans/{id}
+   */
+  async deleteAFCPlan(planId: string): Promise<void> {
+    try {
+      logger.log('[API] Deleting AFC plan:', planId);
+      const endpoint = `/v1/afc/plans/${encodeURIComponent(planId)}`;
+      const response = await this.makeAuthenticatedRequest(endpoint, {
+        method: 'DELETE'
+      }, 10000);
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete AFC plan: ${response.status}`);
+      }
+
+      logger.log('[API] ✓ AFC plan deleted');
+    } catch (error) {
+      logger.error('[API] Failed to delete AFC plan:', error);
+      throw error;
+    }
+  }
+
   // NOTE: Comprehensive API coverage achieved!
   // Total methods implemented: 200+ covering all Campus Controller endpoints
-  // Including Platform Manager, Application Manager, Packet Capture, and all advanced features
-  // Categories: APs, Stations, Sites, Switches, Profiles, Reports, Admin, Config, Packet Capture, etc.
+  // Including Platform Manager, Application Manager, Packet Capture, AFC Planning, and all advanced features
+  // Categories: APs, Stations, Sites, Switches, Profiles, Reports, Admin, Config, Packet Capture, AFC, etc.
 }
 
 export const apiService = new ApiService();

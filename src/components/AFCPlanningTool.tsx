@@ -117,14 +117,8 @@ export function AFCPlanningTool() {
       }
 
       // Load existing AFC plans from API
-      const response = await apiService.makeAuthenticatedRequest('/v1/afc/plans', {
-        method: 'GET'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPlans(Array.isArray(data) ? data : []);
-      }
+      const plansData = await apiService.getAFCPlans();
+      setPlans(Array.isArray(plansData) ? plansData : []);
     } catch (error) {
       console.error('Failed to load AFC data:', error);
       toast.error('Failed to load AFC planning data');
@@ -142,28 +136,20 @@ export function AFCPlanningTool() {
     try {
       const site = sites.find(s => s.id === selectedSiteId);
 
-      const response = await apiService.makeAuthenticatedRequest('/v1/afc/plans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newPlanName,
-          siteId: selectedSiteId,
-          siteName: site?.name || 'Unknown Site',
-          height,
-          country,
-          latitude,
-          longitude
-        })
+      await apiService.createAFCPlan({
+        name: newPlanName,
+        siteId: selectedSiteId,
+        siteName: site?.name || 'Unknown Site',
+        height,
+        country,
+        latitude,
+        longitude
       });
 
-      if (response.ok) {
-        toast.success('AFC plan created');
-        setNewPlanName('');
-        setSelectedSiteId('');
-        await loadData();
-      } else {
-        throw new Error('Failed to create plan');
-      }
+      toast.success('AFC plan created');
+      setNewPlanName('');
+      setSelectedSiteId('');
+      await loadData();
     } catch (error) {
       console.error('Failed to create plan:', error);
       toast.error('Failed to create plan');
@@ -178,20 +164,12 @@ export function AFCPlanningTool() {
       toast.info('Running AFC analysis...');
 
       // Call API to run AFC analysis
-      const response = await apiService.makeAuthenticatedRequest(`/v1/afc/plans/${plan.id}/analyze`, {
-        method: 'POST'
-      });
+      const completedPlan = await apiService.runAFCAnalysis(plan.id);
 
-      if (response.ok) {
-        const completedPlan = await response.json();
-
-        setPlans(plans.map(p => p.id === plan.id ? completedPlan : p));
-        setSelectedPlan(completedPlan);
-        setActiveTab('results');
-        toast.success('AFC analysis completed');
-      } else {
-        throw new Error('Analysis failed');
-      }
+      setPlans(plans.map(p => p.id === plan.id ? completedPlan : p));
+      setSelectedPlan(completedPlan);
+      setActiveTab('results');
+      toast.success('AFC analysis completed');
     } catch (error) {
       console.error('AFC analysis failed:', error);
       toast.error('Analysis failed');
