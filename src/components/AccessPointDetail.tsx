@@ -756,15 +756,40 @@ export function AccessPointDetail({ serialNumber }: AccessPointDetailProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-2">
-            <Button variant="outline" size="sm" className="justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={async () => {
+                try {
+                  await apiService.rebootAP(serialNumber);
+                  toast.success('Access point reboot initiated');
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : 'Failed to reboot access point');
+                }
+              }}
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
               Reboot Access Point
             </Button>
-            <Button variant="outline" size="sm" className="justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => {
+                // Open AP configuration in detail view
+                toast.info('Configuration settings coming soon');
+              }}
+            >
               <Settings className="h-4 w-4 mr-2" />
               Configure Settings
             </Button>
-            <Button variant="outline" size="sm" className="justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => setShowEventsTimeline(true)}
+            >
               <Activity className="h-4 w-4 mr-2" />
               View Performance Logs
             </Button>

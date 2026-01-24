@@ -6444,6 +6444,424 @@ class ApiService {
     }
   }
 
+  // =================================================================
+  // ACCESS POINT MANAGEMENT OPERATIONS
+  // =================================================================
+
+  /**
+   * Reboot an access point
+   * Endpoint: POST /v1/aps/{serialNumber}/reboot
+   */
+  async rebootAP(serialNumber: string): Promise<void> {
+    try {
+      logger.log(`[API] Rebooting AP: ${serialNumber}`);
+
+      // Try multiple possible endpoints
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/reboot`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/reboot`,
+        `/platformmanager/v1/devices/${encodeURIComponent(serialNumber)}/reboot`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            { method: 'POST' },
+            20000
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ AP reboot initiated');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('AP reboot endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to reboot AP:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset access point to factory defaults
+   * Endpoint: POST /v1/aps/{serialNumber}/reset
+   */
+  async resetAPToDefault(serialNumber: string): Promise<void> {
+    try {
+      logger.log(`[API] Resetting AP to defaults: ${serialNumber}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/reset`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/reset`,
+        `/platformmanager/v1/devices/${encodeURIComponent(serialNumber)}/factoryreset`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            { method: 'POST' },
+            20000
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ AP reset initiated');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('AP reset endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to reset AP:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Assign access point to a site
+   * Endpoint: PUT /v1/aps/{serialNumber}/site
+   */
+  async assignAPToSite(serialNumber: string, siteId: string): Promise<void> {
+    try {
+      logger.log(`[API] Assigning AP ${serialNumber} to site ${siteId}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/site`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/site`,
+        `/v3/sites/${encodeURIComponent(siteId)}/devices`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            {
+              method: endpoint.includes('/sites/') ? 'POST' : 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ siteId, serialNumber })
+            },
+            15000
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ AP assigned to site');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('AP site assignment endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to assign AP to site:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete/remove an access point
+   * Endpoint: DELETE /v1/aps/{serialNumber}
+   */
+  async deleteAP(serialNumber: string): Promise<void> {
+    try {
+      logger.log(`[API] Deleting AP: ${serialNumber}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}`,
+        `/platformmanager/v1/devices/${encodeURIComponent(serialNumber)}`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            { method: 'DELETE' },
+            15000
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ AP deleted');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('AP delete endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to delete AP:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upgrade access point firmware/image
+   * Endpoint: POST /v1/aps/{serialNumber}/upgrade
+   */
+  async upgradeAPImage(serialNumber: string, imageVersion?: string): Promise<void> {
+    try {
+      logger.log(`[API] Upgrading AP firmware: ${serialNumber}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/upgrade`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/upgrade`,
+        `/platformmanager/v1/firmware/upgrade`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ serialNumber, imageVersion })
+            },
+            30000 // Longer timeout for firmware operations
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ AP firmware upgrade initiated');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('AP firmware upgrade endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to upgrade AP firmware:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Set access point event logging level
+   * Endpoint: PUT /v1/aps/{serialNumber}/eventlevel
+   */
+  async setEventLevel(serialNumber: string, level: 'debug' | 'info' | 'warning' | 'error'): Promise<void> {
+    try {
+      logger.log(`[API] Setting AP event level: ${serialNumber} -> ${level}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/eventlevel`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/loglevel`,
+        `/platformmanager/v1/devices/${encodeURIComponent(serialNumber)}/config`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ eventLevel: level, logLevel: level })
+            },
+            10000
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ AP event level set');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('AP event level endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to set AP event level:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Set access point adoption preference
+   * Endpoint: PUT /v1/aps/{serialNumber}/adoptionpreference
+   */
+  async setAdoptionPreference(serialNumber: string, preference: 'controller' | 'cloud'): Promise<void> {
+    try {
+      logger.log(`[API] Setting AP adoption preference: ${serialNumber} -> ${preference}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/adoptionpreference`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/preference`,
+        `/platformmanager/v1/devices/${encodeURIComponent(serialNumber)}/adoption`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ adoptionPreference: preference })
+            },
+            10000
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ AP adoption preference set');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('AP adoption preference endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to set AP adoption preference:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Release access point to cloud
+   * Endpoint: POST /v1/aps/{serialNumber}/releasetocloud
+   */
+  async releaseToCloud(serialNumber: string): Promise<void> {
+    try {
+      logger.log(`[API] Releasing AP to cloud: ${serialNumber}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/releasetocloud`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/release`,
+        `/platformmanager/v1/devices/${encodeURIComponent(serialNumber)}/cloud`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            { method: 'POST' },
+            15000
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ AP released to cloud');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('Release to cloud endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to release AP to cloud:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate Certificate Signing Request (CSR) for AP
+   * Endpoint: POST /v1/aps/{serialNumber}/csr
+   */
+  async generateCSR(serialNumber: string, csrData?: {
+    commonName?: string;
+    organization?: string;
+    country?: string;
+  }): Promise<{ csr: string }> {
+    try {
+      logger.log(`[API] Generating CSR for AP: ${serialNumber}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/csr`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/certificate/csr`,
+        `/platformmanager/v1/certificates/csr`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ serialNumber, ...csrData })
+            },
+            15000
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            logger.log('[API] ✓ CSR generated');
+            return data;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('CSR generation endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to generate CSR:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Apply signed certificates to AP
+   * Endpoint: POST /v1/aps/{serialNumber}/certificates
+   */
+  async applyCertificates(serialNumber: string, certificates: {
+    certificate: string;
+    privateKey?: string;
+    caCertificate?: string;
+  }): Promise<void> {
+    try {
+      logger.log(`[API] Applying certificates to AP: ${serialNumber}`);
+
+      const endpoints = [
+        `/v1/aps/${encodeURIComponent(serialNumber)}/certificates`,
+        `/v1/devices/${encodeURIComponent(serialNumber)}/certificate`,
+        `/platformmanager/v1/certificates/apply`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ serialNumber, ...certificates })
+            },
+            20000
+          );
+
+          if (response.ok) {
+            logger.log('[API] ✓ Certificates applied');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('Certificate application endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to apply certificates:', error);
+      throw error;
+    }
+  }
+
   // ============================================================================
   // CLIENT/STATION MANAGEMENT - Enhanced Control
   // ============================================================================
