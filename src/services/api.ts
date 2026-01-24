@@ -1990,14 +1990,6 @@ class ApiService {
     return await response.json();
   }
 
-  async getAPDisplayNames(): Promise<any> {
-    const response = await this.makeAuthenticatedRequest('/v1/aps/displaynames');
-    if (!response.ok) {
-      throw new Error(`Failed to fetch AP display names: ${response.status}`);
-    }
-    return await response.json();
-  }
-
   async getAPDefaults(hardwareType?: string): Promise<any> {
     const endpoint = hardwareType 
       ? `/v1/aps/default?hardwareType=${encodeURIComponent(hardwareType)}`

@@ -951,25 +951,33 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       </DetailSlideOut>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Access Points</CardTitle>
-            <Wifi className="h-4 w-4 text-muted-foreground" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">Total Access Points</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md group-hover:scale-110 transition-transform">
+              <Wifi className="h-3.5 w-3.5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{accessPoints.length}</div>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{accessPoints.length}</div>
             <p className="text-xs text-muted-foreground">
               Managed devices
             </p>
           </CardContent>
         </Card>
 
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">AP Status</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">AP Status</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 shadow-md group-hover:scale-110 transition-transform">
+              <Activity className="h-3.5 w-3.5 text-white animate-pulse" />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -977,7 +985,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
                   <span className="text-sm font-medium">Online</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-green-600">
+                  <span className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
                     {accessPoints.filter(ap => isAPOnline(ap)).length}
                   </span>
                   <span className="text-xs text-muted-foreground">
@@ -1007,14 +1015,18 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
           </CardContent>
         </Card>
 
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">Total Clients</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 shadow-md group-hover:scale-110 transition-transform">
+              <Users className="h-3.5 w-3.5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             <div className="flex items-center space-x-2">
-              <div className="text-2xl font-bold">{getTotalClientCount()}</div>
+              <div className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">{getTotalClientCount()}</div>
               {isLoadingClients && (
                 <div className="animate-pulse">
                   <Activity className="h-4 w-4 text-muted-foreground" />
@@ -1027,13 +1039,17 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
           </CardContent>
         </Card>
 
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hardware Types</CardTitle>
-            <Wifi className="h-4 w-4 text-muted-foreground" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">Hardware Types</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 shadow-md group-hover:scale-110 transition-transform">
+              <Wifi className="h-3.5 w-3.5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{getUniqueHardwareTypes().length}</div>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">{getUniqueHardwareTypes().length}</div>
             <p className="text-xs text-muted-foreground">
               Different models
             </p>

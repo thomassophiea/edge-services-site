@@ -242,17 +242,16 @@ export function ClientInsights({ macAddress, clientName, onOpenFullScreen }: Cli
             </Select>
             {onOpenFullScreen && (
               <Button
-                variant="default"
+                variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenFullScreen();
                 }}
-                className="h-7 px-2.5 text-xs flex items-center gap-1"
-                title="Karl Mode"
+                className="h-7 w-7 p-0"
+                title="Expand Full Screen"
               >
-                <Maximize2 className="h-3 w-3" />
-                PRO
+                <Maximize2 className="h-4 w-4" />
               </Button>
             )}
             <Button
@@ -491,23 +490,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={throughputData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={throughputData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorTotalClient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.3}/>
@@ -555,23 +549,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={rfQualityData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={rfQualityData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorRfQuality" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.3}/>
@@ -657,23 +646,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={appGroupsDetailData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={appGroupsDetailData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatValue(v, 'bps')} width={70} />
@@ -726,23 +710,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={rfqiData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={rfqiData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorRfqi" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.purple} stopOpacity={0.2}/>
@@ -790,23 +769,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={wirelessRttData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={wirelessRttData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorWirelessRtt" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.cyan} stopOpacity={0.2}/>
@@ -854,23 +828,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={networkRttData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={networkRttData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorNetworkRtt" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.orange} stopOpacity={0.2}/>
@@ -918,23 +887,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={rssData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={rssData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorRssClient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.2}/>
@@ -982,23 +946,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={rxRateData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={rxRateData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorRxRate" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.2}/>
@@ -1046,23 +1005,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={txRateData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={txRateData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorTxRate" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.pink} stopOpacity={0.2}/>
@@ -1110,23 +1064,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <BarChart data={eventsData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={eventsData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} width={40} />
@@ -1176,23 +1125,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  onMouseMove={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.setCurrentTime(e.activeLabel);
-                    }
-                  }}
-                  onMouseLeave={() => timeline.setCurrentTime(null)}
-                  onMouseDown={(e: any) => {
-                    if (e && e.activeLabel) {
-                      timeline.startTimeWindow(e.activeLabel);
-                    }
-                  }}
-                  onMouseUp={() => timeline.endTimeWindow()}
-                >
-                  <AreaChart data={dlRetriesData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={dlRetriesData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    syncId="client-insights-charts"
+                    onMouseMove={(e: any) => {
+                      if (e && e.activePayload && e.activePayload[0]) {
+                        timeline.setCurrentTime(e.activePayload[0].payload.timestamp);
+                      }
+                    }}
+                    onMouseLeave={() => timeline.setCurrentTime(null)}
+                  >
                     <defs>
                       <linearGradient id="colorDlRetries" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.warning} stopOpacity={0.2}/>

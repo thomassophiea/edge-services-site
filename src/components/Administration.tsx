@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Settings, Users, Package, Key } from 'lucide-react';
+import { Settings, Users, Package } from 'lucide-react';
 import { SystemAdministration } from './SystemAdministration';
 import { AdministratorsManagement } from './AdministratorsManagement';
 import { ApplicationsManagement } from './ApplicationsManagement';
-import { LicenseManagement } from './LicenseManagement';
 
 interface AdministrationProps {
   networkAssistantEnabled?: boolean;
@@ -31,10 +30,6 @@ export function Administration({ networkAssistantEnabled = false, onToggleNetwor
               <Package className="h-4 w-4" />
               Applications
             </TabsTrigger>
-            <TabsTrigger value="license" className="flex items-center gap-2">
-              <Key className="h-4 w-4" />
-              License
-            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -51,10 +46,6 @@ export function Administration({ networkAssistantEnabled = false, onToggleNetwor
 
         <TabsContent value="applications" className="m-0 h-[calc(100%-3rem)]">
           <ApplicationsManagement />
-        </TabsContent>
-
-        <TabsContent value="license" className="m-0 h-[calc(100%-3rem)]">
-          <LicenseManagement />
         </TabsContent>
       </Tabs>
     </div>

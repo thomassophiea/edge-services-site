@@ -298,23 +298,24 @@ export function AppInsights({ api }: AppInsightsProps) {
     };
 
     return (
-      <Card className="hover:shadow-lg transition-all duration-300">
-        <CardHeader className="pb-3">
+      <Card className="hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <CardHeader className="pb-2 relative">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${color} shadow-md`}>
-                <Icon className="h-4 w-4 text-white" />
+            <div className="flex items-center gap-1.5">
+              <div className={`p-1.5 rounded ${color} shadow-sm group-hover:shadow-md group-hover:scale-110 transition-all`}>
+                <Icon className="h-3.5 w-3.5 text-white" />
               </div>
-              <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+              <CardTitle className="text-xs font-semibold">{title}</CardTitle>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 pt-0">
+        <CardContent className="space-y-3 pt-0 relative">
           {/* Top Categories */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <ChevronUp className="h-3.5 w-3.5 text-emerald-500" />
-              <span className="text-xs font-medium text-muted-foreground">Top Performers</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ChevronUp className="h-3 w-3 text-emerald-500" />
+              <span className="text-[10px] font-medium text-muted-foreground">Top Performers</span>
             </div>
             {topData.slice(0, 5).map((item: any, index: number) => {
               const percentage = maxTop > 0 ? (item.value / maxTop) * 100 : 0;
@@ -322,17 +323,17 @@ export function AppInsights({ api }: AppInsightsProps) {
               const itemColor = getCategoryColor(item.name, index);
 
               return (
-                <div key={item.id} className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div key={item.id} className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
                     <div className="p-0.5 rounded" style={{ backgroundColor: `${itemColor}20` }}>
-                      <CategoryIcon className="h-3 w-3" style={{ color: itemColor }} />
+                      <CategoryIcon className="h-2.5 w-2.5" style={{ color: itemColor }} />
                     </div>
-                    <span className="text-xs font-medium truncate flex-1" title={item.name}>
+                    <span className="text-[11px] font-medium truncate flex-1" title={item.name}>
                       {item.name}
                     </span>
-                    <span className="text-xs font-semibold tabular-nums">{formatValue(item.value)}</span>
+                    <span className="text-[11px] font-semibold tabular-nums">{formatValue(item.value)}</span>
                   </div>
-                  <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden ml-5">
+                  <div className="h-1 bg-muted/50 rounded-full overflow-hidden ml-4">
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${percentage}%`, backgroundColor: itemColor }}
@@ -344,10 +345,10 @@ export function AppInsights({ api }: AppInsightsProps) {
           </div>
 
           {/* Bottom Categories */}
-          <div className="space-y-2 pt-2 border-t">
-            <div className="flex items-center gap-2 mb-2">
-              <ChevronDown className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-xs font-medium text-muted-foreground">Low Activity</span>
+          <div className="space-y-1.5 pt-2 border-t">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ChevronDown className="h-3 w-3 text-amber-500" />
+              <span className="text-[10px] font-medium text-muted-foreground">Low Activity</span>
             </div>
             {bottomData.slice(0, 5).map((item: any, index: number) => {
               const percentage = maxBottom > 0 ? (item.value / maxBottom) * 100 : 0;
@@ -355,17 +356,17 @@ export function AppInsights({ api }: AppInsightsProps) {
               const itemColor = getCategoryColor(item.name, index + 5);
 
               return (
-                <div key={item.id} className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div key={item.id} className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
                     <div className="p-0.5 rounded" style={{ backgroundColor: `${itemColor}20` }}>
-                      <CategoryIcon className="h-3 w-3" style={{ color: itemColor }} />
+                      <CategoryIcon className="h-2.5 w-2.5" style={{ color: itemColor }} />
                     </div>
-                    <span className="text-xs font-medium truncate flex-1 text-muted-foreground" title={item.name}>
+                    <span className="text-[11px] font-medium truncate flex-1 text-muted-foreground" title={item.name}>
                       {item.name}
                     </span>
-                    <span className="text-xs tabular-nums text-muted-foreground">{formatValue(item.value)}</span>
+                    <span className="text-[11px] tabular-nums text-muted-foreground">{formatValue(item.value)}</span>
                   </div>
-                  <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden ml-5">
+                  <div className="h-1 bg-muted/50 rounded-full overflow-hidden ml-4">
                     <div
                       className="h-full rounded-full transition-all duration-500 opacity-60"
                       style={{ width: `${percentage}%`, backgroundColor: itemColor }}
@@ -382,13 +383,23 @@ export function AppInsights({ api }: AppInsightsProps) {
 
   if (loading && !data) {
     return (
-      <div className="p-6 space-y-4">
-        <Skeleton className="h-24 w-full" />
-        <div className="grid grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32" />)}
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-16 w-64" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-20" />
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-96" />)}
+        <div className="grid grid-cols-4 gap-2.5">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />)}
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          {[1, 2].map(i => <Skeleton key={i} className="h-64 animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />)}
+        </div>
+        <div className="grid grid-cols-3 gap-2.5">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-80 animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />)}
         </div>
       </div>
     );
@@ -410,16 +421,22 @@ export function AppInsights({ api }: AppInsightsProps) {
   }
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 space-y-3">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 shadow-lg">
-            <AppWindow className="h-6 w-6 text-white" />
+      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 border border-violet-500/20 backdrop-blur-sm overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 opacity-5 animate-pulse" />
+        <div className="absolute -right-10 -top-10 w-32 h-32 bg-violet-500/20 rounded-full blur-3xl" />
+        <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-fuchsia-500/20 rounded-full blur-3xl" />
+
+        <div className="flex items-center gap-2.5 relative z-10">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 shadow-lg shadow-violet-500/50 animate-pulse">
+            <AppWindow className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">App Insights</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+              App Insights
+            </h1>
+            <p className="text-xs text-muted-foreground">
               Application visibility and traffic analytics
               {selectedSite !== 'all' && (
                 <span className="ml-1 text-primary font-medium">
@@ -430,10 +447,10 @@ export function AppInsights({ api }: AppInsightsProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <Select value={selectedSite} onValueChange={setSelectedSite}>
-            <SelectTrigger className="w-[160px] h-9">
-              <Building className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[145px] h-8 text-xs">
+              <Building className="h-3.5 w-3.5 mr-1.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -447,7 +464,7 @@ export function AppInsights({ api }: AppInsightsProps) {
           </Select>
 
           <Select value={duration} onValueChange={setDuration}>
-            <SelectTrigger className="w-[130px] h-9">
+            <SelectTrigger className="w-[120px] h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -458,8 +475,8 @@ export function AppInsights({ api }: AppInsightsProps) {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="h-9">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="h-8 px-3 text-xs">
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -467,66 +484,82 @@ export function AppInsights({ api }: AppInsightsProps) {
 
       {/* Summary Cards */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 opacity-[0.08]" />
-            <CardContent className="p-4 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+            <div className="absolute -right-6 -top-6 w-20 h-20 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all" />
+            <CardContent className="p-3 relative">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Data</p>
-                  <p className="text-xl font-bold">{formatBytes(stats.totalUsage)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.totalCategories} categories</p>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    Total Data
+                    <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  </p>
+                  <p className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{formatBytes(stats.totalUsage)}</p>
+                  <p className="text-[10px] text-muted-foreground">{stats.totalCategories} categories</p>
                 </div>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md">
-                  <HardDrive className="h-4 w-4 text-white" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md group-hover:scale-110 transition-transform">
+                  <HardDrive className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-500 opacity-[0.08]" />
-            <CardContent className="p-4 relative">
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+            <div className="absolute -right-6 -top-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
+            <CardContent className="p-3 relative">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Throughput</p>
-                  <p className="text-xl font-bold">{formatThroughput(stats.totalThroughput)}</p>
-                  <p className="text-xs text-muted-foreground">Avg bandwidth</p>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    Throughput
+                    <Activity className="h-3 w-3 text-emerald-500 animate-pulse" />
+                  </p>
+                  <p className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">{formatThroughput(stats.totalThroughput)}</p>
+                  <p className="text-[10px] text-muted-foreground">Avg bandwidth</p>
                 </div>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 shadow-md">
-                  <Gauge className="h-4 w-4 text-white" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 shadow-md group-hover:scale-110 transition-transform">
+                  <Gauge className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-500 opacity-[0.08]" />
-            <CardContent className="p-4 relative">
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+            <div className="absolute -right-6 -top-6 w-20 h-20 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all" />
+            <CardContent className="p-3 relative">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Active Clients</p>
-                  <p className="text-xl font-bold">{formatNumber(stats.totalClients)}</p>
-                  <p className="text-xs text-muted-foreground">Using apps</p>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    Active Clients
+                    <ArrowUpRight className="h-3 w-3 text-violet-500" />
+                  </p>
+                  <p className="text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">{formatNumber(stats.totalClients)}</p>
+                  <p className="text-[10px] text-muted-foreground">Using apps</p>
                 </div>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 shadow-md">
-                  <Users className="h-4 w-4 text-white" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 shadow-md group-hover:scale-110 transition-transform">
+                  <Users className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 opacity-[0.08]" />
-            <CardContent className="p-4 relative">
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300 group">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+            <div className="absolute -right-6 -top-6 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all" />
+            <CardContent className="p-3 relative">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Top Category</p>
-                  <p className="text-lg font-bold truncate">{stats.topCategory}</p>
-                  <p className="text-xs text-muted-foreground">{stats.topCategoryPercent}% of traffic</p>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    Top Category
+                    <Sparkles className="h-3 w-3 text-amber-500" />
+                  </p>
+                  <p className="text-base font-bold truncate bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">{stats.topCategory}</p>
+                  <p className="text-[10px] text-muted-foreground">{stats.topCategoryPercent}% of traffic</p>
                 </div>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 shadow-md">
-                  <Zap className="h-4 w-4 text-white" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 shadow-md group-hover:scale-110 transition-transform">
+                  <Zap className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -537,16 +570,16 @@ export function AppInsights({ api }: AppInsightsProps) {
       {/* Insights Banner */}
       {insights.length > 0 && (
         <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="py-3 px-4">
-            <div className="flex items-start gap-3">
-              <div className="p-1.5 rounded-lg bg-primary/10">
-                <Sparkles className="h-4 w-4 text-primary" />
+          <CardContent className="py-2 px-3">
+            <div className="flex items-start gap-2">
+              <div className="p-1 rounded bg-primary/10">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1">Quick Insights</p>
-                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-0.5">Quick Insights</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   {insights.map((insight, i) => (
-                    <p key={i} className="text-sm text-muted-foreground flex items-center gap-1.5">
+                    <p key={i} className="text-xs text-muted-foreground flex items-center gap-1">
                       <Info className="h-3 w-3 text-primary" />
                       {insight.text}
                     </p>
@@ -558,9 +591,111 @@ export function AppInsights({ api }: AppInsightsProps) {
         </Card>
       )}
 
+      {/* Category Distribution Visualizations */}
+      {chartData && stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+          {/* Top Categories Donut Chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <PieChart className="h-4 w-4 text-primary" />
+                  Top Categories by Usage
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={chartData.topUsage.slice(0, 6)}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={(entry) => entry.name.length > 15 ? entry.name.substring(0, 15) + '...' : entry.name}
+                      labelLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 0.5 }}
+                    >
+                      {chartData.topUsage.slice(0, 6).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, index)} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => formatBytes(value)}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px',
+                        fontSize: '11px'
+                      }}
+                    />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Top Applications Bar Chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                Application Bandwidth Distribution
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData.topThroughput.slice(0, 8)}
+                    layout="horizontal"
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.3} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 10 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                      interval={0}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(v) => formatThroughputCompact(v)}
+                      width={40}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [formatThroughput(value), 'Throughput']}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px',
+                        fontSize: '11px'
+                      }}
+                    />
+                    <Bar
+                      dataKey="value"
+                      radius={[4, 4, 0, 0]}
+                    >
+                      {chartData.topThroughput.slice(0, 8).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, index)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Unified Comparison View */}
       {chartData && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
           <ComparisonCard
             topData={chartData.topUsage}
             bottomData={chartData.bottomUsage}

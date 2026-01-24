@@ -478,65 +478,85 @@ export function TrafficStatsConnectedClients({ onShowDetail }: ConnectedClientsP
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">Total Clients</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 shadow-md group-hover:scale-110 transition-transform">
+              <Users className="h-3.5 w-3.5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stations.length}</div>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">{stations.length}</div>
             <p className="text-xs text-muted-foreground">
               Connected devices
             </p>
           </CardContent>
         </Card>
 
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Connections</CardTitle>
-            <Wifi className="h-4 w-4 text-green-500" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">Active Connections</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 shadow-md group-hover:scale-110 transition-transform">
+              <Wifi className="h-3.5 w-3.5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{getActiveClientsCount()}</div>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">{getActiveClientsCount()}</div>
             <p className="text-xs text-muted-foreground">
               Currently active
             </p>
           </CardContent>
         </Card>
 
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Randomized MACs</CardTitle>
-            <Shuffle className="h-4 w-4 text-purple-500" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-rose-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl group-hover:bg-pink-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">Randomized MACs</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 shadow-md group-hover:scale-110 transition-transform">
+              <Shuffle className="h-3.5 w-3.5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{getRandomizedMacCount()}</div>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">{getRandomizedMacCount()}</div>
             <p className="text-xs text-muted-foreground">
               Privacy-enabled devices
             </p>
           </CardContent>
         </Card>
 
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Disconnected</CardTitle>
-            <WifiOff className="h-4 w-4 text-red-400" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-rose-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-red-500/10 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">Disconnected</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-red-500 to-rose-500 shadow-md group-hover:scale-110 transition-transform">
+              <WifiOff className="h-3.5 w-3.5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{getDisconnectedClientsCount()}</div>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">{getDisconnectedClientsCount()}</div>
             <p className="text-xs text-muted-foreground">
               Recently offline
             </p>
           </CardContent>
         </Card>
 
-        <Card className="surface-1dp">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Traffic</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="text-sm font-semibold">Total Traffic</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md group-hover:scale-110 transition-transform">
+              <Activity className="h-3.5 w-3.5 text-white animate-pulse" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatBytes(getTotalTraffic())}</div>
+          <CardContent className="relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{formatBytes(getTotalTraffic())}</div>
             <p className="text-xs text-muted-foreground">
               Data transferred {isLoadingTraffic && "(loading...)"}
             </p>
