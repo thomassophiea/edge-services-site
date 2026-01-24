@@ -740,8 +740,12 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
         );
 
       case 'appGroupsDetail':
-        const lockedAppGroupsDetailValues = timeline.isLocked && timeline.currentTime !== null
-          ? getValueAtTimestamp(appGroupsDetailData, timeline.currentTime, ['upload', 'download'])
+        // Get all app group keys from the data (excluding timestamp/time)
+        const appGroupKeys = appGroupsDetailData.length > 0
+          ? Object.keys(appGroupsDetailData[0]).filter(k => k !== 'timestamp' && k !== 'time').slice(0, 5)
+          : [];
+        const lockedAppGroupsDetailValues = timeline.isLocked && timeline.currentTime !== null && appGroupKeys.length > 0
+          ? getValueAtTimestamp(appGroupsDetailData, timeline.currentTime, appGroupKeys)
           : null;
         return (
           <Card key={config.id}>
@@ -749,17 +753,19 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
                 {lockedAppGroupsDetailValues && (
-                  <div className="flex gap-2 text-xs">
-                    {lockedAppGroupsDetailValues.upload !== null && (
-                      <Badge variant="secondary" className="font-mono">
-                        <span className="text-cyan-500 font-semibold mr-1">Up:</span> {formatValue(lockedAppGroupsDetailValues.upload, 'bps')}
-                      </Badge>
-                    )}
-                    {lockedAppGroupsDetailValues.download !== null && (
-                      <Badge variant="secondary" className="font-mono">
-                        <span className="text-pink-500 font-semibold mr-1">Down:</span> {formatValue(lockedAppGroupsDetailValues.download, 'bps')}
-                      </Badge>
-                    )}
+                  <div className="flex gap-2 text-xs flex-wrap">
+                    {appGroupKeys.map((key, i) => {
+                      const value = lockedAppGroupsDetailValues[key];
+                      if (value !== null && value !== undefined) {
+                        return (
+                          <Badge key={key} variant="secondary" className="font-mono">
+                            <span className="font-semibold mr-1" style={{ color: DONUT_COLORS[i % DONUT_COLORS.length] }}>{key}:</span>
+                            {formatValue(value, 'bps')}
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })}
                   </div>
                 )}
               </div>

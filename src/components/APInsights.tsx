@@ -712,17 +712,31 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
 
       case 'rss':
         const lockedRssValues = timeline.isLocked && timeline.currentTime !== null
-          ? getValueAtTimestamp(rssData, timeline.currentTime, ['Rss'])
+          ? getValueAtTimestamp(rssData, timeline.currentTime, ['Rss', 'Rss Upper', 'Rss Lower'])
           : null;
         return (
           <Card key={config.id}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
-                {lockedRssValues && lockedRssValues.Rss !== null && (
-                  <Badge variant="secondary" className="font-mono">
-                    <span className="text-red-500 font-semibold mr-1">RSS:</span> {lockedRssValues.Rss.toFixed(0)} dBm
-                  </Badge>
+                {lockedRssValues && (
+                  <div className="flex gap-2 text-xs">
+                    {lockedRssValues['Rss Upper'] !== null && lockedRssValues['Rss Upper'] !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-gray-400 font-semibold mr-1">Upper:</span> {lockedRssValues['Rss Upper'].toFixed(0)} dBm
+                      </Badge>
+                    )}
+                    {lockedRssValues.Rss !== null && lockedRssValues.Rss !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-blue-500 font-semibold mr-1">RSS:</span> {lockedRssValues.Rss.toFixed(0)} dBm
+                      </Badge>
+                    )}
+                    {lockedRssValues['Rss Lower'] !== null && lockedRssValues['Rss Lower'] !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-gray-400 font-semibold mr-1">Lower:</span> {lockedRssValues['Rss Lower'].toFixed(0)} dBm
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
             </CardHeader>
@@ -796,20 +810,36 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
 
       case 'channelUtil5':
         const lockedChannelUtil5Values = timeline.isLocked && timeline.currentTime !== null
-          ? getValueAtTimestamp(channelUtil5Data, timeline.currentTime, ['ClientData', 'CoChannel', 'Interference'])
-          : null;
-        const totalUtil5 = lockedChannelUtil5Values
-          ? (lockedChannelUtil5Values.ClientData || 0) + (lockedChannelUtil5Values.CoChannel || 0) + (lockedChannelUtil5Values.Interference || 0)
+          ? getValueAtTimestamp(channelUtil5Data, timeline.currentTime, ['Available', 'ClientData', 'CoChannel', 'Interference'])
           : null;
         return (
           <Card key={config.id}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
-                {totalUtil5 !== null && (
-                  <Badge variant="secondary" className="font-mono">
-                    <span className="text-orange-500 font-semibold mr-1">Util:</span> {totalUtil5.toFixed(1)}%
-                  </Badge>
+                {lockedChannelUtil5Values && (
+                  <div className="flex gap-2 text-xs flex-wrap">
+                    {lockedChannelUtil5Values.Available !== null && lockedChannelUtil5Values.Available !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-yellow-500 font-semibold mr-1">Avail:</span> {lockedChannelUtil5Values.Available.toFixed(1)}%
+                      </Badge>
+                    )}
+                    {lockedChannelUtil5Values.ClientData !== null && lockedChannelUtil5Values.ClientData !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-purple-500 font-semibold mr-1">Client:</span> {lockedChannelUtil5Values.ClientData.toFixed(1)}%
+                      </Badge>
+                    )}
+                    {lockedChannelUtil5Values.CoChannel !== null && lockedChannelUtil5Values.CoChannel !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-cyan-500 font-semibold mr-1">Co-Ch:</span> {lockedChannelUtil5Values.CoChannel.toFixed(1)}%
+                      </Badge>
+                    )}
+                    {lockedChannelUtil5Values.Interference !== null && lockedChannelUtil5Values.Interference !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-blue-500 font-semibold mr-1">Intrf:</span> {lockedChannelUtil5Values.Interference.toFixed(1)}%
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
             </CardHeader>
@@ -878,20 +908,36 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
 
       case 'channelUtil24':
         const lockedChannelUtil24Values = timeline.isLocked && timeline.currentTime !== null
-          ? getValueAtTimestamp(channelUtil24Data, timeline.currentTime, ['ClientData', 'CoChannel', 'Interference'])
-          : null;
-        const totalUtil24 = lockedChannelUtil24Values
-          ? (lockedChannelUtil24Values.ClientData || 0) + (lockedChannelUtil24Values.CoChannel || 0) + (lockedChannelUtil24Values.Interference || 0)
+          ? getValueAtTimestamp(channelUtil24Data, timeline.currentTime, ['Available', 'ClientData', 'CoChannel', 'Interference'])
           : null;
         return (
           <Card key={config.id}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
-                {totalUtil24 !== null && (
-                  <Badge variant="secondary" className="font-mono">
-                    <span className="text-amber-500 font-semibold mr-1">Util:</span> {totalUtil24.toFixed(1)}%
-                  </Badge>
+                {lockedChannelUtil24Values && (
+                  <div className="flex gap-2 text-xs flex-wrap">
+                    {lockedChannelUtil24Values.Available !== null && lockedChannelUtil24Values.Available !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-yellow-500 font-semibold mr-1">Avail:</span> {lockedChannelUtil24Values.Available.toFixed(1)}%
+                      </Badge>
+                    )}
+                    {lockedChannelUtil24Values.ClientData !== null && lockedChannelUtil24Values.ClientData !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-purple-500 font-semibold mr-1">Client:</span> {lockedChannelUtil24Values.ClientData.toFixed(1)}%
+                      </Badge>
+                    )}
+                    {lockedChannelUtil24Values.CoChannel !== null && lockedChannelUtil24Values.CoChannel !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-cyan-500 font-semibold mr-1">Co-Ch:</span> {lockedChannelUtil24Values.CoChannel.toFixed(1)}%
+                      </Badge>
+                    )}
+                    {lockedChannelUtil24Values.Interference !== null && lockedChannelUtil24Values.Interference !== undefined && (
+                      <Badge variant="secondary" className="font-mono">
+                        <span className="text-blue-500 font-semibold mr-1">Intrf:</span> {lockedChannelUtil24Values.Interference.toFixed(1)}%
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
             </CardHeader>
