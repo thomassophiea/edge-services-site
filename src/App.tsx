@@ -58,6 +58,7 @@ import { DevModePanel } from './components/DevModePanel';
 import { VersionDisplay } from './components/VersionDisplay';
 import { toast } from 'sonner';
 import { applyTheme as applyThemeColors } from './lib/themes';
+import { useDeviceDetection } from './hooks/useDeviceDetection';
 
 const pageInfo = {
   'service-levels': { title: 'Contextual Insights', description: 'Context-aware network monitoring and analytics' },
@@ -116,6 +117,9 @@ export default function App() {
 
   // Global filters for site context
   const { filters } = useGlobalFilters();
+
+  // Device detection for responsive design
+  const device = useDeviceDetection();
 
   // Compute assistant context based on current state
   const assistantContext = useMemo((): AssistantContext | undefined => {
@@ -995,51 +999,54 @@ export default function App() {
             paddingBottom: isDevModeOpen ? `${devPanelHeight}px` : '0'
           }}
         >
-          <div className="p-6">
-            {/* Top Bar with Test Tools */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center space-x-4">
-                <h2 className="text-lg font-semibold text-[rgba(255,255,255,1)]">
-                  {pageInfo[currentPage as keyof typeof pageInfo]?.title || 'Mobility Engine'}
-                </h2>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                {/* Developer Mode Toggle */}
-                <Button
-                  variant={isDevModeOpen ? 'default' : 'secondary'}
-                  size="sm"
-                  onClick={handleToggleDevMode}
-                  className="flex items-center"
-                  title="Toggle Developer Mode"
-                >
-                  <Bug className="h-4 w-4" />
-                </Button>
-                
-                {/* API Test Tool */}
-                <Button
-                  variant={currentPage === 'api-test' ? 'default' : 'secondary'}
-                  size="sm"
-                  onClick={() => setCurrentPage('api-test')}
-                  className="flex items-center"
-                  title="API Test Tool"
-                >
-                  <Code className="h-4 w-4" />
-                </Button>
+          <div className="p-4 sm:p-6 pt-16 sm:pt-6">
+            {/* Top Bar - Simplified on mobile */}
+            <div className="flex justify-between items-center gap-3 mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-[rgba(255,255,255,1)] truncate flex-1">
+                {pageInfo[currentPage as keyof typeof pageInfo]?.title || 'Mobility Engine'}
+              </h2>
 
-                {/* Notifications Menu */}
-                <NotificationsMenu />
-                
-                {/* User Menu */}
+              <div className="flex items-center gap-2">
+                {/* Desktop-only developer tools */}
+                {!device.isMobile && (
+                  <>
+                    {/* Developer Mode Toggle */}
+                    <Button
+                      variant={isDevModeOpen ? 'default' : 'secondary'}
+                      size="sm"
+                      onClick={handleToggleDevMode}
+                      className="flex items-center"
+                      title="Toggle Developer Mode"
+                    >
+                      <Bug className="h-4 w-4" />
+                    </Button>
+
+                    {/* API Test Tool */}
+                    <Button
+                      variant={currentPage === 'api-test' ? 'default' : 'secondary'}
+                      size="sm"
+                      onClick={() => setCurrentPage('api-test')}
+                      className="flex items-center"
+                      title="API Test Tool"
+                    >
+                      <Code className="h-4 w-4" />
+                    </Button>
+
+                    {/* Notifications Menu */}
+                    <NotificationsMenu />
+
+                    {/* Apps Menu */}
+                    <AppsMenu />
+                  </>
+                )}
+
+                {/* Always show User Menu */}
                 <UserMenu
                   onLogout={handleLogout}
                   theme={theme}
                   onThemeToggle={toggleTheme}
                   userEmail={localStorage.getItem('user_email') || undefined}
                 />
-                
-                {/* Apps Menu */}
-                <AppsMenu />
               </div>
             </div>
 
@@ -1078,14 +1085,16 @@ export default function App() {
         />
       )}
 
-      {/* Developer Mode Panel */}
-      <DevModePanel
-        isOpen={isDevModeOpen}
-        onClose={() => setIsDevModeOpen(false)}
-        apiLogs={apiLogs}
-        onClearLogs={handleClearApiLogs}
-        onHeightChange={setDevPanelHeight}
-      />
+      {/* Developer Mode Panel - Desktop only */}
+      {!device.isMobile && (
+        <DevModePanel
+          isOpen={isDevModeOpen}
+          onClose={() => setIsDevModeOpen(false)}
+          apiLogs={apiLogs}
+          onClearLogs={handleClearApiLogs}
+          onHeightChange={setDevPanelHeight}
+        />
+      )}
       {/* Version Display - Fixed to bottom-left */}
       <VersionDisplay position="bottom-left" />
     </>
