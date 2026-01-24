@@ -26,7 +26,9 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  ReferenceLine,
+  ReferenceArea
 } from 'recharts';
 import {
   Activity,
@@ -42,6 +44,8 @@ import {
   Gauge
 } from 'lucide-react';
 import { apiService, ClientInsightsResponse, APInsightsReport, APInsightsStatistic } from '../services/api';
+import { useTimelineNavigation } from '../hooks/useTimelineNavigation';
+import { TimelineControls } from './timeline';
 
 interface ClientInsightsProps {
   macAddress: string;
@@ -323,6 +327,18 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
 
   const handleRefresh = () => setRefreshKey(k => k + 1);
 
+  // Timeline navigation hook
+  const timeline = useTimelineNavigation('client-insights');
+
+  // Helper function to format X-axis ticks
+  const formatXAxisTick = (timestamp: number, duration: string): string => {
+    const date = new Date(timestamp);
+    if (duration === '3H' || duration === '24H') {
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -349,6 +365,11 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
       cancelled = true;
     };
   }, [macAddress, duration, refreshKey]);
+
+  // Reset timeline when duration changes
+  useEffect(() => {
+    timeline.resetTimeline();
+  }, [duration]);
 
   // Transform data for all charts
   const throughputData = useMemo(() => {
@@ -470,8 +491,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={throughputData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={throughputData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorTotalClient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.3}/>
@@ -479,10 +515,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatValue(v, 'bps')} width={70} />
                     <Tooltip formatter={(value: number) => [formatValue(value, 'bps'), '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="Total" stroke={CHART_COLORS.blue} fill="url(#colorTotalClient)" name="Total" />
                     <Area type="monotone" dataKey="Upload" stroke={CHART_COLORS.cyan} fill="transparent" name="Upload" />
                     <Area type="monotone" dataKey="Download" stroke={CHART_COLORS.pink} fill="transparent" name="Download" />
@@ -501,8 +555,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rfQualityData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={rfQualityData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorRfQuality" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.3}/>
@@ -510,10 +579,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} width={40} domain={[0, 100]} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(0)}%`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="rfQuality" stroke={CHART_COLORS.success} fill="url(#colorRfQuality)" name="RF Quality" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -570,13 +657,46 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={appGroupsDetailData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={appGroupsDetailData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatValue(v, 'bps')} width={70} />
                     <Tooltip formatter={(value: number) => [formatValue(value, 'bps'), '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     {Object.keys(appGroupsDetailData[0] || {})
                       .filter(k => k !== 'timestamp' && k !== 'time')
                       .slice(0, 5)
@@ -606,8 +726,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rfqiData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={rfqiData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorRfqi" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.purple} stopOpacity={0.2}/>
@@ -615,10 +750,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} width={40} />
                     <Tooltip />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="Rfqi Upper" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Upper" />
                     <Area type="monotone" dataKey="Rfqi" stroke={CHART_COLORS.purple} fill="url(#colorRfqi)" name="RFQI" />
                     <Area type="monotone" dataKey="Rfqi Lower" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Lower" />
@@ -637,8 +790,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={wirelessRttData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={wirelessRttData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorWirelessRtt" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.cyan} stopOpacity={0.2}/>
@@ -646,10 +814,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} ms`} width={50} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(1)} ms`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="WirelessRtt Upper" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Upper" />
                     <Area type="monotone" dataKey="WirelessRtt" stroke={CHART_COLORS.cyan} fill="url(#colorWirelessRtt)" name="Wireless RTT" />
                     <Area type="monotone" dataKey="WirelessRtt Lower" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Lower" />
@@ -668,8 +854,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={networkRttData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={networkRttData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorNetworkRtt" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.orange} stopOpacity={0.2}/>
@@ -677,10 +878,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} ms`} width={50} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(1)} ms`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="NetworkRtt Upper" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Upper" />
                     <Area type="monotone" dataKey="NetworkRtt" stroke={CHART_COLORS.orange} fill="url(#colorNetworkRtt)" name="Network RTT" />
                     <Area type="monotone" dataKey="NetworkRtt Lower" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Lower" />
@@ -699,8 +918,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rssData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={rssData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorRssClient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.2}/>
@@ -708,10 +942,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} dBm`} width={60} domain={['auto', 'auto']} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(0)} dBm`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="Rss Upper" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Upper" />
                     <Area type="monotone" dataKey="Rss" stroke={CHART_COLORS.blue} fill="url(#colorRssClient)" name="RSS" />
                     <Area type="monotone" dataKey="Rss Lower" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Lower" />
@@ -730,8 +982,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rxRateData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={rxRateData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorRxRate" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.2}/>
@@ -739,10 +1006,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} Mbps`} width={60} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(1)} Mbps`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="RxRate Upper" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Upper" />
                     <Area type="monotone" dataKey="RxRate" stroke={CHART_COLORS.success} fill="url(#colorRxRate)" name="RX Rate" />
                     <Area type="monotone" dataKey="RxRate Lower" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Lower" />
@@ -761,8 +1046,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={txRateData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={txRateData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorTxRate" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.pink} stopOpacity={0.2}/>
@@ -770,10 +1070,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} Mbps`} width={60} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(1)} Mbps`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="TxRate Upper" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Upper" />
                     <Area type="monotone" dataKey="TxRate" stroke={CHART_COLORS.pink} fill="url(#colorTxRate)" name="TX Rate" />
                     <Area type="monotone" dataKey="TxRate Lower" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Lower" />
@@ -792,13 +1110,46 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={eventsData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <BarChart data={eventsData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} width={40} />
                     <Tooltip />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     {Object.keys(eventsData[0] || {})
                       .filter(k => k !== 'timestamp' && k !== 'time')
                       .slice(0, 5)
@@ -825,8 +1176,23 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dlRetriesData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={dlRetriesData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="client-insights-charts">
                     <defs>
                       <linearGradient id="colorDlRetries" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.warning} stopOpacity={0.2}/>
@@ -834,10 +1200,28 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} width={40} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     {Object.keys(dlRetriesData[0] || {})
                       .filter(k => k !== 'timestamp' && k !== 'time')
                       .map((key, i) => (
@@ -895,6 +1279,15 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
             </Button>
           </div>
         </div>
+
+        {/* Timeline Controls */}
+        <TimelineControls
+          currentTime={timeline.currentTime}
+          isLocked={timeline.isLocked}
+          hasTimeWindow={timeline.timeWindow.start !== null && timeline.timeWindow.end !== null}
+          onToggleLock={timeline.toggleLock}
+          onClearTimeWindow={timeline.clearTimeWindow}
+        />
 
         {/* Content - All charts on one page */}
         <div className="flex-1 overflow-y-auto">

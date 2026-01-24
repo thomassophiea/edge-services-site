@@ -21,7 +21,9 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  ReferenceLine,
+  ReferenceArea
 } from 'recharts';
 import {
   Activity,
@@ -38,6 +40,8 @@ import {
   Clock
 } from 'lucide-react';
 import { apiService, APInsightsResponse, APInsightsReport, APInsightsStatistic } from '../services/api';
+import { useTimelineNavigation } from '../hooks/useTimelineNavigation';
+import { TimelineControls } from './timeline';
 
 interface APInsightsProps {
   serialNumber: string;
@@ -312,6 +316,18 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
 
   const handleRefresh = () => setRefreshKey(k => k + 1);
 
+  // Timeline navigation hook
+  const timeline = useTimelineNavigation('ap-insights');
+
+  // Helper function to format X-axis ticks
+  const formatXAxisTick = (timestamp: number, duration: string): string => {
+    const date = new Date(timestamp);
+    if (duration === '3H' || duration === '24H') {
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -338,6 +354,11 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
       cancelled = true;
     };
   }, [serialNumber, duration, refreshKey]);
+
+  // Reset timeline when duration changes
+  useEffect(() => {
+    timeline.resetTimeline();
+  }, [duration]);
 
   // Transform data for each chart
   const throughputData = useMemo(() => {
@@ -411,8 +432,23 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={throughputData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={throughputData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="ap-insights-charts">
                     <defs>
                       <linearGradient id="colorTotalFull" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.3}/>
@@ -420,10 +456,28 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatValue(v, 'bps')} width={70} />
                     <Tooltip formatter={(value: number) => [formatValue(value, 'bps'), '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="Total" stroke={CHART_COLORS.blue} fill="url(#colorTotalFull)" name="Total" />
                     <Area type="monotone" dataKey="Upload" stroke={CHART_COLORS.cyan} fill="transparent" name="Upload" />
                     <Area type="monotone" dataKey="Download" stroke={CHART_COLORS.pink} fill="transparent" name="Download" />
@@ -442,13 +496,46 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={powerData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <LineChart data={powerData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="ap-insights-charts">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} W`} width={50} />
                     <Tooltip />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Line type="monotone" dataKey="Power Consumption" stroke={CHART_COLORS.blue} dot={false} name="Power" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -465,13 +552,46 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={clientData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <LineChart data={clientData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="ap-insights-charts">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} width={40} />
                     <Tooltip />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Line type="stepAfter" dataKey="tntUniqueUsers" stroke={CHART_COLORS.blue} dot={false} name="Unique Users" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -488,8 +608,23 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rssData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={rssData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="ap-insights-charts">
                     <defs>
                       <linearGradient id="colorRss" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={CHART_COLORS.cyan} stopOpacity={0.2}/>
@@ -497,10 +632,28 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} dBm`} width={60} domain={['auto', 'auto']} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(0)} dBm`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="Rss Upper" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Upper" />
                     <Area type="monotone" dataKey="Rss" stroke={CHART_COLORS.blue} fill="url(#colorRss)" name="RSS" />
                     <Area type="monotone" dataKey="Rss Lower" stroke={CHART_COLORS.secondary} fill="transparent" strokeDasharray="3 3" name="Lower" />
@@ -519,13 +672,46 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={channelUtil5Data} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={channelUtil5Data} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="ap-insights-charts">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} width={40} domain={[0, 100]} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="Available" stackId="1" stroke={CHART_COLORS.warning} fill={CHART_COLORS.warning} fillOpacity={0.5} />
                     <Area type="monotone" dataKey="ClientData" stackId="1" stroke={CHART_COLORS.purple} fill={CHART_COLORS.purple} fillOpacity={0.5} />
                     <Area type="monotone" dataKey="CoChannel" stackId="1" stroke={CHART_COLORS.cyan} fill={CHART_COLORS.cyan} fillOpacity={0.5} />
@@ -545,13 +731,46 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={channelUtil24Data} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <AreaChart data={channelUtil24Data} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="ap-insights-charts">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} width={40} domain={[0, 100]} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Area type="monotone" dataKey="Available" stackId="1" stroke={CHART_COLORS.warning} fill={CHART_COLORS.warning} fillOpacity={0.5} />
                     <Area type="monotone" dataKey="ClientData" stackId="1" stroke={CHART_COLORS.purple} fill={CHART_COLORS.purple} fillOpacity={0.5} />
                     <Area type="monotone" dataKey="CoChannel" stackId="1" stroke={CHART_COLORS.cyan} fill={CHART_COLORS.cyan} fillOpacity={0.5} />
@@ -571,13 +790,46 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
             </CardHeader>
             <CardContent>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={noiseData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  onMouseMove={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.setCurrentTime(e.activeLabel);
+                    }
+                  }}
+                  onMouseLeave={() => timeline.setCurrentTime(null)}
+                  onMouseDown={(e: any) => {
+                    if (e && e.activeLabel) {
+                      timeline.startTimeWindow(e.activeLabel);
+                    }
+                  }}
+                  onMouseUp={() => timeline.endTimeWindow()}
+                >
+                  <LineChart data={noiseData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} syncId="ap-insights-charts">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="timestamp" tick={{ fontSize: 11 }} tickFormatter={(ts) => formatXAxisTick(ts, duration)} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} dBm`} width={60} />
                     <Tooltip formatter={(v: number) => [`${v.toFixed(0)} dBm`, '']} />
                     <Legend />
+                    {timeline.currentTime !== null && (
+                      <ReferenceLine
+                        x={timeline.currentTime}
+                        stroke={timeline.isLocked ? '#8b5cf6' : '#3b82f6'}
+                        strokeWidth={timeline.isLocked ? 2 : 1.5}
+                        strokeDasharray={timeline.isLocked ? undefined : '4 4'}
+                      />
+                    )}
+                    {timeline.timeWindow.start !== null && timeline.timeWindow.end !== null && (
+                      <ReferenceArea
+                        x1={Math.min(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        x2={Math.max(timeline.timeWindow.start, timeline.timeWindow.end)}
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.15}
+                        stroke="hsl(var(--primary))"
+                        strokeOpacity={0.3}
+                      />
+                    )}
                     <Line type="monotone" dataKey="R1" stroke={CHART_COLORS.blue} dot={false} name="R1" />
                     <Line type="monotone" dataKey="R2" stroke={CHART_COLORS.cyan} dot={false} name="R2" />
                     <Line type="monotone" dataKey="R3" stroke={CHART_COLORS.pink} dot={false} name="R3" />
@@ -626,6 +878,15 @@ export function APInsightsFullScreen({ serialNumber, apName, onClose }: APInsigh
             </Button>
           </div>
         </div>
+
+        {/* Timeline Controls */}
+        <TimelineControls
+          currentTime={timeline.currentTime}
+          isLocked={timeline.isLocked}
+          hasTimeWindow={timeline.timeWindow.start !== null && timeline.timeWindow.end !== null}
+          onToggleLock={timeline.toggleLock}
+          onClearTimeWindow={timeline.clearTimeWindow}
+        />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto min-h-0">
