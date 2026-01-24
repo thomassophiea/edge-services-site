@@ -26,6 +26,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { TouchButton } from './TouchButton';
+import { ResponsiveDialog } from './ResponsiveDialog';
+import { DesktopOnly } from './MobileOptimized';
 
 interface BackupFile {
   filename: string;
@@ -192,16 +195,18 @@ export function SystemBackupManager() {
   }
 
   return (
-    <div className="space-y-6 p-6 animate-in fade-in duration-500">
-      <div className="flex items-start justify-between">
+    <div className="space-y-6 p-4 md:p-6 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold flex items-center gap-3 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            <Database className="h-8 w-8 text-primary" />
+          <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <Database className="h-6 w-6 md:h-8 md:w-8 text-primary" />
             System Backup & Storage Manager
           </h2>
-          <p className="text-muted-foreground mt-2 text-base">
-            Manage configuration backups and flash memory storage
-          </p>
+          <DesktopOnly>
+            <p className="text-muted-foreground mt-2 text-base">
+              Manage configuration backups and flash memory storage
+            </p>
+          </DesktopOnly>
         </div>
       </div>
 
@@ -276,25 +281,25 @@ export function SystemBackupManager() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button
+              <TouchButton
                 variant="outline"
                 size="sm"
                 onClick={loadBackups}
                 aria-label="Refresh backup list"
                 className="hover:bg-muted/80 transition-colors shadow-sm"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button
+                <RefreshCw className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Refresh</span>
+              </TouchButton>
+              <TouchButton
                 size="sm"
                 onClick={() => setShowCreateDialog(true)}
                 aria-label="Create new configuration backup"
                 className="shadow-md hover:shadow-lg transition-all bg-gradient-to-r from-primary to-primary/90"
               >
-                <Upload className="h-4 w-4 mr-2" />
-                Create Backup
-              </Button>
+                <Upload className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Create Backup</span>
+              </TouchButton>
             </div>
           </div>
         </CardHeader>
@@ -331,17 +336,17 @@ export function SystemBackupManager() {
                     </div>
                   </div>
                   <div className="flex gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
-                    <Button
+                    <TouchButton
                       variant="outline"
                       size="sm"
                       onClick={() => handleDownloadBackup(backup.filename)}
                       aria-label={`Download backup ${backup.filename}`}
                       className="hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors"
                     >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                    <Button
+                      <Download className="h-4 w-4 md:mr-2" />
+                      <span className="hidden md:inline">Download</span>
+                    </TouchButton>
+                    <TouchButton
                       variant="outline"
                       size="sm"
                       onClick={() => {
@@ -351,9 +356,9 @@ export function SystemBackupManager() {
                       aria-label={`Restore configuration from ${backup.filename}`}
                       className="hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
                     >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Restore
-                    </Button>
+                      <RefreshCw className="h-4 w-4 md:mr-2" />
+                      <span className="hidden md:inline">Restore</span>
+                    </TouchButton>
                   </div>
                 </div>
               ))}
