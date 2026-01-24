@@ -311,38 +311,79 @@ export function PacketCapture() {
   };
 
   const startCapture = async () => {
+    // Validation for wireless capture - need at least one AP
+    if (captureLocation === 'wireless' && accessPoints.length === 0) {
+      toast.error('No access points available for wireless capture');
+      return;
+    }
+
+    // Validation for SCP destination
+    if (packetDestination === 'scp' && (!scpIpAddress || !scpUsername)) {
+      toast.error('SCP server IP and username are required');
+      return;
+    }
+
     setStarting(true);
 
     try {
-      // Build capture config matching Campus Controller API
+      // Build capture config matching Campus Controller API format
+      // The startappacketcapture endpoint expects specific field structure
       const captureConfig: Record<string, any> = {
-        captureWired: captureLocation === 'wired' || captureLocation === 'appliance',
-        captureWireless: captureLocation === 'wireless',
-        captureWiredClients: includeWiredClients,
         duration: duration,
-        truncationSize: truncatePackets > 0 ? truncatePackets : 3001,
-        protocol: selectedProtocol !== 'all' ? selectedProtocol.toUpperCase() : undefined,
-        destination: packetDestination,
-        filters: filters.map(f => ({ type: f.type, value: f.value }))
+        truncation: truncatePackets > 0 ? truncatePackets : 3001,
       };
 
-      // Add wireless-specific options
-      if (captureLocation === 'wireless') {
+      // Set capture type/interface
+      if (captureLocation === 'appliance') {
+        captureConfig.captureType = 'DATA_PORT';
+      } else if (captureLocation === 'wired') {
+        captureConfig.captureType = 'WIRED';
+        captureConfig.includeWiredClients = includeWiredClients;
+      } else if (captureLocation === 'wireless') {
+        captureConfig.captureType = 'WIRELESS';
+        // AP serial is required for wireless capture
+        if (selectedAP !== 'all') {
+          captureConfig.apSerialNumber = selectedAP;
+        } else if (accessPoints.length > 0) {
+          // Use first AP if "all" is selected
+          captureConfig.apSerialNumber = accessPoints[0].serialNumber;
+        }
         if (selectedRadio !== 'all') {
           captureConfig.radio = selectedRadio;
         }
-        if (selectedAP !== 'all') {
-          captureConfig.apSerial = selectedAP;
-        }
       }
 
-      // Add SCP credentials if SCP destination is selected
+      // Direction
+      if (direction !== 'both') {
+        captureConfig.direction = direction.toUpperCase();
+      }
+
+      // Protocol filter
+      if (selectedProtocol !== 'all') {
+        captureConfig.protocol = selectedProtocol.toUpperCase();
+      }
+
+      // Address filters - Campus Controller format
+      const macFilters = filters.filter(f => f.type === 'mac').map(f => f.value);
+      const ipFilters = filters.filter(f => f.type === 'ip').map(f => f.value);
+
+      if (macFilters.length > 0) {
+        captureConfig.macAddress = macFilters[0]; // API typically takes single value
+      }
+      if (ipFilters.length > 0) {
+        captureConfig.ipAddress = ipFilters[0]; // API typically takes single value
+      }
+
+      // Destination
+      captureConfig.destination = packetDestination.toUpperCase();
+
+      // SCP credentials if SCP destination is selected
       if (packetDestination === 'scp') {
-        captureConfig.scpServer = {
-          ipAddress: scpIpAddress,
+        captureConfig.scpConfig = {
+          serverIp: scpIpAddress,
           username: scpUsername,
           password: scpPassword,
-          destinationPath: scpDestinationPath
+          path: scpDestinationPath
         };
       }
 
@@ -360,7 +401,7 @@ export function PacketCapture() {
 
         // Add to active captures
         const newCapture: ActiveCapture = {
-          id: result.id || result.captureId || `capture-${Date.now()}`,
+          id: result.id || result.captureId || result.sessionId || `capture-${Date.now()}`,
           location: captureLocation,
           direction,
           duration: duration * 60,
@@ -374,7 +415,10 @@ export function PacketCapture() {
         await loadActiveCaptures();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to start capture: ${response.status}`);
+        console.error('[PacketCapture] API error response:', errorData);
+        const errorMsg = errorData.message || errorData.error || errorData.details ||
+          (typeof errorData === 'string' ? errorData : `Failed to start capture: ${response.status}`);
+        throw new Error(errorMsg);
       }
     } catch (err) {
       console.error('[PacketCapture] Error starting capture:', err);
