@@ -7,7 +7,7 @@
 
 ## Project Overview
 
-**EDGE (Edge Data Gateway Engine) v500**
+**Wireless EDGE Services**
 - **Total Lines of Code:** 64,347 lines
 - **Components:** 124 files (45,429 lines)
 - **Services:** 19 files (8,860 lines)

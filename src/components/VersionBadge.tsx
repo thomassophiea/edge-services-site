@@ -136,7 +136,7 @@ export function VersionBadge() {
 
           <div className="pt-2 border-t">
             <p className="text-xs text-muted-foreground">
-              EDGE (Edge Data Gateway Engine) v500
+              Wireless EDGE Services
             </p>
           </div>
         </div>

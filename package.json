@@ -1,5 +1,5 @@
 {
-  "name": "EDGE (Edge Data Gateway Engine) v500 (w/3rd party)",
+  "name": "Wireless EDGE Services (w/3rd party)",
   "version": "0.1.1-deploy-test",
   "private": true,
   "type": "module",
@@ -51,6 +51,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.55.0",
     "react-resizable-panels": "^2.1.7",
+    "react-swipeable": "^7.0.2",
     "recharts": "^2.15.2",
     "serve": "^14.2.4",
     "sonner": "^2.0.3",
