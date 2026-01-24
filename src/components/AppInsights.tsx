@@ -4,7 +4,7 @@
  * Displays application visibility and control metrics with unified top/bottom view
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -202,7 +202,7 @@ export function AppInsights({ api }: AppInsightsProps) {
   };
 
   // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -215,10 +215,10 @@ export function AppInsights({ api }: AppInsightsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, duration, selectedSite]);
 
   useEffect(() => { loadSites(); }, []);
-  useEffect(() => { fetchData(); }, [duration, selectedSite]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   // Prepare chart data
   const chartData = useMemo(() => {
