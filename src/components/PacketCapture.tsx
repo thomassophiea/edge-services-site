@@ -121,13 +121,22 @@ export function PacketCapture() {
       setError(null);
 
       try {
-        // Load access points for wireless capture
+        // Load access points for wireless capture using the correct endpoint
         try {
-          const apResponse = await apiService.makeAuthenticatedRequest('/v1/accesspoints', {}, 10000);
+          const apResponse = await apiService.makeAuthenticatedRequest('/v1/aps/query', {
+            method: 'POST',
+            body: JSON.stringify({})
+          }, 10000);
           if (!cancelled && apResponse.ok) {
             const data = await apResponse.json();
-            const apList = Array.isArray(data) ? data : (data.accessPoints || []);
-            setAccessPoints(apList);
+            const apList = Array.isArray(data) ? data : (data.accessPoints || data.aps || []);
+            console.log('[PacketCapture] Loaded APs:', apList.length);
+            setAccessPoints(apList.map((ap: any) => ({
+              serialNumber: ap.serialNumber || ap.serial || ap.id,
+              displayName: ap.displayName || ap.name || ap.hostname,
+              name: ap.name || ap.hostname,
+              status: ap.status
+            })));
           }
         } catch (apErr) {
           console.warn('[PacketCapture] Failed to load APs:', apErr);
