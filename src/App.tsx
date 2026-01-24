@@ -995,16 +995,16 @@ export default function App() {
             paddingBottom: isDevModeOpen ? `${devPanelHeight}px` : '0'
           }}
         >
-          <div className="p-6">
+          <div className="p-4 sm:p-6 pt-16 sm:pt-6">
             {/* Top Bar with Test Tools */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div className="flex items-center space-x-4">
-                <h2 className="text-lg font-semibold text-[rgba(255,255,255,1)]">
+                <h2 className="text-base sm:text-lg font-semibold text-[rgba(255,255,255,1)]">
                   {pageInfo[currentPage as keyof typeof pageInfo]?.title || 'Mobility Engine'}
                 </h2>
               </div>
-              
-              <div className="flex items-center space-x-2">
+
+              <div className="flex items-center space-x-2 flex-wrap">
                 {/* Developer Mode Toggle */}
                 <Button
                   variant={isDevModeOpen ? 'default' : 'secondary'}

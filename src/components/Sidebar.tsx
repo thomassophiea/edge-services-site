@@ -35,6 +35,8 @@ import { useState } from 'react';
 import { cn } from './ui/utils';
 import { useBranding } from '@/lib/branding';
 import { VersionBadge } from './VersionBadge';
+import { useDeviceDetection } from '@/hooks/useDeviceDetection';
+import { useEffect } from 'react';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -77,7 +79,9 @@ const systemItems = [
 
 export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme = 'system', onThemeToggle }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const branding = useBranding();
+  const device = useDeviceDetection();
 
   // Check if any configure sub-item is currently active
   const isConfigureActive = configureItems.some(item => currentPage === item.id);
@@ -87,11 +91,63 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
   const [isConfigureExpanded, setIsConfigureExpanded] = useState(isConfigureActive);
   const [isSystemExpanded, setIsSystemExpanded] = useState(isSystemActive);
 
+  // Close mobile sidebar when page changes
+  useEffect(() => {
+    if (device.isMobile) {
+      setIsMobileOpen(false);
+    }
+  }, [currentPage, device.isMobile]);
+
+  // Close mobile sidebar on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && device.isMobile && isMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [device.isMobile, isMobileOpen]);
+
+  const handlePageChange = (page: string) => {
+    onPageChange(page);
+    if (device.isMobile) {
+      setIsMobileOpen(false);
+    }
+  };
+
   return (
-    <div className={cn(
-      "bg-sidebar border-r border-sidebar-border h-full flex flex-col transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
-    )}>
+    <>
+      {/* Mobile Overlay */}
+      {device.isMobile && isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Menu Button */}
+      {device.isMobile && (
+        <button
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className="fixed top-4 left-4 z-50 p-2 rounded-md bg-sidebar border border-sidebar-border shadow-lg lg:hidden"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+      )}
+
+      {/* Sidebar */}
+      <div className={cn(
+        "bg-sidebar border-r border-sidebar-border h-full flex flex-col transition-all duration-300",
+        // Desktop behavior
+        !device.isMobile && (isCollapsed ? "w-16" : "w-64"),
+        // Mobile behavior
+        device.isMobile && [
+          "fixed inset-y-0 left-0 z-50 w-64",
+          "transform transition-transform duration-300",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        ]
+      )}>
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
@@ -128,7 +184,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
-              onClick={() => onPageChange(item.id)}
+              onClick={() => handlePageChange(item.id)}
             >
               <Icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
               {!isCollapsed && <span>{item.label}</span>}
@@ -182,7 +238,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
                         ? "bg-sidebar-primary text-sidebar-primary-foreground"
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
-                    onClick={() => onPageChange(item.id)}
+                    onClick={() => handlePageChange(item.id)}
                   >
                     <Icon className="h-3 w-3 mr-2" />
                     <span>{item.label}</span>
@@ -239,7 +295,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
                         ? "bg-sidebar-primary text-sidebar-primary-foreground"
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
-                    onClick={() => onPageChange(item.id)}
+                    onClick={() => handlePageChange(item.id)}
                   >
                     <Icon className="h-3 w-3 mr-2" />
                     <span>{item.label}</span>
@@ -262,7 +318,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
               ? "bg-sidebar-primary text-sidebar-primary-foreground"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
-          onClick={() => onPageChange('tools')}
+          onClick={() => handlePageChange('tools')}
         >
           <Wrench className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
           {!isCollapsed && <span>Tools</span>}
@@ -276,7 +332,7 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
               ? "bg-sidebar-primary text-sidebar-primary-foreground"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
-          onClick={() => onPageChange('administration')}
+          onClick={() => handlePageChange('administration')}
         >
           <Settings className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
           {!isCollapsed && <span>Administration</span>}
@@ -337,5 +393,6 @@ export function Sidebar({ onLogout, adminRole, currentPage, onPageChange, theme 
         </Button>
       </div>
     </div>
+    </>
   );
 }
