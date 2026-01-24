@@ -298,23 +298,23 @@ export function AppInsights({ api }: AppInsightsProps) {
     };
 
     return (
-      <Card className="hover:shadow-lg transition-all duration-300">
-        <CardHeader className="pb-3">
+      <Card className="hover:shadow-md transition-all duration-200">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${color} shadow-md`}>
-                <Icon className="h-4 w-4 text-white" />
+            <div className="flex items-center gap-1.5">
+              <div className={`p-1.5 rounded ${color} shadow-sm`}>
+                <Icon className="h-3.5 w-3.5 text-white" />
               </div>
-              <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+              <CardTitle className="text-xs font-semibold">{title}</CardTitle>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 pt-0">
+        <CardContent className="space-y-3 pt-0">
           {/* Top Categories */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <ChevronUp className="h-3.5 w-3.5 text-emerald-500" />
-              <span className="text-xs font-medium text-muted-foreground">Top Performers</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ChevronUp className="h-3 w-3 text-emerald-500" />
+              <span className="text-[10px] font-medium text-muted-foreground">Top Performers</span>
             </div>
             {topData.slice(0, 5).map((item: any, index: number) => {
               const percentage = maxTop > 0 ? (item.value / maxTop) * 100 : 0;
@@ -322,17 +322,17 @@ export function AppInsights({ api }: AppInsightsProps) {
               const itemColor = getCategoryColor(item.name, index);
 
               return (
-                <div key={item.id} className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div key={item.id} className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
                     <div className="p-0.5 rounded" style={{ backgroundColor: `${itemColor}20` }}>
-                      <CategoryIcon className="h-3 w-3" style={{ color: itemColor }} />
+                      <CategoryIcon className="h-2.5 w-2.5" style={{ color: itemColor }} />
                     </div>
-                    <span className="text-xs font-medium truncate flex-1" title={item.name}>
+                    <span className="text-[11px] font-medium truncate flex-1" title={item.name}>
                       {item.name}
                     </span>
-                    <span className="text-xs font-semibold tabular-nums">{formatValue(item.value)}</span>
+                    <span className="text-[11px] font-semibold tabular-nums">{formatValue(item.value)}</span>
                   </div>
-                  <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden ml-5">
+                  <div className="h-1 bg-muted/50 rounded-full overflow-hidden ml-4">
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${percentage}%`, backgroundColor: itemColor }}
@@ -344,10 +344,10 @@ export function AppInsights({ api }: AppInsightsProps) {
           </div>
 
           {/* Bottom Categories */}
-          <div className="space-y-2 pt-2 border-t">
-            <div className="flex items-center gap-2 mb-2">
-              <ChevronDown className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-xs font-medium text-muted-foreground">Low Activity</span>
+          <div className="space-y-1.5 pt-2 border-t">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ChevronDown className="h-3 w-3 text-amber-500" />
+              <span className="text-[10px] font-medium text-muted-foreground">Low Activity</span>
             </div>
             {bottomData.slice(0, 5).map((item: any, index: number) => {
               const percentage = maxBottom > 0 ? (item.value / maxBottom) * 100 : 0;
@@ -355,17 +355,17 @@ export function AppInsights({ api }: AppInsightsProps) {
               const itemColor = getCategoryColor(item.name, index + 5);
 
               return (
-                <div key={item.id} className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div key={item.id} className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
                     <div className="p-0.5 rounded" style={{ backgroundColor: `${itemColor}20` }}>
-                      <CategoryIcon className="h-3 w-3" style={{ color: itemColor }} />
+                      <CategoryIcon className="h-2.5 w-2.5" style={{ color: itemColor }} />
                     </div>
-                    <span className="text-xs font-medium truncate flex-1 text-muted-foreground" title={item.name}>
+                    <span className="text-[11px] font-medium truncate flex-1 text-muted-foreground" title={item.name}>
                       {item.name}
                     </span>
-                    <span className="text-xs tabular-nums text-muted-foreground">{formatValue(item.value)}</span>
+                    <span className="text-[11px] tabular-nums text-muted-foreground">{formatValue(item.value)}</span>
                   </div>
-                  <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden ml-5">
+                  <div className="h-1 bg-muted/50 rounded-full overflow-hidden ml-4">
                     <div
                       className="h-full rounded-full transition-all duration-500 opacity-60"
                       style={{ width: `${percentage}%`, backgroundColor: itemColor }}
@@ -410,16 +410,16 @@ export function AppInsights({ api }: AppInsightsProps) {
   }
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 space-y-3">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 shadow-lg">
-            <AppWindow className="h-6 w-6 text-white" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 shadow-md">
+            <AppWindow className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">App Insights</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-xl font-bold tracking-tight">App Insights</h1>
+            <p className="text-xs text-muted-foreground">
               Application visibility and traffic analytics
               {selectedSite !== 'all' && (
                 <span className="ml-1 text-primary font-medium">
@@ -430,10 +430,10 @@ export function AppInsights({ api }: AppInsightsProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <Select value={selectedSite} onValueChange={setSelectedSite}>
-            <SelectTrigger className="w-[160px] h-9">
-              <Building className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[145px] h-8 text-xs">
+              <Building className="h-3.5 w-3.5 mr-1.5" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -447,7 +447,7 @@ export function AppInsights({ api }: AppInsightsProps) {
           </Select>
 
           <Select value={duration} onValueChange={setDuration}>
-            <SelectTrigger className="w-[130px] h-9">
+            <SelectTrigger className="w-[120px] h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -458,8 +458,8 @@ export function AppInsights({ api }: AppInsightsProps) {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="h-9">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="h-8 px-3 text-xs">
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -467,18 +467,18 @@ export function AppInsights({ api }: AppInsightsProps) {
 
       {/* Summary Cards */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 opacity-[0.08]" />
-            <CardContent className="p-4 relative">
+            <CardContent className="p-3 relative">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Data</p>
-                  <p className="text-xl font-bold">{formatBytes(stats.totalUsage)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.totalCategories} categories</p>
+                  <p className="text-lg font-bold">{formatBytes(stats.totalUsage)}</p>
+                  <p className="text-[10px] text-muted-foreground">{stats.totalCategories} categories</p>
                 </div>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md">
-                  <HardDrive className="h-4 w-4 text-white" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md">
+                  <HardDrive className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -486,15 +486,15 @@ export function AppInsights({ api }: AppInsightsProps) {
 
           <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-500 opacity-[0.08]" />
-            <CardContent className="p-4 relative">
+            <CardContent className="p-3 relative">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Throughput</p>
-                  <p className="text-xl font-bold">{formatThroughput(stats.totalThroughput)}</p>
-                  <p className="text-xs text-muted-foreground">Avg bandwidth</p>
+                  <p className="text-lg font-bold">{formatThroughput(stats.totalThroughput)}</p>
+                  <p className="text-[10px] text-muted-foreground">Avg bandwidth</p>
                 </div>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 shadow-md">
-                  <Gauge className="h-4 w-4 text-white" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 shadow-md">
+                  <Gauge className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -502,15 +502,15 @@ export function AppInsights({ api }: AppInsightsProps) {
 
           <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-500 opacity-[0.08]" />
-            <CardContent className="p-4 relative">
+            <CardContent className="p-3 relative">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Active Clients</p>
-                  <p className="text-xl font-bold">{formatNumber(stats.totalClients)}</p>
-                  <p className="text-xs text-muted-foreground">Using apps</p>
+                  <p className="text-lg font-bold">{formatNumber(stats.totalClients)}</p>
+                  <p className="text-[10px] text-muted-foreground">Using apps</p>
                 </div>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 shadow-md">
-                  <Users className="h-4 w-4 text-white" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 shadow-md">
+                  <Users className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -518,15 +518,15 @@ export function AppInsights({ api }: AppInsightsProps) {
 
           <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 opacity-[0.08]" />
-            <CardContent className="p-4 relative">
+            <CardContent className="p-3 relative">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Top Category</p>
-                  <p className="text-lg font-bold truncate">{stats.topCategory}</p>
-                  <p className="text-xs text-muted-foreground">{stats.topCategoryPercent}% of traffic</p>
+                  <p className="text-base font-bold truncate">{stats.topCategory}</p>
+                  <p className="text-[10px] text-muted-foreground">{stats.topCategoryPercent}% of traffic</p>
                 </div>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 shadow-md">
-                  <Zap className="h-4 w-4 text-white" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 shadow-md">
+                  <Zap className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -537,16 +537,16 @@ export function AppInsights({ api }: AppInsightsProps) {
       {/* Insights Banner */}
       {insights.length > 0 && (
         <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="py-3 px-4">
-            <div className="flex items-start gap-3">
-              <div className="p-1.5 rounded-lg bg-primary/10">
-                <Sparkles className="h-4 w-4 text-primary" />
+          <CardContent className="py-2 px-3">
+            <div className="flex items-start gap-2">
+              <div className="p-1 rounded bg-primary/10">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-1">Quick Insights</p>
-                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-0.5">Quick Insights</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   {insights.map((insight, i) => (
-                    <p key={i} className="text-sm text-muted-foreground flex items-center gap-1.5">
+                    <p key={i} className="text-xs text-muted-foreground flex items-center gap-1">
                       <Info className="h-3 w-3 text-primary" />
                       {insight.text}
                     </p>
@@ -560,7 +560,7 @@ export function AppInsights({ api }: AppInsightsProps) {
 
       {/* Unified Comparison View */}
       {chartData && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
           <ComparisonCard
             topData={chartData.topUsage}
             bottomData={chartData.bottomUsage}

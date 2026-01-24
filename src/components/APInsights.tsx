@@ -231,17 +231,16 @@ export function APInsights({ serialNumber, apName, onOpenFullScreen }: APInsight
             </Select>
             {onOpenFullScreen && (
               <Button
-                variant="default"
+                variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenFullScreen();
                 }}
-                className="h-7 px-2.5 text-xs flex items-center gap-1"
-                title="Karl Mode"
+                className="h-7 w-7 p-0"
+                title="Expand Full Screen"
               >
-                <Maximize2 className="h-3 w-3" />
-                PRO
+                <Maximize2 className="h-4 w-4" />
               </Button>
             )}
             <Button
