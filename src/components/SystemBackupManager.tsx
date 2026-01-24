@@ -192,50 +192,59 @@ export function SystemBackupManager() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Database className="h-6 w-6" />
-          System Backup & Storage Manager
-        </h2>
-        <p className="text-muted-foreground">
-          Manage configuration backups and flash memory storage
-        </p>
+    <div className="space-y-6 p-6 animate-in fade-in duration-500">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-3xl font-bold flex items-center gap-3 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <Database className="h-8 w-8 text-primary" />
+            System Backup & Storage Manager
+          </h2>
+          <p className="text-muted-foreground mt-2 text-base">
+            Manage configuration backups and flash memory storage
+          </p>
+        </div>
       </div>
 
       {/* Flash Storage Overview */}
       {flashUsage && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HardDrive className="h-5 w-5" />
+        <Card className="border-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <HardDrive className="h-5 w-5 text-primary" />
+              </div>
               Flash Memory Usage
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium">Storage</span>
-                  <span className="text-sm text-muted-foreground">
+              <div className="bg-gradient-to-br from-muted/30 to-muted/10 p-4 rounded-xl">
+                <div className="flex justify-between mb-3">
+                  <span className="text-sm font-semibold">Storage Capacity</span>
+                  <span className="text-sm font-mono font-medium">
                     {formatFileSize(flashUsage.used)} / {formatFileSize(flashUsage.total)}
                   </span>
                 </div>
-                <div className="w-full bg-muted rounded-full h-4" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={getUsagePercentage()} aria-label="Flash memory usage">
+                <div className="w-full bg-muted/50 rounded-full h-3 overflow-hidden shadow-inner" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={getUsagePercentage()} aria-label="Flash memory usage">
                   <div
-                    className={`h-4 rounded-full transition-all ${
+                    className={`h-3 rounded-full transition-all duration-700 ease-out shadow-sm ${
                       getUsagePercentage() > 90
-                        ? 'bg-red-500'
+                        ? 'bg-gradient-to-r from-red-500 to-red-600'
                         : getUsagePercentage() > 70
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
+                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500'
+                        : 'bg-gradient-to-r from-green-500 to-emerald-500'
                     }`}
                     style={{ width: `${getUsagePercentage()}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {getUsagePercentage().toFixed(1)}% used
-                </p>
+                <div className="flex justify-between mt-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {getUsagePercentage().toFixed(1)}% utilized
+                  </p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {formatFileSize(flashUsage.total - flashUsage.used)} available
+                  </p>
+                </div>
               </div>
 
               {getUsagePercentage() > 80 && (
@@ -252,12 +261,17 @@ export function SystemBackupManager() {
       )}
 
       {/* Configuration Backups */}
-      <Card>
-        <CardHeader>
+      <Card className="border-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Configuration Backups</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <Database className="h-5 w-5 text-blue-600" />
+                </div>
+                Configuration Backups
+              </CardTitle>
+              <CardDescription className="mt-1">
                 Backup and restore controller configuration
               </CardDescription>
             </div>
@@ -267,6 +281,7 @@ export function SystemBackupManager() {
                 size="sm"
                 onClick={loadBackups}
                 aria-label="Refresh backup list"
+                className="hover:bg-muted/80 transition-colors shadow-sm"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -275,6 +290,7 @@ export function SystemBackupManager() {
                 size="sm"
                 onClick={() => setShowCreateDialog(true)}
                 aria-label="Create new configuration backup"
+                className="shadow-md hover:shadow-lg transition-all bg-gradient-to-r from-primary to-primary/90"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Create Backup
@@ -284,37 +300,43 @@ export function SystemBackupManager() {
         </CardHeader>
         <CardContent>
           {backups.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No configuration backups found</p>
-              <p className="text-sm mt-2">Create your first backup to get started</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <div className="inline-block p-6 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl mb-4">
+                <Database className="h-16 w-16 mx-auto text-blue-500/60" />
+              </div>
+              <p className="text-lg font-semibold mb-2">No configuration backups found</p>
+              <p className="text-sm max-w-md mx-auto">Create your first backup to safeguard your controller configuration and enable quick restore capabilities</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {backups.map((backup) => (
+            <div className="space-y-3">
+              {backups.map((backup, index) => (
                 <div
                   key={backup.filename}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="group flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 hover:shadow-md"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-center gap-3">
-                    <Database className="h-5 w-5 text-primary" />
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors">
+                      <Database className="h-5 w-5 text-blue-600" />
+                    </div>
                     <div>
-                      <p className="font-medium">{backup.filename}</p>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
+                      <p className="font-semibold text-base group-hover:text-primary transition-colors">{backup.filename}</p>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5" />
                           {formatDate(backup.created)}
                         </span>
-                        <Badge variant="outline">{formatFileSize(backup.size)}</Badge>
+                        <Badge variant="outline" className="font-mono text-xs">{formatFileSize(backup.size)}</Badge>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDownloadBackup(backup.filename)}
                       aria-label={`Download backup ${backup.filename}`}
+                      className="hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download
@@ -327,6 +349,7 @@ export function SystemBackupManager() {
                         setShowRestoreDialog(true);
                       }}
                       aria-label={`Restore configuration from ${backup.filename}`}
+                      className="hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Restore
@@ -340,10 +363,15 @@ export function SystemBackupManager() {
       </Card>
 
       {/* Flash Files */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Flash Memory Files</CardTitle>
-          <CardDescription>
+      <Card className="border-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <div className="p-2 bg-purple-500/10 rounded-lg">
+              <HardDrive className="h-5 w-5 text-purple-600" />
+            </div>
+            Flash Memory Files
+          </CardTitle>
+          <CardDescription className="mt-1">
             Manage files stored in flash memory
           </CardDescription>
         </CardHeader>
@@ -354,17 +382,20 @@ export function SystemBackupManager() {
             </div>
           ) : (
             <div className="space-y-2">
-              {flashFiles.map((file) => (
+              {flashFiles.map((file, index) => (
                 <div
                   key={file.filename}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="group flex items-center justify-between p-4 border-2 rounded-xl hover:border-purple-300 hover:bg-purple-50/50 transition-all duration-300"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-center gap-3">
-                    <HardDrive className="h-4 w-4 text-muted-foreground" />
+                    <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                      <HardDrive className="h-4 w-4 text-purple-600" />
+                    </div>
                     <div>
-                      <p className="font-medium text-sm">{file.filename}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
+                      <p className="font-semibold text-sm">{file.filename}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs font-mono">
                           {formatFileSize(file.size)}
                         </Badge>
                         {file.type && (
@@ -383,8 +414,9 @@ export function SystemBackupManager() {
                       setShowDeleteDialog(true);
                     }}
                     aria-label={`Delete file ${file.filename}`}
+                    className="hover:bg-red-50 hover:text-red-700 transition-colors"
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
