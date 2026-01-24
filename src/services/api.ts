@@ -4062,6 +4062,63 @@ class ApiService {
     }
   }
 
+  /**
+   * Get available device types
+   * Endpoint: GET /v1/devices/types, /v1/device-types, /v3/devices/types
+   */
+  async getDeviceTypes(): Promise<string[]> {
+    try {
+      logger.log('[API] Fetching device types');
+      const endpoints = [
+        '/v1/devices/types',
+        '/v1/device-types',
+        '/v3/devices/types',
+        '/platformmanager/v1/devices/types',
+        '/v1/config/device-types'
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(endpoint, {}, 10000);
+          if (response.ok) {
+            const data = await response.json();
+            const types = Array.isArray(data) ? data : data.deviceTypes || data.types || [];
+            logger.log(`[API] ✓ Loaded ${types.length} device types`);
+            return types;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      // If no endpoint available, return default device types
+      logger.warn('[API] Device types endpoint not available, returning default types');
+      return [
+        'Access Point',
+        'Switch',
+        'Router',
+        'Gateway',
+        'Controller',
+        'Sensor',
+        'Camera',
+        'Firewall'
+      ];
+    } catch (error) {
+      logger.error('[API] Failed to fetch device types:', error);
+      // Return default types on error
+      return [
+        'Access Point',
+        'Switch',
+        'Router',
+        'Gateway',
+        'Controller',
+        'Sensor',
+        'Camera',
+        'Firewall'
+      ];
+    }
+  }
+
   // ==================== PHASE 5: DETAILED REPORTING APIs ====================
 
   /**
@@ -6858,6 +6915,205 @@ class ApiService {
       throw new Error('Certificate application endpoint not available');
     } catch (error) {
       logger.error('[API] Failed to apply certificates:', error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // ADOPTION RULES MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Get all adoption rules
+   * Endpoint: GET /v1/adoption-rules, /v1/adoption/rules, /v1/config/adoption-rules
+   */
+  async getAdoptionRules(): Promise<any[]> {
+    try {
+      logger.log('[API] Fetching adoption rules');
+      const endpoints = [
+        '/v1/adoption-rules',
+        '/v1/adoption/rules',
+        '/v1/config/adoption-rules',
+        '/platformmanager/v1/adoption-rules'
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(endpoint, {}, 10000);
+          if (response.ok) {
+            const data = await response.json();
+            logger.log(`[API] ✓ Loaded ${Array.isArray(data) ? data.length : 0} adoption rules`);
+            return Array.isArray(data) ? data : data.rules || [];
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      logger.warn('[API] Adoption rules endpoint not available, returning empty list');
+      return [];
+    } catch (error) {
+      logger.error('[API] Failed to fetch adoption rules:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Create a new adoption rule
+   * Endpoint: POST /v1/adoption-rules, /v1/adoption/rules
+   */
+  async createAdoptionRule(rule: any): Promise<any> {
+    try {
+      logger.log('[API] Creating adoption rule:', rule.name);
+      const endpoints = [
+        '/v1/adoption-rules',
+        '/v1/adoption/rules',
+        '/v1/config/adoption-rules',
+        '/platformmanager/v1/adoption-rules'
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(rule)
+            },
+            15000
+          );
+          if (response.ok) {
+            const data = await response.json();
+            logger.log('[API] ✓ Adoption rule created successfully');
+            return data;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('Adoption rule creation endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to create adoption rule:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing adoption rule
+   * Endpoint: PUT /v1/adoption-rules/{id}, PATCH /v1/adoption-rules/{id}
+   */
+  async updateAdoptionRule(ruleId: string, rule: any): Promise<any> {
+    try {
+      logger.log(`[API] Updating adoption rule: ${ruleId}`);
+      const endpoints = [
+        { path: `/v1/adoption-rules/${encodeURIComponent(ruleId)}`, method: 'PUT' },
+        { path: `/v1/adoption-rules/${encodeURIComponent(ruleId)}`, method: 'PATCH' },
+        { path: `/v1/adoption/rules/${encodeURIComponent(ruleId)}`, method: 'PUT' },
+        { path: `/v1/config/adoption-rules/${encodeURIComponent(ruleId)}`, method: 'PUT' }
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint.path,
+            {
+              method: endpoint.method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(rule)
+            },
+            15000
+          );
+          if (response.ok) {
+            const data = await response.json();
+            logger.log('[API] ✓ Adoption rule updated successfully');
+            return data;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('Adoption rule update endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to update adoption rule:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an adoption rule
+   * Endpoint: DELETE /v1/adoption-rules/{id}
+   */
+  async deleteAdoptionRule(ruleId: string): Promise<void> {
+    try {
+      logger.log(`[API] Deleting adoption rule: ${ruleId}`);
+      const endpoints = [
+        `/v1/adoption-rules/${encodeURIComponent(ruleId)}`,
+        `/v1/adoption/rules/${encodeURIComponent(ruleId)}`,
+        `/v1/config/adoption-rules/${encodeURIComponent(ruleId)}`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint,
+            { method: 'DELETE' },
+            10000
+          );
+          if (response.ok) {
+            logger.log('[API] ✓ Adoption rule deleted successfully');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('Adoption rule deletion endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to delete adoption rule:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Toggle adoption rule enabled/disabled status
+   * Endpoint: PUT /v1/adoption-rules/{id}/toggle, PATCH /v1/adoption-rules/{id}
+   */
+  async toggleAdoptionRule(ruleId: string, enabled: boolean): Promise<void> {
+    try {
+      logger.log(`[API] Toggling adoption rule ${ruleId}: ${enabled ? 'enabled' : 'disabled'}`);
+      const endpoints = [
+        { path: `/v1/adoption-rules/${encodeURIComponent(ruleId)}/toggle`, method: 'POST', body: { enabled } },
+        { path: `/v1/adoption-rules/${encodeURIComponent(ruleId)}`, method: 'PATCH', body: { enabled } },
+        { path: `/v1/adoption/rules/${encodeURIComponent(ruleId)}`, method: 'PATCH', body: { enabled } }
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await this.makeAuthenticatedRequest(
+            endpoint.path,
+            {
+              method: endpoint.method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(endpoint.body)
+            },
+            10000
+          );
+          if (response.ok) {
+            logger.log('[API] ✓ Adoption rule toggled successfully');
+            return;
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+
+      throw new Error('Adoption rule toggle endpoint not available');
+    } catch (error) {
+      logger.error('[API] Failed to toggle adoption rule:', error);
       throw error;
     }
   }
