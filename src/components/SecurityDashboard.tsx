@@ -125,11 +125,11 @@ export function SecurityDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={loadData}>
+          <Button variant="outline" size="sm" onClick={loadData} aria-label="Refresh security data">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button size="sm" onClick={handleScan} disabled={scanning}>
+          <Button size="sm" onClick={handleScan} disabled={scanning} aria-label="Scan for rogue access points">
             {scanning ? (
               <>
                 <Scan className="h-4 w-4 mr-2 animate-pulse" />

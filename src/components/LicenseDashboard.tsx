@@ -77,9 +77,20 @@ export function LicenseDashboard() {
     }
   };
 
+  const validateLicenseKey = (key: string): boolean => {
+    // Basic validation: should contain alphanumeric characters and dashes
+    const licenseKeyRegex = /^[A-Z0-9\-]+$/i;
+    return key.trim().length >= 10 && licenseKeyRegex.test(key);
+  };
+
   const handleInstallLicense = async () => {
     if (!licenseKey.trim()) {
       toast.error('Please enter a license key');
+      return;
+    }
+
+    if (!validateLicenseKey(licenseKey)) {
+      toast.error('Invalid license key format. Please check and try again.');
       return;
     }
 
@@ -177,6 +188,7 @@ export function LicenseDashboard() {
             variant="outline"
             size="sm"
             onClick={loadLicenseData}
+            aria-label="Refresh license data"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -184,6 +196,7 @@ export function LicenseDashboard() {
           <Button
             size="sm"
             onClick={() => setShowInstallDialog(true)}
+            aria-label="Install new license"
           >
             <Plus className="h-4 w-4 mr-2" />
             Install License
@@ -274,7 +287,7 @@ export function LicenseDashboard() {
                     {licenseUsage.licensedDevices} / {licenseUsage.totalDevices}
                   </span>
                 </div>
-                <div className="w-full bg-muted rounded-full h-4">
+                <div className="w-full bg-muted rounded-full h-4" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={licenseUsage.utilizationPercentage} aria-label="License utilization percentage">
                   <div
                     className={`h-4 rounded-full transition-all ${
                       licenseUsage.utilizationPercentage > 90
@@ -392,14 +405,17 @@ export function LicenseDashboard() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>License Key</Label>
+              <Label htmlFor="license-key">License Key</Label>
               <Input
+                id="license-key"
                 value={licenseKey}
                 onChange={(e) => setLicenseKey(e.target.value)}
                 placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"
                 onKeyPress={(e) => e.key === 'Enter' && handleInstallLicense()}
+                aria-describedby="license-key-hint"
+                aria-label="Enter license key"
               />
-              <p className="text-xs text-muted-foreground">
+              <p id="license-key-hint" className="text-xs text-muted-foreground">
                 Enter the complete license key including dashes
               </p>
             </div>
@@ -409,10 +425,15 @@ export function LicenseDashboard() {
               variant="outline"
               onClick={() => setShowInstallDialog(false)}
               disabled={installing}
+              aria-label="Cancel license installation"
             >
               Cancel
             </Button>
-            <Button onClick={handleInstallLicense} disabled={installing}>
+            <Button
+              onClick={handleInstallLicense}
+              disabled={installing}
+              aria-label="Install license key"
+            >
               {installing ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

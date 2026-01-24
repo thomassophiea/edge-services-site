@@ -213,7 +213,7 @@ export function APFirmwareManager() {
             Manage access point firmware upgrades and schedules
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadData}>
+        <Button variant="outline" size="sm" onClick={loadData} aria-label="Refresh AP firmware data">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
@@ -339,10 +339,10 @@ export function APFirmwareManager() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={selectAll}>
+              <Button variant="outline" size="sm" onClick={selectAll} aria-label="Select all access points">
                 Select All
               </Button>
-              <Button variant="outline" size="sm" onClick={deselectAll}>
+              <Button variant="outline" size="sm" onClick={deselectAll} aria-label="Deselect all access points">
                 Deselect All
               </Button>
             </div>

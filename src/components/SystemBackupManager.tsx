@@ -50,6 +50,8 @@ export function SystemBackupManager() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [selectedBackup, setSelectedBackup] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadBackups();
@@ -82,9 +84,19 @@ export function SystemBackupManager() {
     }
   };
 
+  const validateFilename = (filename: string): boolean => {
+    const filenameRegex = /^[a-zA-Z0-9\-_.]+$/;
+    return filenameRegex.test(filename);
+  };
+
   const handleCreateBackup = async () => {
     if (!newBackupName.trim()) {
       toast.error('Please enter a backup filename');
+      return;
+    }
+
+    if (!validateFilename(newBackupName)) {
+      toast.error('Filename can only contain letters, numbers, hyphens, underscores, and dots');
       return;
     }
 
@@ -135,12 +147,14 @@ export function SystemBackupManager() {
     }
   };
 
-  const handleDeleteFlashFile = async (filename: string) => {
-    if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+  const handleDeleteFlashFile = async () => {
+    if (!fileToDelete) return;
 
     try {
-      await apiService.deleteFlashFile(filename);
+      await apiService.deleteFlashFile(fileToDelete);
       toast.success('File deleted successfully');
+      setShowDeleteDialog(false);
+      setFileToDelete(null);
       await loadFlashInfo();
     } catch (error) {
       console.error('Failed to delete file:', error);
@@ -207,7 +221,7 @@ export function SystemBackupManager() {
                     {formatFileSize(flashUsage.used)} / {formatFileSize(flashUsage.total)}
                   </span>
                 </div>
-                <div className="w-full bg-muted rounded-full h-4">
+                <div className="w-full bg-muted rounded-full h-4" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={getUsagePercentage()} aria-label="Flash memory usage">
                   <div
                     className={`h-4 rounded-full transition-all ${
                       getUsagePercentage() > 90
@@ -252,6 +266,7 @@ export function SystemBackupManager() {
                 variant="outline"
                 size="sm"
                 onClick={loadBackups}
+                aria-label="Refresh backup list"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -259,6 +274,7 @@ export function SystemBackupManager() {
               <Button
                 size="sm"
                 onClick={() => setShowCreateDialog(true)}
+                aria-label="Create new configuration backup"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Create Backup
@@ -298,6 +314,7 @@ export function SystemBackupManager() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDownloadBackup(backup.filename)}
+                      aria-label={`Download backup ${backup.filename}`}
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download
@@ -309,6 +326,7 @@ export function SystemBackupManager() {
                         setSelectedBackup(backup.filename);
                         setShowRestoreDialog(true);
                       }}
+                      aria-label={`Restore configuration from ${backup.filename}`}
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Restore
@@ -360,7 +378,11 @@ export function SystemBackupManager() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDeleteFlashFile(file.filename)}
+                    onClick={() => {
+                      setFileToDelete(file.filename);
+                      setShowDeleteDialog(true);
+                    }}
+                    aria-label={`Delete file ${file.filename}`}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -382,13 +404,19 @@ export function SystemBackupManager() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Backup Filename</Label>
+              <Label htmlFor="backup-filename">Backup Filename</Label>
               <Input
+                id="backup-filename"
                 value={newBackupName}
                 onChange={(e) => setNewBackupName(e.target.value)}
                 placeholder="config-backup"
                 onKeyPress={(e) => e.key === 'Enter' && handleCreateBackup()}
+                aria-describedby="backup-filename-hint"
+                aria-label="Enter backup filename"
               />
+              <p id="backup-filename-hint" className="text-xs text-muted-foreground">
+                Only letters, numbers, hyphens, underscores, and dots are allowed
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -396,10 +424,15 @@ export function SystemBackupManager() {
               variant="outline"
               onClick={() => setShowCreateDialog(false)}
               disabled={creating}
+              aria-label="Cancel backup creation"
             >
               Cancel
             </Button>
-            <Button onClick={handleCreateBackup} disabled={creating}>
+            <Button
+              onClick={handleCreateBackup}
+              disabled={creating}
+              aria-label="Create configuration backup"
+            >
               {creating ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -444,15 +477,56 @@ export function SystemBackupManager() {
             <Button
               variant="outline"
               onClick={() => setShowRestoreDialog(false)}
+              aria-label="Cancel restore operation"
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleRestoreBackup}
+              aria-label="Confirm restore configuration"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Restore Configuration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete File Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Flash File</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this file? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {fileToDelete && (
+              <p className="text-sm">
+                <strong>File to delete:</strong> {fileToDelete}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setFileToDelete(null);
+              }}
+              aria-label="Cancel delete operation"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteFlashFile}
+              aria-label="Confirm delete file"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete File
             </Button>
           </DialogFooter>
         </DialogContent>

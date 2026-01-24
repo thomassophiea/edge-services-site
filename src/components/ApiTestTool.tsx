@@ -353,6 +353,104 @@ const endpointCategories = {
     { method: 'PUT', endpoint: '/v3/analytics/{analyticsProfileId}', description: 'Update analytics profile' },
     { method: 'DELETE', endpoint: '/v3/analytics/{analyticsProfileId}', description: 'Delete analytics profile' },
   ],
+
+  'Platform Manager - Backup & Configuration': [
+    { method: 'GET', endpoint: '/platformmanager/v1/configuration/backups', description: 'Get configuration backups' },
+    { method: 'POST', endpoint: '/platformmanager/v1/configuration/backup', description: 'Create configuration backup' },
+    { method: 'POST', endpoint: '/platformmanager/v1/configuration/restore', description: 'Restore configuration' },
+    { method: 'GET', endpoint: '/platformmanager/v1/configuration/download/{filename}', description: 'Download backup file' },
+  ],
+
+  'Platform Manager - License Management': [
+    { method: 'GET', endpoint: '/platformmanager/v1/license/info', description: 'Get license information' },
+    { method: 'GET', endpoint: '/platformmanager/v1/license/usage', description: 'Get license usage' },
+    { method: 'POST', endpoint: '/platformmanager/v1/license/install', description: 'Install license' },
+  ],
+
+  'Platform Manager - Flash Memory': [
+    { method: 'GET', endpoint: '/platformmanager/v1/flash/files', description: 'Get flash files' },
+    { method: 'GET', endpoint: '/platformmanager/v1/flash/usage', description: 'Get flash usage' },
+    { method: 'DELETE', endpoint: '/platformmanager/v1/flash/files/{filename}', description: 'Delete flash file' },
+  ],
+
+  'Platform Manager - Network Diagnostics': [
+    { method: 'POST', endpoint: '/platformmanager/v1/network/ping', description: 'Execute ping test' },
+    { method: 'POST', endpoint: '/platformmanager/v1/network/traceroute', description: 'Execute traceroute' },
+    { method: 'POST', endpoint: '/platformmanager/v1/network/dns', description: 'Execute DNS lookup' },
+  ],
+
+  'AP Firmware Management': [
+    { method: 'POST', endpoint: '/v1/accesspoints/software/upgrade', description: 'Upgrade AP software' },
+    { method: 'GET', endpoint: '/v1/accesspoints/software/schedule', description: 'Get upgrade schedules' },
+    { method: 'POST', endpoint: '/v1/accesspoints/software/schedule', description: 'Create upgrade schedule' },
+    { method: 'DELETE', endpoint: '/v1/accesspoints/software/schedule/{id}', description: 'Delete upgrade schedule' },
+    { method: 'POST', endpoint: '/v1/devices/adoption/force', description: 'Force adopt device' },
+    { method: 'DELETE', endpoint: '/v1/devices/{serialNumber}/unadopt', description: 'Unadopt device' },
+  ],
+
+  'Client Management (Enhanced)': [
+    { method: 'POST', endpoint: '/v1/stations/{mac}/deauth', description: 'Deauthenticate station' },
+    { method: 'POST', endpoint: '/v1/stations/{mac}/block', description: 'Block station' },
+    { method: 'DELETE', endpoint: '/v1/stations/{mac}/block', description: 'Unblock station' },
+    { method: 'GET', endpoint: '/v1/stations/{mac}/history', description: 'Get station history' },
+    { method: 'POST', endpoint: '/v1/stations/{mac}/bandwidth/limit', description: 'Set bandwidth limit' },
+    { method: 'GET', endpoint: '/v1/stations/blocked', description: 'Get blocked stations' },
+  ],
+
+  'Events & Alarms': [
+    { method: 'GET', endpoint: '/v1/events', description: 'Get system events' },
+    { method: 'GET', endpoint: '/v1/alarms', description: 'Get all alarms' },
+    { method: 'GET', endpoint: '/v1/alarms/active', description: 'Get active alarms' },
+    { method: 'POST', endpoint: '/v1/alarms/{id}/acknowledge', description: 'Acknowledge alarm' },
+    { method: 'POST', endpoint: '/v1/alarms/{id}/clear', description: 'Clear alarm' },
+  ],
+
+  'RF Analytics': [
+    { method: 'GET', endpoint: '/v1/analytics/wireless/interference', description: 'Get wireless interference' },
+    { method: 'GET', endpoint: '/v1/analytics/wireless/coverage', description: 'Get wireless coverage' },
+    { method: 'GET', endpoint: '/v1/analytics/clients/roaming', description: 'Get client roaming analytics' },
+  ],
+
+  'Security & Rogue AP Detection': [
+    { method: 'POST', endpoint: '/v1/security/rogue-ap/detect', description: 'Detect rogue APs' },
+    { method: 'GET', endpoint: '/v1/security/rogue-ap/list', description: 'Get rogue AP list' },
+    { method: 'POST', endpoint: '/v1/security/rogue-ap/{mac}/classify', description: 'Classify rogue AP' },
+    { method: 'GET', endpoint: '/v1/security/threats', description: 'Get security threats' },
+    { method: 'POST', endpoint: '/v1/security/wids/enable', description: 'Enable WIDS' },
+  ],
+
+  'Guest Management': [
+    { method: 'GET', endpoint: '/v1/guests', description: 'Get guest accounts' },
+    { method: 'POST', endpoint: '/v1/guests/create', description: 'Create guest account' },
+    { method: 'DELETE', endpoint: '/v1/guests/{id}', description: 'Delete guest account' },
+    { method: 'POST', endpoint: '/v1/guests/{id}/voucher', description: 'Generate guest voucher' },
+    { method: 'GET', endpoint: '/v1/guests/portal/config', description: 'Get guest portal config' },
+    { method: 'POST', endpoint: '/v1/guests/portal/customize', description: 'Customize guest portal' },
+  ],
+
+  'QoS Management': [
+    { method: 'POST', endpoint: '/v1/qos/policy/create', description: 'Create QoS policy' },
+    { method: 'GET', endpoint: '/v1/qos/statistics', description: 'Get QoS statistics' },
+    { method: 'POST', endpoint: '/v1/qos/bandwidth/allocate', description: 'Allocate bandwidth' },
+    { method: 'GET', endpoint: '/v1/qos/dscp/mappings', description: 'Get DSCP mappings' },
+  ],
+
+  'Application Manager': [
+    { method: 'GET', endpoint: '/appsmanager/v1/applications', description: 'Get applications' },
+    { method: 'POST', endpoint: '/appsmanager/v1/applications/install', description: 'Install application' },
+    { method: 'GET', endpoint: '/appsmanager/v1/containers', description: 'Get containers' },
+    { method: 'POST', endpoint: '/appsmanager/v1/containers/create', description: 'Create container' },
+    { method: 'GET', endpoint: '/appsmanager/v1/storage', description: 'Get storage info' },
+    { method: 'GET', endpoint: '/appsmanager/v1/images', description: 'Get application images' },
+  ],
+
+  'Location Analytics': [
+    { method: 'POST', endpoint: '/v1/location/zone/create', description: 'Create location zone' },
+    { method: 'GET', endpoint: '/v1/location/zone/list', description: 'Get location zones' },
+    { method: 'POST', endpoint: '/v1/location/presence/notify', description: 'Get presence analytics' },
+    { method: 'GET', endpoint: '/v1/location/analytics/dwell', description: 'Get dwell time analytics' },
+    { method: 'GET', endpoint: '/v1/location/analytics/traffic', description: 'Get traffic flow analytics' },
+  ],
 };
 
 export function ApiTestTool() {
