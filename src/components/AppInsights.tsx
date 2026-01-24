@@ -616,8 +616,34 @@ export function AppInsights({ api }: AppInsightsProps) {
                       outerRadius={90}
                       paddingAngle={2}
                       dataKey="value"
-                      label={(entry) => entry.name.length > 15 ? entry.name.substring(0, 15) + '...' : entry.name}
-                      labelLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 0.5 }}
+                      label={({ name, cx, cy, midAngle, innerRadius, outerRadius }) => {
+                        const RADIAN = Math.PI / 180;
+                        const radius = outerRadius + 25;
+                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                        const displayName = name.length > 15 ? name.substring(0, 15) + '...' : name;
+
+                        return (
+                          <text
+                            x={x}
+                            y={y}
+                            fill="hsl(var(--foreground))"
+                            textAnchor={x > cx ? 'start' : 'end'}
+                            dominantBaseline="central"
+                            className="text-xs font-medium"
+                            style={{
+                              paintOrder: 'stroke',
+                              stroke: 'hsl(var(--background))',
+                              strokeWidth: 3,
+                              strokeLinecap: 'round',
+                              strokeLinejoin: 'round'
+                            }}
+                          >
+                            {displayName}
+                          </text>
+                        );
+                      }}
+                      labelLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1 }}
                     >
                       {chartData.topUsage.slice(0, 6).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name, index)} />
