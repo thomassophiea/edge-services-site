@@ -116,7 +116,7 @@ export function EventAlarmDashboard() {
             Monitor system events and manage alarms
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadData}>
+        <Button variant="outline" size="sm" onClick={loadData} aria-label="Refresh events and alarms">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
@@ -242,6 +242,7 @@ export function EventAlarmDashboard() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleAcknowledgeAlarm(alarm.id)}
+                          aria-label={`Acknowledge alarm: ${alarm.title || alarm.type}`}
                         >
                           Acknowledge
                         </Button>
@@ -249,6 +250,7 @@ export function EventAlarmDashboard() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleClearAlarm(alarm.id)}
+                          aria-label={`Clear alarm: ${alarm.title || alarm.type}`}
                         >
                           Clear
                         </Button>

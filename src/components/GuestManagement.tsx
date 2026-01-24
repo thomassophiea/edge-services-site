@@ -56,9 +56,25 @@ export function GuestManagement() {
     }
   };
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleCreateGuest = async () => {
     if (!newGuest.name || !newGuest.email) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (!validateEmail(newGuest.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    const duration = parseInt(newGuest.duration);
+    if (duration < 1 || duration > 168) {
+      toast.error('Duration must be between 1 and 168 hours (7 days)');
       return;
     }
 
@@ -67,7 +83,7 @@ export function GuestManagement() {
       await apiService.createGuest({
         name: newGuest.name,
         email: newGuest.email,
-        duration: parseInt(newGuest.duration) * 60 * 60, // Convert hours to seconds
+        duration: duration * 60 * 60, // Convert hours to seconds
         company: newGuest.company
       });
       toast.success('Guest account created successfully');
@@ -144,11 +160,11 @@ export function GuestManagement() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={loadGuests}>
+          <Button variant="outline" size="sm" onClick={loadGuests} aria-label="Refresh guest list">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+          <Button size="sm" onClick={() => setShowCreateDialog(true)} aria-label="Create new guest account">
             <UserPlus className="h-4 w-4 mr-2" />
             Create Guest
           </Button>
@@ -262,6 +278,7 @@ export function GuestManagement() {
                       size="sm"
                       onClick={() => handleGenerateVoucher(guest.id)}
                       disabled={isExpired(guest.expirationDate)}
+                      aria-label={`Generate voucher for ${guest.name}`}
                     >
                       <Ticket className="h-4 w-4 mr-2" />
                       Voucher
@@ -270,6 +287,7 @@ export function GuestManagement() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteGuest(guest.id)}
+                      aria-label={`Delete guest account for ${guest.name}`}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -292,39 +310,57 @@ export function GuestManagement() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Guest Name *</Label>
+              <Label htmlFor="guest-name">Guest Name *</Label>
               <Input
+                id="guest-name"
                 value={newGuest.name}
                 onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
                 placeholder="John Doe"
+                aria-label="Enter guest name"
+                aria-required="true"
               />
             </div>
             <div className="space-y-2">
-              <Label>Email Address *</Label>
+              <Label htmlFor="guest-email">Email Address *</Label>
               <Input
+                id="guest-email"
                 type="email"
                 value={newGuest.email}
                 onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
                 placeholder="john@example.com"
+                aria-label="Enter guest email address"
+                aria-required="true"
+                aria-describedby="email-hint"
               />
+              <p id="email-hint" className="text-xs text-muted-foreground">
+                A valid email address is required for guest access
+              </p>
             </div>
             <div className="space-y-2">
-              <Label>Company</Label>
+              <Label htmlFor="guest-company">Company</Label>
               <Input
+                id="guest-company"
                 value={newGuest.company}
                 onChange={(e) => setNewGuest({ ...newGuest, company: e.target.value })}
                 placeholder="Acme Corp"
+                aria-label="Enter company name (optional)"
               />
             </div>
             <div className="space-y-2">
-              <Label>Access Duration (hours)</Label>
+              <Label htmlFor="guest-duration">Access Duration (hours)</Label>
               <Input
+                id="guest-duration"
                 type="number"
                 value={newGuest.duration}
                 onChange={(e) => setNewGuest({ ...newGuest, duration: e.target.value })}
                 min="1"
                 max="168"
+                aria-label="Set access duration in hours"
+                aria-describedby="duration-hint"
               />
+              <p id="duration-hint" className="text-xs text-muted-foreground">
+                Duration must be between 1 and 168 hours (7 days)
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -332,10 +368,15 @@ export function GuestManagement() {
               variant="outline"
               onClick={() => setShowCreateDialog(false)}
               disabled={creating}
+              aria-label="Cancel guest creation"
             >
               Cancel
             </Button>
-            <Button onClick={handleCreateGuest} disabled={creating}>
+            <Button
+              onClick={handleCreateGuest}
+              disabled={creating}
+              aria-label="Create guest account"
+            >
               {creating ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

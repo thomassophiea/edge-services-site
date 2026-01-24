@@ -5,6 +5,7 @@ import { LoginForm } from './components/LoginForm';
 import { Sidebar } from './components/Sidebar';
 import { DetailSlideOut } from './components/DetailSlideOut';
 import { PlaceholderPage } from './components/PlaceholderPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy load route components for better performance with prefetch
 const DashboardEnhanced = lazy(() => import('./components/DashboardEnhanced').then(m => ({ default: m.DashboardEnhanced })));
@@ -848,19 +849,47 @@ export default function App() {
       case 'pci-report':
         return <PCIReport />;
       case 'system-backup':
-        return <SystemBackupManager />;
+        return (
+          <ErrorBoundary fallbackTitle="System Backup Error">
+            <SystemBackupManager />
+          </ErrorBoundary>
+        );
       case 'license-dashboard':
-        return <LicenseDashboard />;
+        return (
+          <ErrorBoundary fallbackTitle="License Dashboard Error">
+            <LicenseDashboard />
+          </ErrorBoundary>
+        );
       case 'firmware-manager':
-        return <APFirmwareManager />;
+        return (
+          <ErrorBoundary fallbackTitle="Firmware Manager Error">
+            <APFirmwareManager />
+          </ErrorBoundary>
+        );
       case 'network-diagnostics':
-        return <NetworkDiagnostics />;
+        return (
+          <ErrorBoundary fallbackTitle="Network Diagnostics Error">
+            <NetworkDiagnostics />
+          </ErrorBoundary>
+        );
       case 'event-alarm-dashboard':
-        return <EventAlarmDashboard />;
+        return (
+          <ErrorBoundary fallbackTitle="Events & Alarms Error">
+            <EventAlarmDashboard />
+          </ErrorBoundary>
+        );
       case 'security-dashboard':
-        return <SecurityDashboard />;
+        return (
+          <ErrorBoundary fallbackTitle="Security Dashboard Error">
+            <SecurityDashboard />
+          </ErrorBoundary>
+        );
       case 'guest-management':
-        return <GuestManagement />;
+        return (
+          <ErrorBoundary fallbackTitle="Guest Management Error">
+            <GuestManagement />
+          </ErrorBoundary>
+        );
       case 'configure-networks':
         return <ConfigureNetworks />;
       case 'configure-policy':

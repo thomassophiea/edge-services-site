@@ -75,9 +75,20 @@ export function NetworkDiagnostics() {
   const [dnsRunning, setDnsRunning] = useState(false);
   const [dnsResult, setDnsResult] = useState<DnsResult | null>(null);
 
+  const validateHostOrIP = (value: string): boolean => {
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const hostnameRegex = /^[a-zA-Z0-9][a-zA-Z0-9-_.]*[a-zA-Z0-9]$/;
+    return ipRegex.test(value) || hostnameRegex.test(value);
+  };
+
   const handlePing = async () => {
     if (!pingHost.trim()) {
       toast.error('Please enter a hostname or IP address');
+      return;
+    }
+
+    if (!validateHostOrIP(pingHost)) {
+      toast.error('Please enter a valid hostname or IP address');
       return;
     }
 
@@ -104,6 +115,11 @@ export function NetworkDiagnostics() {
       return;
     }
 
+    if (!validateHostOrIP(traceHost)) {
+      toast.error('Please enter a valid hostname or IP address');
+      return;
+    }
+
     setTraceRunning(true);
     setTraceResult(null);
     try {
@@ -124,6 +140,12 @@ export function NetworkDiagnostics() {
   const handleDnsLookup = async () => {
     if (!dnsHostname.trim()) {
       toast.error('Please enter a hostname');
+      return;
+    }
+
+    const hostnameRegex = /^[a-zA-Z0-9][a-zA-Z0-9-_.]*[a-zA-Z0-9]$/;
+    if (!hostnameRegex.test(dnsHostname)) {
+      toast.error('Please enter a valid hostname');
       return;
     }
 
@@ -184,26 +206,30 @@ export function NetworkDiagnostics() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Hostname or IP Address</Label>
+                  <Label htmlFor="ping-host">Hostname or IP Address</Label>
                   <Input
+                    id="ping-host"
                     value={pingHost}
                     onChange={(e) => setPingHost(e.target.value)}
                     placeholder="8.8.8.8 or google.com"
                     onKeyPress={(e) => e.key === 'Enter' && handlePing()}
+                    aria-label="Enter hostname or IP address for ping test"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Packet Count</Label>
+                  <Label htmlFor="ping-count">Packet Count</Label>
                   <Input
+                    id="ping-count"
                     type="number"
                     value={pingCount}
                     onChange={(e) => setPingCount(e.target.value)}
                     min="1"
                     max="100"
+                    aria-label="Set number of ping packets"
                   />
                 </div>
               </div>
-              <Button onClick={handlePing} disabled={pingRunning}>
+              <Button onClick={handlePing} disabled={pingRunning} aria-label="Run ping test">
                 {pingRunning ? (
                   <>
                     <Activity className="h-4 w-4 mr-2 animate-pulse" />
@@ -299,15 +325,17 @@ export function NetworkDiagnostics() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Hostname or IP Address</Label>
+                <Label htmlFor="trace-host">Hostname or IP Address</Label>
                 <Input
+                  id="trace-host"
                   value={traceHost}
                   onChange={(e) => setTraceHost(e.target.value)}
                   placeholder="8.8.8.8 or google.com"
                   onKeyPress={(e) => e.key === 'Enter' && handleTraceroute()}
+                  aria-label="Enter hostname or IP address for traceroute"
                 />
               </div>
-              <Button onClick={handleTraceroute} disabled={traceRunning}>
+              <Button onClick={handleTraceroute} disabled={traceRunning} aria-label="Run traceroute">
                 {traceRunning ? (
                   <>
                     <Activity className="h-4 w-4 mr-2 animate-pulse" />
@@ -373,15 +401,17 @@ export function NetworkDiagnostics() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Hostname</Label>
+                <Label htmlFor="dns-hostname">Hostname</Label>
                 <Input
+                  id="dns-hostname"
                   value={dnsHostname}
                   onChange={(e) => setDnsHostname(e.target.value)}
                   placeholder="example.com"
                   onKeyPress={(e) => e.key === 'Enter' && handleDnsLookup()}
+                  aria-label="Enter hostname for DNS lookup"
                 />
               </div>
-              <Button onClick={handleDnsLookup} disabled={dnsRunning}>
+              <Button onClick={handleDnsLookup} disabled={dnsRunning} aria-label="Perform DNS lookup">
                 {dnsRunning ? (
                   <>
                     <Activity className="h-4 w-4 mr-2 animate-pulse" />
