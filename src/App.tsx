@@ -1045,7 +1045,8 @@ export default function App() {
           </DetailSlideOut>
         )}
 
-        <Toaster position="top-right" />
+        {/* Minimal toasts for mobile - bottom position, short duration */}
+        <Toaster position="bottom-center" duration={2000} />
       </>
     );
   }

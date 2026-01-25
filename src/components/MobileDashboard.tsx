@@ -1,4 +1,4 @@
-import { Users, Wifi, AppWindow, Menu, ArrowLeft } from 'lucide-react';
+import { Users, Wifi, AppWindow, ArrowLeft, Activity, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { UserMenu } from './UserMenu';
 import {
@@ -15,7 +15,6 @@ import { apiService } from '@/services/api';
 const TrafficStatsConnectedClients = lazy(() => import('./TrafficStatsConnectedClients').then(m => ({ default: m.TrafficStatsConnectedClients })));
 const AccessPoints = lazy(() => import('./AccessPoints').then(m => ({ default: m.AccessPoints })));
 const AppInsights = lazy(() => import('./AppInsights').then(m => ({ default: m.AppInsights })));
-const ServiceLevelsEnhanced = lazy(() => import('./ServiceLevelsEnhanced').then(m => ({ default: m.ServiceLevelsEnhanced })));
 
 interface MobileDashboardProps {
   currentPage: string;
@@ -38,6 +37,8 @@ export function MobileDashboard({
 }: MobileDashboardProps) {
   const [sites, setSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ clients: 0, aps: { total: 0, online: 0 } });
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     const loadSites = async () => {
@@ -52,6 +53,44 @@ export function MobileDashboard({
     };
     loadSites();
   }, []);
+
+  // Load basic stats
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!currentSite) return;
+
+      setStatsLoading(true);
+      try {
+        const [clientsData, apsData] = await Promise.all([
+          apiService.getStations(),
+          apiService.getAccessPoints()
+        ]);
+
+        const filteredClients = currentSite === 'all'
+          ? clientsData
+          : clientsData.filter((c: any) => c.siteId === currentSite);
+
+        const filteredAPs = currentSite === 'all'
+          ? apsData
+          : apsData.filter((ap: any) => ap.siteId === currentSite);
+
+        const onlineAPs = filteredAPs.filter((ap: any) =>
+          ap.status === 'up' || ap.connectionState === 'connected'
+        ).length;
+
+        setStats({
+          clients: filteredClients.length,
+          aps: { total: filteredAPs.length, online: onlineAPs }
+        });
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    loadStats();
+  }, [currentSite]);
 
   const menuItems = [
     {
@@ -78,7 +117,7 @@ export function MobileDashboard({
   ];
 
   // Check if we're on the home dashboard or a specific page
-  const isHome = !['connected-clients', 'access-points', 'app-insights', 'service-levels'].includes(currentPage);
+  const isHome = !['connected-clients', 'access-points', 'app-insights'].includes(currentPage);
   const showBackButton = !isHome;
 
   const renderPageContent = () => {
@@ -89,8 +128,6 @@ export function MobileDashboard({
         return <AccessPoints />;
       case 'app-insights':
         return <AppInsights />;
-      case 'service-levels':
-        return <ServiceLevelsEnhanced />;
       default:
         return null;
     }
@@ -112,7 +149,7 @@ export function MobileDashboard({
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             )}
-            <h1 className="text-xl font-bold">EDGE Controller</h1>
+            <h1 className="text-xl font-bold">EDGE</h1>
           </div>
           <UserMenu
             onLogout={onLogout}
@@ -144,39 +181,76 @@ export function MobileDashboard({
 
       {/* Main Content */}
       {isHome ? (
-        /* Dashboard - Large Buttons */
-        <div className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-muted-foreground mb-2">Quick Access</h2>
-
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className="w-full p-6 bg-card border-2 border-border rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 text-left"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`${item.color} p-4 rounded-xl`}>
-                    <Icon className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.subtitle}</p>
-                  </div>
+        /* Dashboard - Stats + Large Buttons */
+        <div className="p-6 space-y-6">
+          {/* Status Overview */}
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3">Network Status</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Clients Card */}
+              <div className="bg-card border-2 border-border rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Clients</span>
                 </div>
-              </button>
-            );
-          })}
+                <div className="text-3xl font-bold">
+                  {statsLoading ? '...' : stats.clients}
+                </div>
+              </div>
 
-          {/* More Options Button */}
-          <button
-            onClick={() => onNavigate('service-levels')}
-            className="w-full p-4 border-2 border-dashed border-border rounded-xl text-center hover:bg-muted/50 transition-colors"
-          >
-            <Menu className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-sm font-medium text-muted-foreground">More Options</p>
-          </button>
+              {/* APs Card */}
+              <div className="bg-card border-2 border-border rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Wifi className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Access Points</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-bold">
+                    {statsLoading ? '...' : stats.aps.online}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    / {stats.aps.total}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 mt-1">
+                  {stats.aps.online === stats.aps.total ? (
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <Activity className="h-3 w-3 text-yellow-500" />
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {stats.aps.online === stats.aps.total ? 'All Online' : 'Some Offline'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Access Buttons */}
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3">Quick Access</h2>
+            <div className="space-y-3">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onNavigate(item.id)}
+                    className="w-full p-5 bg-card border-2 border-border rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`${item.color} p-3 rounded-xl`}>
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold">{item.title}</h3>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       ) : (
         /* Page Content */
