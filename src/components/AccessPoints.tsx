@@ -9,7 +9,7 @@ import { DetailSlideOut } from './DetailSlideOut';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
-import { AlertCircle, Wifi, Search, RefreshCw, Filter, Eye, Users, Activity, Signal, Cpu, HardDrive, MoreVertical, Shield, Key, RotateCcw, MapPin, Settings, AlertTriangle, Download, Trash2, Cloud, Power, WifiOff, CheckCircle2, XCircle, Building, Info, Columns } from 'lucide-react';
+import { AlertCircle, Wifi, Search, RefreshCw, Filter, Eye, Users, Activity, Signal, Cpu, HardDrive, MoreVertical, Shield, Key, RotateCcw, MapPin, Settings, AlertTriangle, Download, Trash2, Cloud, Power, WifiOff, CheckCircle2, XCircle, Building, Info, Columns, Anchor } from 'lucide-react';
 import { Checkbox } from './ui/checkbox';
 import { Alert, AlertDescription } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
@@ -65,6 +65,7 @@ const AVAILABLE_COLUMNS: ColumnConfig[] = [
   { key: 'source', label: 'Location Source', defaultVisible: false, category: 'advanced' },
   { key: 'floorName', label: 'Floor Name', defaultVisible: false, category: 'advanced' },
   { key: 'description', label: 'Description', defaultVisible: false, category: 'advanced' },
+  { key: 'afcAnchor', label: 'AFC Anchor', defaultVisible: false, category: 'advanced' },
 ];
 
 interface AccessPointsProps {
@@ -527,6 +528,34 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
     );
   };
 
+  // Check if AP is an AFC anchor (6 GHz Standard Power)
+  const isAfcAnchor = (ap: AccessPoint): boolean => {
+    const apAny = ap as any;
+    // Check direct AFC anchor flags
+    if (apAny.afcAnchor === true || apAny.isAfcAnchor === true || apAny.afcEnabled === true) {
+      return true;
+    }
+    // Check if AP has 6 GHz radio with Standard Power mode
+    if (apAny.radios && Array.isArray(apAny.radios)) {
+      return apAny.radios.some((radio: any) => {
+        const band = (radio.band || radio.frequency || radio.radioName || '').toLowerCase();
+        const mode = (radio.mode || radio.powerMode || radio.operationalMode || '').toLowerCase();
+        const is6GHz = band.includes('6g') || band.includes('6 g') || band.includes('unii');
+        const isStandardPower = mode.includes('sp') || mode.includes('standard') || radio.standardPower === true;
+        return is6GHz && isStandardPower;
+      });
+    }
+    // Check top-level 6 GHz indicators
+    const apMode = (apAny.powerMode || apAny.operationalMode || apAny.afcMode || '').toLowerCase();
+    if (apMode.includes('sp') || apMode.includes('standard') || apAny.standardPower === true) {
+      const bands = (apAny.bands || apAny.supportedBands || apAny.band || '').toLowerCase();
+      if (bands.includes('6g') || bands.includes('6 g')) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Helper function to get connection status icon and color
   const getConnectionStatusIcon = (ap: AccessPoint) => {
     if (isAPOnline(ap)) {
@@ -633,7 +662,14 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       case 'connection':
         return <div className="flex items-center justify-center">{getConnectionStatusIcon(ap)}</div>;
       case 'apName':
-        return <span>{getAPName(ap)}</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <span>{getAPName(ap)}</span>
+            {isAfcAnchor(ap) && (
+              <Anchor className="h-4 w-4 text-blue-500" title="AFC Anchor - 6 GHz Standard Power" />
+            )}
+          </div>
+        );
       case 'serialNumber':
         return <span className="font-mono text-sm">{ap.serialNumber}</span>;
       case 'hostSite':
@@ -699,6 +735,15 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
         return <span className="text-sm">{(ap as any).floorName || '-'}</span>;
       case 'description':
         return <span className="text-sm">{(ap as any).description || '-'}</span>;
+      case 'afcAnchor':
+        return isAfcAnchor(ap) ? (
+          <div className="flex items-center gap-1">
+            <Anchor className="h-4 w-4 text-blue-500" />
+            <span className="text-sm text-blue-500 font-medium">Yes</span>
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">No</span>
+        );
       default:
         return <span className="text-sm">-</span>;
     }

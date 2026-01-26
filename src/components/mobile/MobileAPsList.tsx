@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Anchor } from 'lucide-react';
 import { MobileStatusList } from './MobileStatusList';
 import { MobileStatusRow } from './MobileStatusRow';
 import { MobileBottomSheet } from './MobileBottomSheet';
@@ -108,6 +108,33 @@ export function MobileAPsList({ currentSite }: MobileAPsListProps) {
   const getClientCount = (ap: any): number => {
     const key = ap.serialNumber || ap.name || ap.displayName;
     return key ? (clientCounts[key] || ap.clientCount || ap.clients || ap.numClients || 0) : 0;
+  };
+
+  // Check if AP is an AFC anchor (6 GHz Standard Power)
+  const isAfcAnchor = (ap: any): boolean => {
+    // Check direct AFC anchor flags
+    if (ap.afcAnchor === true || ap.isAfcAnchor === true || ap.afcEnabled === true) {
+      return true;
+    }
+    // Check if AP has 6 GHz radio with Standard Power mode
+    if (ap.radios && Array.isArray(ap.radios)) {
+      return ap.radios.some((radio: any) => {
+        const band = (radio.band || radio.frequency || radio.radioName || '').toLowerCase();
+        const mode = (radio.mode || radio.powerMode || radio.operationalMode || '').toLowerCase();
+        const is6GHz = band.includes('6g') || band.includes('6 g') || band.includes('unii');
+        const isStandardPower = mode.includes('sp') || mode.includes('standard') || radio.standardPower === true;
+        return is6GHz && isStandardPower;
+      });
+    }
+    // Check top-level 6 GHz indicators
+    const apMode = (ap.powerMode || ap.operationalMode || ap.afcMode || '').toLowerCase();
+    if (apMode.includes('sp') || apMode.includes('standard') || ap.standardPower === true) {
+      const bands = (ap.bands || ap.supportedBands || ap.band || '').toLowerCase();
+      if (bands.includes('6g') || bands.includes('6 g')) {
+        return true;
+      }
+    }
+    return false;
   };
 
   // Filter and search
@@ -238,6 +265,7 @@ export function MobileAPsList({ currentSite }: MobileAPsListProps) {
           {filteredAPs.map((ap: any) => {
             const online = isAPOnline(ap);
             const clientCount = getClientCount(ap);
+            const afcAnchor = isAfcAnchor(ap);
 
             // Get band information from various sources
             let band = ap.band || ap.radioType;
@@ -255,12 +283,17 @@ export function MobileAPsList({ currentSite }: MobileAPsListProps) {
               <MobileStatusRow
                 key={ap.serialNumber || ap.macAddress}
                 primaryText={ap.displayName || ap.name || ap.serialNumber || 'Unknown AP'}
-                secondaryText={`${clientCount} client${clientCount !== 1 ? 's' : ''} • ${bandText}`}
+                secondaryText={`${clientCount} client${clientCount !== 1 ? 's' : ''} • ${bandText}${afcAnchor ? ' • AFC' : ''}`}
                 status={{
                   label: online ? 'Online' : 'Offline',
                   variant: online ? 'success' : 'destructive',
                 }}
                 indicator={online ? 'online' : 'offline'}
+                rightContent={afcAnchor ? (
+                  <div className="flex items-center gap-2">
+                    <Anchor className="h-5 w-5 text-blue-500" title="AFC Anchor" />
+                  </div>
+                ) : undefined}
                 onClick={() => handleAPClick(ap)}
               />
             );
@@ -304,6 +337,17 @@ export function MobileAPsList({ currentSite }: MobileAPsListProps) {
               <p className="text-sm text-muted-foreground">Model</p>
               <p className="text-base font-medium">{selectedAP.model || selectedAP.deviceType || 'N/A'}</p>
             </div>
+            {isAfcAnchor(selectedAP) && (
+              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Anchor className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium text-blue-500">AFC Anchor</p>
+                    <p className="text-xs text-blue-500/70">6 GHz Standard Power enabled</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </MobileBottomSheet>
