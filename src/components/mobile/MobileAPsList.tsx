@@ -31,7 +31,13 @@ export function MobileAPsList({ currentSite }: MobileAPsListProps) {
     `aps_${currentSite}`,
     async () => {
       const data = await apiService.getAccessPoints();
-      return currentSite === 'all' ? data : data.filter((ap: any) => ap.siteId === currentSite);
+      if (currentSite === 'all') return data;
+      // Filter by multiple possible site ID fields
+      return data.filter((ap: any) =>
+        ap.siteId === currentSite ||
+        ap.site === currentSite ||
+        ap.hostSite === currentSite
+      );
     },
     30000
   );
@@ -40,7 +46,13 @@ export function MobileAPsList({ currentSite }: MobileAPsListProps) {
     `clients_${currentSite}`,
     async () => {
       const data = await apiService.getStations();
-      return currentSite === 'all' ? data : data.filter((c: any) => c.siteId === currentSite);
+      if (currentSite === 'all') return data;
+      // Filter by multiple possible site ID fields
+      return data.filter((c: any) =>
+        c.siteId === currentSite ||
+        c.site === currentSite ||
+        c.siteName === currentSite
+      );
     },
     30000
   );

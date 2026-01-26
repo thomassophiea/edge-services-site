@@ -31,7 +31,13 @@ export function MobileClientsList({ currentSite }: MobileClientsListProps) {
     `clients_${currentSite}`,
     async () => {
       const data = await apiService.getStations();
-      return currentSite === 'all' ? data : data.filter((c: any) => c.siteId === currentSite);
+      if (currentSite === 'all') return data;
+      // Filter by multiple possible site ID fields
+      return data.filter((c: any) =>
+        c.siteId === currentSite ||
+        c.site === currentSite ||
+        c.siteName === currentSite
+      );
     },
     30000
   );

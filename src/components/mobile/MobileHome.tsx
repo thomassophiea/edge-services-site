@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Users, Wifi, AppWindow, AlertCircle, RefreshCw } from 'lucide-react';
+import { Users, Wifi, AppWindow, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { MobileKPITile } from './MobileKPITile';
 import { NetworkHealthScore } from './NetworkHealthScore';
 import { MobileBottomSheet } from './MobileBottomSheet';
@@ -44,17 +44,35 @@ export function MobileHome({ currentSite, onSiteChange, onNavigate }: MobileHome
   const [offlineAPs, setOfflineAPs] = useState<any[]>([]);
 
   // Use offline cache for stats
-  const { data: cachedStats, isOffline, lastUpdated, refresh } = useOfflineCache(
+  const { data: cachedStats, loading: statsLoading, error: statsError, isOffline, lastUpdated, refresh } = useOfflineCache(
     `stats_${currentSite}`,
     async () => {
+      console.log('[MobileHome] Fetching stats for site:', currentSite);
       const [clientsData, apsData, appsData] = await Promise.all([
         apiService.getStations(),
         apiService.getAccessPoints(),
         apiService.getApplications().catch(() => []),
       ]);
 
-      const filteredClients = currentSite === 'all' ? clientsData : clientsData.filter((c: any) => c.siteId === currentSite);
-      const filteredAPs = currentSite === 'all' ? apsData : apsData.filter((ap: any) => ap.siteId === currentSite);
+      console.log('[MobileHome] Raw data - clients:', clientsData?.length, 'aps:', apsData?.length, 'apps:', appsData?.length);
+
+      // Filter by site - check multiple possible site ID fields
+      const filteredClients = currentSite === 'all'
+        ? clientsData
+        : clientsData.filter((c: any) =>
+            c.siteId === currentSite ||
+            c.site === currentSite ||
+            c.siteName === currentSite
+          );
+      const filteredAPs = currentSite === 'all'
+        ? apsData
+        : apsData.filter((ap: any) =>
+            ap.siteId === currentSite ||
+            ap.site === currentSite ||
+            ap.hostSite === currentSite
+          );
+
+      console.log('[MobileHome] Filtered - clients:', filteredClients?.length, 'aps:', filteredAPs?.length);
 
       const isAPOnline = (ap: any): boolean => {
         const status = (ap.status || ap.connectionState || ap.operationalState || ap.state || '').toLowerCase();
@@ -180,12 +198,30 @@ export function MobileHome({ currentSite, onSiteChange, onNavigate }: MobileHome
           variant="outline"
           size="icon"
           onClick={handleRefresh}
-          disabled={isRefreshing}
+          disabled={isRefreshing || statsLoading}
           className="h-12 w-12 flex-shrink-0"
         >
-          <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-5 w-5 ${isRefreshing || statsLoading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
+
+      {/* Loading State */}
+      {statsLoading && !cachedStats && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading stats...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {statsError && !cachedStats && (
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <p className="text-sm text-red-500">Failed to load stats: {statsError}</p>
+          <Button variant="outline" size="sm" onClick={handleRefresh} className="mt-2">
+            Retry
+          </Button>
+        </div>
+      )}
 
       {/* Network Health Score */}
       <NetworkHealthScore score={stats.healthScore} />
