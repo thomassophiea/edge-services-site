@@ -112,27 +112,28 @@ export function MobileAPsList({ currentSite }: MobileAPsListProps) {
 
   // Check if AP is an AFC anchor (6 GHz Standard Power)
   const isAfcAnchor = (ap: any): boolean => {
-    // Check direct AFC anchor flags
-    if (ap.afcAnchor === true || ap.isAfcAnchor === true || ap.afcEnabled === true) {
+    // Check top-level gpsAnchor flag (from AP detail endpoint)
+    if (ap.gpsAnchor === true) {
       return true;
     }
-    // Check if AP has 6 GHz radio with Standard Power mode
-    if (ap.radios && Array.isArray(ap.radios)) {
-      return ap.radios.some((radio: any) => {
-        const band = (radio.band || radio.frequency || radio.radioName || '').toLowerCase();
-        const mode = (radio.mode || radio.powerMode || radio.operationalMode || '').toLowerCase();
-        const is6GHz = band.includes('6g') || band.includes('6 g') || band.includes('unii');
-        const isStandardPower = mode.includes('sp') || mode.includes('standard') || radio.standardPower === true;
-        return is6GHz && isStandardPower;
-      });
+    // Check anchorLocSrc field (from AFC query endpoint - "GPS" means it's an anchor)
+    if (ap.anchorLocSrc === 'GPS') {
+      return true;
     }
-    // Check top-level 6 GHz indicators
-    const apMode = (ap.powerMode || ap.operationalMode || ap.afcMode || '').toLowerCase();
-    if (apMode.includes('sp') || apMode.includes('standard') || ap.standardPower === true) {
-      const bands = (ap.bands || ap.supportedBands || ap.band || '').toLowerCase();
-      if (bands.includes('6g') || bands.includes('6 g')) {
+    // Check if any radio has AFC enabled (from AP detail radios array)
+    if (ap.radios && Array.isArray(ap.radios)) {
+      const hasAfcRadio = ap.radios.some((radio: any) => radio.afc === true);
+      if (hasAfcRadio) {
         return true;
       }
+    }
+    // Check pwrMode field (from AFC query - "SP" = Standard Power)
+    if (ap.pwrMode === 'SP') {
+      return true;
+    }
+    // Fallback: check for older field names
+    if (ap.afcAnchor === true || ap.isAfcAnchor === true) {
+      return true;
     }
     return false;
   };

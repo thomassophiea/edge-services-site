@@ -531,27 +531,28 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
   // Check if AP is an AFC anchor (6 GHz Standard Power)
   const isAfcAnchor = (ap: AccessPoint): boolean => {
     const apAny = ap as any;
-    // Check direct AFC anchor flags
-    if (apAny.afcAnchor === true || apAny.isAfcAnchor === true || apAny.afcEnabled === true) {
+    // Check top-level gpsAnchor flag (from AP detail endpoint)
+    if (apAny.gpsAnchor === true) {
       return true;
     }
-    // Check if AP has 6 GHz radio with Standard Power mode
-    if (apAny.radios && Array.isArray(apAny.radios)) {
-      return apAny.radios.some((radio: any) => {
-        const band = (radio.band || radio.frequency || radio.radioName || '').toLowerCase();
-        const mode = (radio.mode || radio.powerMode || radio.operationalMode || '').toLowerCase();
-        const is6GHz = band.includes('6g') || band.includes('6 g') || band.includes('unii');
-        const isStandardPower = mode.includes('sp') || mode.includes('standard') || radio.standardPower === true;
-        return is6GHz && isStandardPower;
-      });
+    // Check anchorLocSrc field (from AFC query endpoint - "GPS" means it's an anchor)
+    if (apAny.anchorLocSrc === 'GPS') {
+      return true;
     }
-    // Check top-level 6 GHz indicators
-    const apMode = (apAny.powerMode || apAny.operationalMode || apAny.afcMode || '').toLowerCase();
-    if (apMode.includes('sp') || apMode.includes('standard') || apAny.standardPower === true) {
-      const bands = (apAny.bands || apAny.supportedBands || apAny.band || '').toLowerCase();
-      if (bands.includes('6g') || bands.includes('6 g')) {
+    // Check if any radio has AFC enabled (from AP detail radios array)
+    if (apAny.radios && Array.isArray(apAny.radios)) {
+      const hasAfcRadio = apAny.radios.some((radio: any) => radio.afc === true);
+      if (hasAfcRadio) {
         return true;
       }
+    }
+    // Check pwrMode field (from AFC query - "SP" = Standard Power)
+    if (apAny.pwrMode === 'SP') {
+      return true;
+    }
+    // Fallback: check for older field names
+    if (apAny.afcAnchor === true || apAny.isAfcAnchor === true) {
+      return true;
     }
     return false;
   };
