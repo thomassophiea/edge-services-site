@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Checkbox } from './ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { AlertCircle, Users, Search, RefreshCw, Filter, Wifi, Activity, Timer, Signal, Download, Upload, Shield, Router, MapPin, User, Clock, Star, Trash2, UserX, RotateCcw, UserPlus, UserMinus, ShieldCheck, ShieldX, Info, Radio, WifiOff, SignalHigh, SignalMedium, SignalLow, SignalZero, Cable, Shuffle, Columns, Route, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Users, Search, RefreshCw, Filter, Wifi, Activity, Timer, Signal, Download, Upload, Shield, Router, MapPin, User, Clock, Star, Trash2, UserX, RotateCcw, UserPlus, UserMinus, ShieldCheck, ShieldX, Info, Radio, WifiOff, SignalHigh, SignalMedium, SignalLow, SignalZero, Cable, Shuffle, Columns, Route, ArrowLeft, FileDown, UserMinus2 } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Alert, AlertDescription } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
@@ -51,6 +51,8 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
   const [stationTrafficData, setStationTrafficData] = useState<Map<string, any>>(new Map());
   const [isLoadingTraffic, setIsLoadingTraffic] = useState(false);
   const [showRoamingTrail, setShowRoamingTrail] = useState(false);
+  const [isGdprDeleteDialogOpen, setIsGdprDeleteDialogOpen] = useState(false);
+  const [isDeletingClientData, setIsDeletingClientData] = useState(false);
 
   // Table customization
   const customization = useTableCustomization({
@@ -354,6 +356,106 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
       toast.error(err instanceof Error ? err.message : 'Action failed');
     } finally {
       setIsPerformingAction(false);
+    }
+  };
+
+  // GDPR: Download all client data as JSON
+  const handleDownloadClientData = async (station: Station) => {
+    try {
+      // Collect all available client data
+      const clientData = {
+        exportDate: new Date().toISOString(),
+        gdprDataExport: true,
+        clientIdentifier: station.macAddress,
+        basicInformation: {
+          macAddress: station.macAddress,
+          ipAddress: station.ipAddress,
+          ipv6Address: station.ipv6Address,
+          hostname: station.hostName,
+          username: station.username,
+          deviceType: station.deviceType,
+          manufacturer: station.manufacturer,
+          osType: station.osType,
+        },
+        networkInformation: {
+          siteName: station.siteName,
+          siteId: station.siteId,
+          accessPoint: station.apName,
+          apSerial: station.apSerial,
+          network: station.network,
+          ssid: station.ssid,
+          role: station.role,
+          vlan: station.vlan,
+          radioId: station.radioId,
+          channel: station.channel,
+        },
+        connectionStatus: {
+          status: station.status,
+          lastSeen: station.lastSeen,
+          connectionTime: station.connectionTime,
+          sessionDuration: station.sessionDuration,
+        },
+        trafficStatistics: {
+          rxBytes: station.rxBytes,
+          txBytes: station.txBytes,
+          inBytes: station.inBytes,
+          outBytes: station.outBytes,
+          clientBandwidthBytes: station.clientBandwidthBytes,
+        },
+        signalQuality: {
+          rssi: station.rssi,
+          snr: station.snr,
+          txRate: station.txRate,
+          rxRate: station.rxRate,
+          siteRating: station.siteRating,
+        },
+        recentEvents: stationEvents.map(event => ({
+          timestamp: event.timestamp,
+          eventType: event.eventType,
+          details: event.details,
+          apName: event.apName,
+          ssid: event.ssid,
+          ipAddress: event.ipAddress,
+        })),
+      };
+
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(clientData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `client-data-${station.macAddress.replace(/:/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Client data exported successfully');
+    } catch (error) {
+      console.error('[ConnectedClients] Error exporting client data:', error);
+      toast.error('Failed to export client data');
+    }
+  };
+
+  // GDPR: Delete all client data
+  const handleDeleteClientData = async (station: Station) => {
+    setIsDeletingClientData(true);
+    try {
+      // Call the API to delete the station/client data
+      await apiService.bulkDeleteStations([station.macAddress]);
+
+      toast.success('Client data deleted successfully');
+      setIsGdprDeleteDialogOpen(false);
+      setIsModalOpen(false);
+      setSelectedStation(null);
+
+      // Refresh the stations list
+      await loadStations();
+    } catch (error) {
+      console.error('[ConnectedClients] Error deleting client data:', error);
+      toast.error('Failed to delete client data');
+    } finally {
+      setIsDeletingClientData(false);
     }
   };
 
@@ -868,6 +970,95 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* GDPR Data Rights Section */}
+                <Card className="mt-4 border-2 border-blue-200 dark:border-blue-800">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-blue-500" />
+                      GDPR Data Rights
+                    </CardTitle>
+                    <CardDescription>
+                      Exercise your data protection rights under GDPR
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1 justify-start"
+                        onClick={() => handleDownloadClientData(selectedStation)}
+                      >
+                        <FileDown className="mr-2 h-4 w-4 text-blue-500" />
+                        Download My Data
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 justify-start border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950"
+                        onClick={() => setIsGdprDeleteDialogOpen(true)}
+                      >
+                        <UserMinus2 className="mr-2 h-4 w-4 text-red-500" />
+                        Delete My Data
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Under GDPR Article 15 (Right of Access) and Article 17 (Right to Erasure),
+                      you can request a copy of all data we hold about this device or request its deletion.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* GDPR Delete Confirmation Dialog */}
+                <Dialog open={isGdprDeleteDialogOpen} onOpenChange={setIsGdprDeleteDialogOpen}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-red-600">
+                        <AlertCircle className="h-5 w-5" />
+                        Confirm Data Deletion
+                      </DialogTitle>
+                      <DialogDescription className="pt-4 space-y-3">
+                        <p>
+                          You are about to permanently delete all data associated with this client device:
+                        </p>
+                        <div className="bg-muted p-3 rounded-lg font-mono text-sm">
+                          <div><strong>MAC Address:</strong> {selectedStation.macAddress}</div>
+                          {selectedStation.hostName && <div><strong>Hostname:</strong> {selectedStation.hostName}</div>}
+                          {selectedStation.ipAddress && <div><strong>IP Address:</strong> {selectedStation.ipAddress}</div>}
+                        </div>
+                        <p className="text-red-600 font-medium">
+                          This action cannot be undone. All connection history, events, and statistics
+                          for this device will be permanently removed.
+                        </p>
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-3 mt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsGdprDeleteDialogOpen(false)}
+                        disabled={isDeletingClientData}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleDeleteClientData(selectedStation)}
+                        disabled={isDeletingClientData}
+                      >
+                        {isDeletingClientData ? (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete All Data
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </TabsContent>
               
               <TabsContent value="events" className="space-y-4">
