@@ -395,6 +395,35 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
     return matchesSearch && matchesStatus && matchesHardware;
   });
 
+  // Check if AP is an AFC anchor (6 GHz Standard Power)
+  const isAfcAnchor = (ap: AccessPoint): boolean => {
+    const apAny = ap as any;
+    // Check top-level gpsAnchor flag (from AP detail endpoint)
+    if (apAny.gpsAnchor === true) {
+      return true;
+    }
+    // Check anchorLocSrc field (from AFC query endpoint - "GPS" means it's an anchor)
+    if (apAny.anchorLocSrc === 'GPS') {
+      return true;
+    }
+    // Check if any radio has AFC enabled (from AP detail radios array)
+    if (apAny.radios && Array.isArray(apAny.radios)) {
+      const hasAfcRadio = apAny.radios.some((radio: any) => radio.afc === true);
+      if (hasAfcRadio) {
+        return true;
+      }
+    }
+    // Check pwrMode field (from AFC query - "SP" = Standard Power)
+    if (apAny.pwrMode === 'SP') {
+      return true;
+    }
+    // Fallback: check for older field names
+    if (apAny.afcAnchor === true || apAny.isAfcAnchor === true) {
+      return true;
+    }
+    return false;
+  };
+
   // Helper function to get sortable value for a column
   const getSortValue = (ap: AccessPoint, columnKey: string): string | number | boolean => {
     const apAny = ap as any;
@@ -617,35 +646,6 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       isOnline === true ||
       (!status && isUp !== false && isOnline !== false)
     );
-  };
-
-  // Check if AP is an AFC anchor (6 GHz Standard Power)
-  const isAfcAnchor = (ap: AccessPoint): boolean => {
-    const apAny = ap as any;
-    // Check top-level gpsAnchor flag (from AP detail endpoint)
-    if (apAny.gpsAnchor === true) {
-      return true;
-    }
-    // Check anchorLocSrc field (from AFC query endpoint - "GPS" means it's an anchor)
-    if (apAny.anchorLocSrc === 'GPS') {
-      return true;
-    }
-    // Check if any radio has AFC enabled (from AP detail radios array)
-    if (apAny.radios && Array.isArray(apAny.radios)) {
-      const hasAfcRadio = apAny.radios.some((radio: any) => radio.afc === true);
-      if (hasAfcRadio) {
-        return true;
-      }
-    }
-    // Check pwrMode field (from AFC query - "SP" = Standard Power)
-    if (apAny.pwrMode === 'SP') {
-      return true;
-    }
-    // Fallback: check for older field names
-    if (apAny.afcAnchor === true || apAny.isAfcAnchor === true) {
-      return true;
-    }
-    return false;
   };
 
   // Helper function to get connection status icon and color
