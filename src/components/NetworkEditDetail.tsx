@@ -9,8 +9,9 @@ import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { AlertCircle, Save, RefreshCw, Plus, Trash2, Network, Shield, Wifi, Settings, Radio, Users, Globe, Lock, Unlock, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Save, RefreshCw, Plus, Trash2, Network, Shield, Wifi, Settings, Radio, Users, Globe, Lock, Unlock, Eye, EyeOff, Info } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Skeleton } from './ui/skeleton';
 import { ScrollArea } from './ui/scroll-area';
 import { apiService, Service, Role, Topology, AaaPolicy, ClassOfService } from '../services/api';
@@ -1675,17 +1676,206 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
 
         {/* Advanced Settings Tab */}
         <TabsContent value="advanced" className="space-y-6">
-          {/* Client Management */}
+          {/* Campus Controller Advanced Settings */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Client Management</CardTitle>
-              <CardDescription>Advanced client communication and behavior settings</CardDescription>
+              <CardTitle className="text-sm">Advanced Settings</CardTitle>
+              <CardDescription>Campus Controller advanced WLAN configuration options</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* MultiBand Operation */}
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <Label>Client-to-Client Communication</Label>
-                  <p className="text-sm text-muted-foreground">Allow wireless clients to communicate directly</p>
+                  <div className="flex items-center gap-2">
+                    <Label>MultiBand Operation</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-medium">MBO (Multi-Band Operation)</p>
+                        <p className="text-xs opacity-80">Part of Wi-Fi Agile Multiband. Enables enhanced 802.11k/v features that help clients make better roaming decisions across 2.4GHz, 5GHz, and 6GHz bands.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Enhanced 802.11k/v features for multi-band steering</p>
+                </div>
+                <Switch
+                  checked={formData.mbo}
+                  onCheckedChange={(checked) => handleInputChange('mbo', checked)}
+                />
+              </div>
+
+              {/* RADIUS Accounting */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>RADIUS Accounting</Label>
+                  <p className="text-sm text-muted-foreground">Track user session and usage data via RADIUS</p>
+                </div>
+                <Switch
+                  checked={formData.accountingEnabled}
+                  onCheckedChange={(checked) => handleInputChange('accountingEnabled', checked)}
+                />
+              </div>
+
+              {/* Hide SSID */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Hide SSID</Label>
+                  <p className="text-sm text-muted-foreground">Do not broadcast SSID in beacons</p>
+                </div>
+                <Switch
+                  checked={formData.hidden}
+                  onCheckedChange={(checked) => {
+                    handleInputChange('hidden', checked);
+                    handleInputChange('broadcastSSID', !checked);
+                  }}
+                />
+              </div>
+
+              {/* Include Hostname */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Include Hostname</Label>
+                  <p className="text-sm text-muted-foreground">Send client hostname to RADIUS server</p>
+                </div>
+                <Switch
+                  checked={formData.includeHostname}
+                  onCheckedChange={(checked) => handleInputChange('includeHostname', checked)}
+                />
+              </div>
+
+              {/* FTM (11mc) responder support */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label>FTM (11mc) Responder Support</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-medium">Fine Timing Measurement (802.11mc)</p>
+                        <p className="text-xs opacity-80">Enables Wi-Fi Round Trip Time (RTT) for indoor positioning. Allows clients to measure their distance from the AP with sub-meter accuracy for location-based services.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Enable 802.11mc location services</p>
+                </div>
+                <Switch
+                  checked={formData.enable11mcSupport}
+                  onCheckedChange={(checked) => handleInputChange('enable11mcSupport', checked)}
+                />
+              </div>
+
+              {/* Radio Management (11k) support */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label>Radio Management (11k) Support</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-medium">Radio Resource Management (802.11k)</p>
+                        <p className="text-xs opacity-80">Provides neighbor AP reports to clients, helping them discover nearby APs and make faster, smarter roaming decisions without scanning all channels.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Help clients find the best AP via neighbor reports</p>
+                </div>
+                <Switch
+                  checked={formData.enabled11kSupport}
+                  onCheckedChange={(checked) => handleInputChange('enabled11kSupport', checked)}
+                />
+              </div>
+
+              {/* U-APSD (WMM-PS) */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label>U-APSD (WMM-PS)</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-medium">Unscheduled Automatic Power Save Delivery</p>
+                        <p className="text-xs opacity-80">WMM Power Save feature that allows devices to sleep longer while maintaining quality for voice/video. Reduces battery drain on mobile devices without impacting real-time applications.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Unscheduled Automatic Power Save Delivery</p>
+                </div>
+                <Switch
+                  checked={formData.uapsdEnabled}
+                  onCheckedChange={(checked) => handleInputChange('uapsdEnabled', checked)}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Admission Control Section */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Admission Control</h4>
+
+                {/* Voice (VO) */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Use Admission Control for Voice (VO)</Label>
+                    <p className="text-sm text-muted-foreground">Require channel capacity for voice traffic (AC_VO)</p>
+                  </div>
+                  <Switch
+                    checked={formData.admissionControlVoice}
+                    onCheckedChange={(checked) => handleInputChange('admissionControlVoice', checked)}
+                  />
+                </div>
+
+                {/* Video (VI) */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Use Admission Control for Video (VI)</Label>
+                    <p className="text-sm text-muted-foreground">Require channel capacity for video traffic (AC_VI)</p>
+                  </div>
+                  <Switch
+                    checked={formData.admissionControlVideo}
+                    onCheckedChange={(checked) => handleInputChange('admissionControlVideo', checked)}
+                  />
+                </div>
+
+                {/* Best Effort (BE) */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Use Admission Control for Best Effort (BE)</Label>
+                    <p className="text-sm text-muted-foreground">Require channel capacity for best effort traffic (AC_BE)</p>
+                  </div>
+                  <Switch
+                    checked={formData.admissionControlBestEffort}
+                    onCheckedChange={(checked) => handleInputChange('admissionControlBestEffort', checked)}
+                  />
+                </div>
+
+                {/* Background (BK) */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Use Global Admission Control for Background (BK)</Label>
+                    <p className="text-sm text-muted-foreground">Require channel capacity for background traffic (AC_BK)</p>
+                  </div>
+                  <Switch
+                    checked={formData.admissionControlBackgroundTraffic}
+                    onCheckedChange={(checked) => handleInputChange('admissionControlBackgroundTraffic', checked)}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Client To Client Communication */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Client To Client Communication</Label>
+                  <p className="text-sm text-muted-foreground">Allow wireless clients to communicate with each other</p>
                 </div>
                 <Switch
                   checked={formData.clientToClientCommunication}
@@ -1696,6 +1886,101 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                 />
               </div>
 
+              {/* Clear Session on Disconnect */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Clear Session on Disconnect</Label>
+                  <p className="text-sm text-muted-foreground">Purge client session data when disconnected</p>
+                </div>
+                <Switch
+                  checked={formData.purgeOnDisconnect}
+                  onCheckedChange={(checked) => handleInputChange('purgeOnDisconnect', checked)}
+                />
+              </div>
+
+              {/* Beacon Protection */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label>Beacon Protection</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-medium">Beacon Protection (WPA3)</p>
+                        <p className="text-xs opacity-80">Protects beacon frames from spoofing and tampering. Part of WPA3 security enhancements that prevents attackers from forging management frames.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Enhanced WPA3 security feature for beacon frames</p>
+                </div>
+                <Switch
+                  checked={formData.beaconProtection}
+                  onCheckedChange={(checked) => handleInputChange('beaconProtection', checked)}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Timeout Settings */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium">Session Timeouts</h4>
+
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Pre-Authenticated idle timeout */}
+                  <div className="space-y-2">
+                    <Label htmlFor="pre-auth-idle-timeout">Pre-Authenticated idle timeout (seconds)</Label>
+                    <Input
+                      id="pre-auth-idle-timeout"
+                      type="number"
+                      value={formData.preAuthenticatedIdleTimeout}
+                      onChange={(e) => handleInputChange('preAuthenticatedIdleTimeout', parseInt(e.target.value) || 300)}
+                      min="0"
+                      max="999999"
+                    />
+                    <p className="text-xs text-muted-foreground">Default: 300</p>
+                  </div>
+
+                  {/* Post-Authenticated idle timeout */}
+                  <div className="space-y-2">
+                    <Label htmlFor="post-auth-idle-timeout">Post-Authenticated idle timeout (seconds)</Label>
+                    <Input
+                      id="post-auth-idle-timeout"
+                      type="number"
+                      value={formData.postAuthenticatedIdleTimeout}
+                      onChange={(e) => handleInputChange('postAuthenticatedIdleTimeout', parseInt(e.target.value) || 1800)}
+                      min="0"
+                      max="999999"
+                    />
+                    <p className="text-xs text-muted-foreground">Default: 1800</p>
+                  </div>
+
+                  {/* Maximum session duration */}
+                  <div className="space-y-2">
+                    <Label htmlFor="max-session-duration">Maximum session duration (seconds)</Label>
+                    <Input
+                      id="max-session-duration"
+                      type="number"
+                      value={formData.sessionTimeout}
+                      onChange={(e) => handleInputChange('sessionTimeout', parseInt(e.target.value) || 0)}
+                      min="0"
+                      max="999999"
+                    />
+                    <p className="text-xs text-muted-foreground">0 = unlimited</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Additional Client Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Additional Client Settings</CardTitle>
+              <CardDescription>Extra client communication and behavior settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <Label>Client Isolation</Label>
@@ -1718,28 +2003,6 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                 <Switch
                   checked={formData.flexibleClientAccess}
                   onCheckedChange={(checked) => handleInputChange('flexibleClientAccess', checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Purge on Disconnect</Label>
-                  <p className="text-sm text-muted-foreground">Clear client data when disconnected</p>
-                </div>
-                <Switch
-                  checked={formData.purgeOnDisconnect}
-                  onCheckedChange={(checked) => handleInputChange('purgeOnDisconnect', checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Include Hostname in RADIUS</Label>
-                  <p className="text-sm text-muted-foreground">Send client hostname to RADIUS server</p>
-                </div>
-                <Switch
-                  checked={formData.includeHostname}
-                  onCheckedChange={(checked) => handleInputChange('includeHostname', checked)}
                 />
               </div>
             </CardContent>

@@ -396,6 +396,8 @@ export interface Service {
   vlan?: number;
   band?: string;
   maxClients?: number;
+  maxClientsPer24?: number; // Max clients on 2.4GHz band
+  maxClientsPer5?: number; // Max clients on 5GHz band
   hidden?: boolean;
   suppressSsid?: boolean; // Alternative field for hidden SSID
   captivePortal?: boolean;
@@ -525,6 +527,7 @@ export interface Service {
 
   // Roaming
   roamingAssistPolicy?: string | null; // Roaming assistance policy UUID
+  loadBalancing?: boolean; // Distribute clients across APs
 
   // RADIUS Attributes
   vendorSpecificAttributes?: string[]; // Custom RADIUS VSAs: ["apName", "vnsName", "ssid", etc.]

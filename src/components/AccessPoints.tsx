@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { AlertCircle, Wifi, Search, RefreshCw, Filter, Eye, Users, Activity, Signal, Cpu, HardDrive, MoreVertical, Shield, Key, RotateCcw, MapPin, Settings, AlertTriangle, Download, Trash2, Cloud, Power, WifiOff, CheckCircle2, XCircle, Building, Info, Columns, Anchor } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Checkbox } from './ui/checkbox';
 import { Alert, AlertDescription } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
@@ -560,9 +561,29 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
   // Helper function to get connection status icon and color
   const getConnectionStatusIcon = (ap: AccessPoint) => {
     if (isAPOnline(ap)) {
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <CheckCircle2 className="h-4 w-4 text-green-500 cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-medium">Online</p>
+            <p className="text-xs opacity-80">Access Point is connected and operational</p>
+          </TooltipContent>
+        </Tooltip>
+      );
     } else {
-      return <XCircle className="h-4 w-4 text-red-500" />;
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <XCircle className="h-4 w-4 text-red-500 cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-medium">Offline</p>
+            <p className="text-xs opacity-80">Access Point is not responding or disconnected</p>
+          </TooltipContent>
+        </Tooltip>
+      );
     }
   };
 
@@ -667,7 +688,15 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
           <div className="flex items-center gap-2">
             <span>{getAPName(ap)}</span>
             {isAfcAnchor(ap) && (
-              <Anchor className="h-4 w-4 text-blue-500" title="AFC Anchor - 6 GHz Standard Power" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Anchor className="h-4 w-4 text-blue-500 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-medium">AFC Anchor</p>
+                  <p className="text-xs opacity-80">6 GHz Standard Power - This AP provides GPS location for AFC (Automated Frequency Coordination)</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         );
@@ -738,10 +767,18 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
         return <span className="text-sm">{(ap as any).description || '-'}</span>;
       case 'afcAnchor':
         return isAfcAnchor(ap) ? (
-          <div className="flex items-center gap-1">
-            <Anchor className="h-4 w-4 text-blue-500" />
-            <span className="text-sm text-blue-500 font-medium">Yes</span>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-help">
+                <Anchor className="h-4 w-4 text-blue-500" />
+                <span className="text-sm text-blue-500 font-medium">Yes</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-medium">AFC Anchor</p>
+              <p className="text-xs opacity-80">This AP has GPS and provides location data for AFC (Automated Frequency Coordination) to enable 6 GHz Standard Power operation</p>
+            </TooltipContent>
+          </Tooltip>
         ) : (
           <span className="text-sm text-muted-foreground">No</span>
         );
