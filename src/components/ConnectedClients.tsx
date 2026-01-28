@@ -53,6 +53,8 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
   const [showRoamingTrail, setShowRoamingTrail] = useState(false);
   const [isGdprDeleteDialogOpen, setIsGdprDeleteDialogOpen] = useState(false);
   const [isDeletingClientData, setIsDeletingClientData] = useState(false);
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Table customization
   const customization = useTableCustomization({
@@ -151,7 +153,7 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
   };
 
   const filteredStations = stations.filter((station) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       station.macAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       station.ipAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       station.hostName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,13 +163,102 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
       station.siteName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       station.network?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       station.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || station.status?.toLowerCase() === statusFilter.toLowerCase();
     const matchesAP = apFilter === 'all' || station.apSerial === apFilter || station.apName === apFilter;
     const matchesSite = siteFilter === 'all' || station.siteName === siteFilter;
     const matchesDeviceType = deviceTypeFilter === 'all' || station.deviceType === deviceTypeFilter;
-    
+
     return matchesSearch && matchesStatus && matchesAP && matchesSite && matchesDeviceType;
+  });
+
+  // Helper function to get sortable value for a column
+  const getSortValue = (station: Station, columnKey: string): string | number => {
+    const stationAny = station as any;
+    switch (columnKey) {
+      case 'macAddress':
+        return (station.macAddress || '').toLowerCase();
+      case 'hostName':
+        return (station.hostName || '').toLowerCase();
+      case 'ipAddress':
+        return station.ipAddress || '';
+      case 'status':
+        return (station.status || '').toLowerCase();
+      case 'apName':
+        return (station.apName || '').toLowerCase();
+      case 'apSerial':
+        return (station.apSerial || '').toLowerCase();
+      case 'siteName':
+        return (station.siteName || '').toLowerCase();
+      case 'network':
+        return (station.network || '').toLowerCase();
+      case 'ssid':
+        return (stationAny.ssid || station.network || '').toLowerCase();
+      case 'rssi':
+      case 'signalStrength':
+        return stationAny.rssi || stationAny.signalStrength || stationAny.snr || 0;
+      case 'snr':
+        return stationAny.snr || 0;
+      case 'channel':
+        return stationAny.channel || 0;
+      case 'band':
+        return (stationAny.band || '').toLowerCase();
+      case 'rxBytes':
+      case 'download':
+        return station.rxBytes || stationAny.clientBandwidthBytes || 0;
+      case 'txBytes':
+      case 'upload':
+        return station.txBytes || stationAny.outBytes || 0;
+      case 'connectedTime':
+      case 'connectionTime':
+        return stationAny.connectedTime || stationAny.connectionTime || stationAny.assocTime || 0;
+      case 'username':
+        return (station.username || '').toLowerCase();
+      case 'role':
+        return (stationAny.role || '').toLowerCase();
+      case 'vlan':
+        return stationAny.vlan || 0;
+      case 'manufacturer':
+      case 'vendor':
+        return (station.manufacturer || '').toLowerCase();
+      case 'deviceType':
+        return (station.deviceType || '').toLowerCase();
+      case 'os':
+        return (stationAny.os || '').toLowerCase();
+      case 'protocol':
+        return (stationAny.protocol || '').toLowerCase();
+      case 'authType':
+        return (stationAny.authType || '').toLowerCase();
+      default:
+        return stationAny[columnKey] || '';
+    }
+  };
+
+  // Handle column header click for sorting
+  const handleSort = (columnKey: string) => {
+    if (sortColumn === columnKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(columnKey);
+      setSortDirection('asc');
+    }
+  };
+
+  // Sort the filtered stations
+  const sortedStations = [...filteredStations].sort((a, b) => {
+    if (!sortColumn) return 0;
+
+    const aValue = getSortValue(a, sortColumn);
+    const bValue = getSortValue(b, sortColumn);
+
+    let comparison = 0;
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      comparison = aValue - bValue;
+    } else {
+      comparison = String(aValue).localeCompare(String(bValue));
+    }
+
+    return sortDirection === 'asc' ? comparison : -comparison;
   });
 
   const getUniqueStatuses = () => {
@@ -231,7 +322,7 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allMacAddresses = new Set(filteredStations.map(station => station.macAddress));
+      const allMacAddresses = new Set(sortedStations.map(station => station.macAddress));
       setSelectedStations(allMacAddresses);
     } else {
       setSelectedStations(new Set());
@@ -769,13 +860,13 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredStations.length === 0 ? (
+          {sortedStations.length === 0 ? (
             <div className="text-center py-8">
               <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No Connected Clients Found</h3>
               <p className="text-muted-foreground">
                 {searchTerm || statusFilter !== 'all' || apFilter !== 'all' || siteFilter !== 'all' || deviceTypeFilter !== 'all'
-                  ? 'No clients match your current filters.' 
+                  ? 'No clients match your current filters.'
                   : 'No clients are currently connected to the network.'}
               </p>
             </div>
@@ -786,20 +877,24 @@ function ConnectedClientsComponent({ onShowDetail }: ConnectedClientsProps) {
                   <TableRow className="h-8">
                     <TableHead className="w-10 p-1 text-[10px]">
                       <Checkbox
-                        checked={selectedStations.size === filteredStations.length && filteredStations.length > 0}
+                        checked={selectedStations.size === sortedStations.length && sortedStations.length > 0}
                         onCheckedChange={handleSelectAll}
                         className="h-3 w-3"
                       />
                     </TableHead>
                     {customization.visibleColumnConfigs.map(column => (
-                      <TableHead key={column.key} className="p-1 text-[10px]">
+                      <TableHead
+                        key={column.key}
+                        className="p-1 text-[10px] cursor-pointer select-none hover:bg-muted/50 transition-colors"
+                        onClick={() => handleSort(column.key)}
+                      >
                         {column.label}
                       </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStations.map((station, index) => (
+                  {sortedStations.map((station, index) => (
                     <TableRow 
                       key={station.macAddress || index}
                       className="cursor-pointer hover:bg-muted/50 h-10"

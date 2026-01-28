@@ -9,7 +9,7 @@ import { DetailSlideOut } from './DetailSlideOut';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
-import { AlertCircle, Wifi, Search, RefreshCw, Filter, Eye, Users, Activity, Signal, Cpu, HardDrive, MoreVertical, Shield, Key, RotateCcw, MapPin, Settings, AlertTriangle, Download, Trash2, Cloud, Power, WifiOff, CheckCircle2, XCircle, Building, Info, Columns, Anchor, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { AlertCircle, Wifi, Search, RefreshCw, Filter, Eye, Users, Activity, Signal, Cpu, HardDrive, MoreVertical, Shield, Key, RotateCcw, MapPin, Settings, AlertTriangle, Download, Trash2, Cloud, Power, WifiOff, CheckCircle2, XCircle, Building, Info, Columns, Anchor } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Checkbox } from './ui/checkbox';
 import { Alert, AlertDescription } from './ui/alert';
@@ -464,16 +464,6 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
       setSortColumn(columnKey);
       setSortDirection('asc');
     }
-  };
-
-  // Get sort icon for column header
-  const getSortIcon = (columnKey: string) => {
-    if (sortColumn !== columnKey) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
-    }
-    return sortDirection === 'asc'
-      ? <ArrowUp className="h-4 w-4 ml-1" />
-      : <ArrowDown className="h-4 w-4 ml-1" />;
   };
 
   // Sort the filtered access points
@@ -1342,10 +1332,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
                           className="cursor-pointer select-none hover:bg-muted/50 transition-colors"
                           onClick={() => handleSort(columnKey)}
                         >
-                          <div className="flex items-center">
-                            {column?.label || columnKey}
-                            {getSortIcon(columnKey)}
-                          </div>
+                          {column?.label || columnKey}
                         </TableHead>
                       );
                     })}
