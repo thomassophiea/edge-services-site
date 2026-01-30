@@ -47,6 +47,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cartesia
 import { OperationalContextSummary } from './OperationalContextSummary';
 import { FilterBar } from './FilterBar';
 import { VersionBadge } from './VersionBadge';
+import { ContextualInsightsSelector, SelectorTab } from './ContextualInsightsSelector';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
 import { VenueStatisticsWidget } from './VenueStatisticsWidget';
 import { ConfigurationProfilesWidget } from './ConfigurationProfilesWidget';
@@ -226,6 +227,10 @@ function DashboardEnhancedComponent() {
 
   // Collapsible sections state
   const [isTopClientsCollapsed, setIsTopClientsCollapsed] = useState(true);
+
+  // Contextual Insights Selector state
+  const [selectorTab, setSelectorTab] = useState<SelectorTab>('ai-insights');
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [isConnectedClientsCollapsed, setIsConnectedClientsCollapsed] = useState(true);
 
   useEffect(() => {
@@ -1145,27 +1150,58 @@ function DashboardEnhancedComponent() {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <FilterBar
-        showSiteFilter={true}
-        showTimeRangeFilter={true}
-        showContextFilter={true}
-        onFilterChange={(filters) => {
-          console.log('[Dashboard] Filters changed:', filters);
-          // Filters will automatically be applied via useGlobalFilters hook
-          // Context is now available in filters.context
-        }}
-      />
+      {/* Contextual Insights Selector + Content Layout */}
+      <div className="flex gap-6">
+        {/* Left Sidebar - Selector */}
+        <div className="w-80 flex-shrink-0">
+          <ContextualInsightsSelector
+            activeTab={selectorTab}
+            selectedId={selectedEntityId || undefined}
+            onTabChange={(tab) => {
+              setSelectorTab(tab);
+              setSelectedEntityId(null);
+            }}
+            onSelectionChange={(tab, id) => {
+              setSelectedEntityId(id);
+              console.log('[Dashboard] Selection changed:', { tab, id });
+            }}
+          />
 
-      {/* ========================================
-          SECTION 1: OPERATIONAL CONTEXT SUMMARY
-          ======================================== */}
-      <div className="space-y-4">
-        <div className="border-b pb-2">
-          <h3 className="text-lg font-semibold">Operational Context Summary</h3>
-          <p className="text-sm text-muted-foreground">Intelligent context-aware network insights</p>
+          {/* Time Range Filter below selector */}
+          <div className="mt-4">
+            <FilterBar
+              showSiteFilter={false}
+              showTimeRangeFilter={true}
+              showContextFilter={false}
+            />
+          </div>
         </div>
-        <OperationalContextSummary />
+
+        {/* Right Content Area */}
+        <div className="flex-1 min-w-0">
+          {/* ========================================
+              SECTION 1: OPERATIONAL CONTEXT SUMMARY
+              ======================================== */}
+          <div className="space-y-4">
+            <div className="border-b pb-2">
+              <h3 className="text-lg font-semibold">
+                {selectorTab === 'ai-insights' && 'AI-Powered Network Insights'}
+                {selectorTab === 'site' && (selectedEntityId ? 'Site Details' : 'Site Overview')}
+                {selectorTab === 'access-point' && (selectedEntityId ? 'Access Point Details' : 'Access Point Overview')}
+                {selectorTab === 'switch' && (selectedEntityId ? 'Switch Details' : 'Switch Overview')}
+                {selectorTab === 'client' && (selectedEntityId ? 'Client Details' : 'Client Overview')}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {selectorTab === 'ai-insights' && 'Intelligent context-aware network analysis and recommendations'}
+                {selectorTab === 'site' && 'Site-level network performance and health metrics'}
+                {selectorTab === 'access-point' && 'Access point status, performance, and client connections'}
+                {selectorTab === 'switch' && 'Switch status and port utilization metrics'}
+                {selectorTab === 'client' && 'Client connection quality and network usage'}
+              </p>
+            </div>
+            <OperationalContextSummary />
+          </div>
+        </div>
       </div>
 
       {/* ========================================
