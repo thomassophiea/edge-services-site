@@ -364,7 +364,7 @@ export class ChatbotService {
     const connected = ap.connected;
 
     // Consider an AP online if:
-    // 1. Status is "inservice" (primary status from Campus Controller)
+    // 1. Status is "inservice" (primary status from Extreme Platform ONE)
     // 2. Status is "ONLINE" (case-insensitive)
     // 3. Status contains 'up', 'online', 'connected'
     // 4. isUp, online, or connected boolean is true

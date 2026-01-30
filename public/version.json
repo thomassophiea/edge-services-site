@@ -1,13 +1,13 @@
 {
-  "version": "v543.ac0a274",
-  "commit": "ac0a274",
-  "commitFull": "ac0a2744f68fe57a367e80325725430ad0ddea14",
-  "commitCount": "543",
-  "cacheVersion": 1043,
+  "version": "v544.d8e2a46",
+  "commit": "d8e2a46",
+  "commitFull": "d8e2a46",
+  "commitCount": "544",
+  "cacheVersion": 1044,
   "branch": "main",
-  "buildDate": "2026-01-30T02:10:56.716Z",
-  "commitDate": "2026-01-29 17:57:21 -0800",
-  "message": "Update user menu with Cloud Status link and API Documentation",
+  "buildDate": "2026-01-30T02:30:00.000Z",
+  "commitDate": "2026-01-29",
+  "message": "Replace Campus Controller with Extreme Platform ONE branding",
   "features": [
     "Data Normalization Layer (P0-002)",
     "Universal FilterBar Component (P0-003)",
@@ -18,6 +18,6 @@
     "Anomaly Detector Widget (P1-005)",
     "RF Quality Index (RFQI) Widget",
     "Application Analytics Widget",
-    "Campus Controller Widget API Integration"
+    "Extreme Platform ONE Widget API Integration"
   ]
 }

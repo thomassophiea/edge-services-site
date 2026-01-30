@@ -37,7 +37,7 @@ interface SwitchesWidgetProps {
  * - Switch models distribution
  * - Detailed switch information in slide-out panel
  *
- * Uses Campus Controller API: GET /v1/switches
+ * Uses Extreme Platform ONE API: GET /v1/switches
  */
 export function SwitchesWidget({ siteId }: SwitchesWidgetProps) {
   const [loading, setLoading] = useState(true);

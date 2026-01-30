@@ -27,7 +27,7 @@ interface AuditLog {
  * Audit Logs Widget
  *
  * Displays system audit logs showing user actions and system events
- * Uses Campus Controller API: GET /v1/auditlogs
+ * Uses Extreme Platform ONE API: GET /v1/auditlogs
  */
 export function AuditLogsWidget() {
   const [loading, setLoading] = useState(true);

@@ -1,7 +1,7 @@
 import { Service } from '../services/api';
 
 /**
- * Generate a complete default service object based on the Campus Controller API structure
+ * Generate a complete default service object based on the Extreme Platform ONE API structure
  * This includes all required fields to ensure network creation succeeds
  */
 export function generateDefaultService(overrides: Partial<Service> = {}): Partial<Service> {

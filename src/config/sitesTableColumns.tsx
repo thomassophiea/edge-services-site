@@ -288,7 +288,7 @@ export const SITES_TABLE_COLUMNS: ColumnConfig<Site>[] = [
 
   {
     key: 'adoptionPrimary',
-    label: 'Primary Controller',
+    label: 'Primary Platform',
     category: 'advanced',
     dataType: 'string',
     fieldPath: 'adoptionPrimary',
@@ -296,12 +296,12 @@ export const SITES_TABLE_COLUMNS: ColumnConfig<Site>[] = [
     sortable: true,
     defaultWidth: 180,
     renderCell: (site) => site.adoptionPrimary || '—',
-    tooltip: 'Primary controller address'
+    tooltip: 'Primary Extreme Platform ONE address'
   },
 
   {
     key: 'adoptionBackup',
-    label: 'Backup Controller',
+    label: 'Backup Platform',
     category: 'advanced',
     dataType: 'string',
     fieldPath: 'adoptionBackup',
@@ -309,6 +309,6 @@ export const SITES_TABLE_COLUMNS: ColumnConfig<Site>[] = [
     sortable: true,
     defaultWidth: 180,
     renderCell: (site) => site.adoptionBackup || '—',
-    tooltip: 'Backup controller address'
+    tooltip: 'Backup Extreme Platform ONE address'
   }
 ];

@@ -126,7 +126,7 @@ export function RFQualityWidget({ siteId, duration = '24H' }: RFQualityWidgetPro
           <Alert className="border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-              {error || 'RF quality data is not available for this site. This feature may require additional licensing or controller configuration.'}
+              {error || 'RF quality data is not available for this site. This feature may require additional licensing or Extreme Platform ONE configuration.'}
             </AlertDescription>
           </Alert>
 

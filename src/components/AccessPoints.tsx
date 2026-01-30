@@ -46,7 +46,7 @@ const AVAILABLE_COLUMNS: ColumnConfig[] = [
   { key: 'status', label: 'Status', defaultVisible: false, category: 'status' },
   { key: 'uptime', label: 'Uptime', defaultVisible: false, category: 'status' },
   { key: 'adoptedBy', label: 'Adopted By', defaultVisible: false, category: 'status' },
-  { key: 'home', label: 'Home Controller', defaultVisible: false, category: 'status' },
+  { key: 'home', label: 'Home Platform', defaultVisible: false, category: 'status' },
 
   // Performance columns
   { key: 'cpuUsage', label: 'CPU %', defaultVisible: false, category: 'performance' },
@@ -275,7 +275,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
         setError(errorMessage);
       } else {
         // For timeout errors, show a user-friendly message
-        setError('Loading access points is taking longer than expected. The Campus Controller may be slow to respond.');
+        setError('Loading access points is taking longer than expected. Extreme Platform ONE may be slow to respond.');
       }
     } finally {
       setIsLoading(false);
@@ -719,7 +719,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
     const isOnline = (ap as any).online;
 
     // Consider an AP online if:
-    // 1. Status is "inservice" (case-insensitive) - this is the primary status from Campus Controller
+    // 1. Status is "inservice" (case-insensitive) - this is the primary status from Extreme Platform ONE
     // 2. Status contains 'up', 'online', 'connected'
     // 3. isUp or online boolean is true
     // 4. No status field but AP exists in list (default to online)
@@ -1674,7 +1674,7 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
                             <DropdownMenuItem
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                if (confirm(`Delete ${getAPName(ap)}? This will remove the AP from the controller.`)) {
+                                if (confirm(`Delete ${getAPName(ap)}? This will remove the AP from Extreme Platform ONE.`)) {
                                   try {
                                     await apiService.deleteAP(ap.serialNumber);
                                     toast.success('AP deleted successfully');

@@ -170,13 +170,13 @@ export function Dashboard() {
             toast.success('Dashboard refreshed');
           }
         } else {
-          // Silently set error without logging - this is expected for some Campus Controller versions
+          // Silently set error without logging - this is expected for some Extreme Platform ONE versions
           setError('Dashboard endpoint not available. Please check API configuration.');
           
           // Only show toast if user explicitly refreshed
           if (showRefreshing) {
             toast.info('Dashboard unavailable', {
-              description: 'This Campus Controller version does not support dashboard endpoints.'
+              description: 'This Extreme Platform ONE version does not support dashboard endpoints.'
             });
           }
         }
@@ -936,7 +936,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              The dashboard endpoint is not available on this Campus Controller. The system tried multiple methods to load dashboard data.
+              The dashboard endpoint is not available on this Extreme Platform ONE. The system tried multiple methods to load dashboard data.
             </p>
             <div className="bg-muted/20 border border-border rounded-lg p-4">
               <p className="text-sm text-muted-foreground mb-2">

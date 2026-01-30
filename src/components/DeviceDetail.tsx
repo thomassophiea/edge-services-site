@@ -118,7 +118,7 @@ export function DeviceDetail({ deviceId }: DeviceDetailProps) {
       
       if (errorMessage.includes('timed out') || errorMessage.includes('timeout')) {
         toast.error('Request timed out', {
-          description: 'The Campus Controller is taking too long to respond.',
+          description: 'Extreme Platform ONE is taking too long to respond.',
           duration: 8000
         });
       } else {

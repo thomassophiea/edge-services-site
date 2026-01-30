@@ -309,7 +309,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                               enterpriseElement.mode === 'mixed' ? 'tkip-aes' : 'aes';
         }
 
-        // Map service data to comprehensive form data with ALL Campus Controller fields
+        // Map service data to comprehensive form data with ALL Extreme Platform ONE fields
         const mappedFormData = {
           // Basic Settings
           name: serviceData.serviceName || serviceData.name || serviceData.ssid || 'Unnamed Network',
@@ -668,7 +668,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
       setService(updatedService);
 
       toast.success('Network configuration saved successfully', {
-        description: `Settings for ${formData.name} have been updated with all Campus Controller features.`
+        description: `Settings for ${formData.name} have been updated with all Extreme Platform ONE features.`
       });
 
       // Call onSave callback to refresh parent component
@@ -689,8 +689,8 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
       console.error('Original service structure:', Object.keys(service || {}));
       console.error('Form data structure:', formData);
 
-      // Log specific Campus Controller API expectations
-      console.error('Campus Controller API debugging hints:');
+      // Log specific Extreme Platform ONE API expectations
+      console.error('Extreme Platform ONE API debugging hints:');
       console.error('- Check if service ID exists:', serviceId);
       console.error('- Verify field names match API expectations');
       console.error('- Check for required fields that might be missing');
@@ -707,7 +707,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
       // Provide actionable error message to user
       let userFriendlyError = errorMessage;
       if (errorMessage.includes('422')) {
-        userFriendlyError = 'Validation failed. The Campus Controller rejected the update. Check that all field values are valid (e.g., valid VLAN range, proper passphrase length, valid UUIDs for roles/topologies).';
+        userFriendlyError = 'Validation failed. Extreme Platform ONE rejected the update. Check that all field values are valid (e.g., valid VLAN range, proper passphrase length, valid UUIDs for roles/topologies).';
       } else if (errorMessage.includes('404')) {
         userFriendlyError = 'Service not found. The network configuration may have been deleted by another user.';
       } else if (errorMessage.includes('403')) {
@@ -1177,7 +1177,7 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {formData.proxied === 'Local' ? 'Traffic bridged locally at AP' : 'Traffic tunneled to controller'}
+                    {formData.proxied === 'Local' ? 'Traffic bridged locally at AP' : 'Traffic tunneled to Extreme Platform ONE'}
                   </p>
                 </div>
               </div>
@@ -1676,11 +1676,11 @@ export function NetworkEditDetail({ serviceId, onSave, isInline = false }: Netwo
 
         {/* Advanced Settings Tab */}
         <TabsContent value="advanced" className="space-y-6">
-          {/* Campus Controller Advanced Settings */}
+          {/* Extreme Platform ONE Advanced Settings */}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Advanced Settings</CardTitle>
-              <CardDescription>Campus Controller advanced WLAN configuration options</CardDescription>
+              <CardDescription>Extreme Platform ONE advanced WLAN configuration options</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* MultiBand Operation */}

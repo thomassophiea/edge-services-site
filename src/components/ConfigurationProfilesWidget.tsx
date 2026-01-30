@@ -18,7 +18,7 @@ import { apiService } from '../services/api';
  * - CoS (Class of Service) Profiles
  * - Rate Limiters
  *
- * Uses multiple Campus Controller APIs to provide complete configuration visibility
+ * Uses multiple Extreme Platform ONE APIs to provide complete configuration visibility
  */
 
 // Standard 802.1p CoS priority mappings

@@ -2,7 +2,7 @@ import { apiService } from './api';
 
 /**
  * Widget Service
- * Handles fetching widget data from Campus Controller report APIs
+ * Handles fetching widget data from Extreme Platform ONE report APIs
  */
 
 export interface WidgetRequest {
@@ -18,7 +18,7 @@ export interface WidgetResponse {
 }
 
 /**
- * Fetch widget data from Campus Controller
+ * Fetch widget data from Extreme Platform ONE
  */
 export async function fetchWidgetData(request: WidgetRequest): Promise<WidgetResponse> {
   const {

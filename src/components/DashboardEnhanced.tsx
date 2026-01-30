@@ -726,7 +726,7 @@ function DashboardEnhancedComponent() {
 
       // Try to get upload rate with smart unit detection
       // API may return bps or Mbps depending on controller version
-      // Real data analysis: Campus Controller returns bps (values like 149610, 28375512)
+      // Real data analysis: Extreme Platform ONE returns bps (values like 149610, 28375512)
       // Threshold: > 1000 = bps, ≤ 1000 = Mbps
       if (station.transmittedRate !== undefined && station.transmittedRate !== null && station.transmittedRate > 0) {
         // If value > 1000, assume it's already in bps (e.g., 612612 bps)
@@ -1009,7 +1009,7 @@ function DashboardEnhancedComponent() {
 
   // Helper function to format Tx/Rx rates with smart unit detection
   // API may return bps or Mbps depending on controller version
-  // Real data analysis: Campus Controller returns bps (values like 149610, 28375512)
+  // Real data analysis: Extreme Platform ONE returns bps (values like 149610, 28375512)
   // Threshold: > 1000 = bps, ≤ 1000 = Mbps
   const formatTxRxRate = (rate: number | undefined): string => {
     if (rate === undefined || rate === null || rate === 0) {
@@ -1908,152 +1908,6 @@ function DashboardEnhancedComponent() {
         </Card>
       )}
 
-      {/* Connected Clients Detail */}
-      {stations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Connected Clients</CardTitle>
-                <CardDescription>Click on any client to view detailed information</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{stations.length} Total</Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsConnectedClientsCollapsed(!isConnectedClientsCollapsed)}
-                >
-                  {isConnectedClientsCollapsed ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          {!isConnectedClientsCollapsed && (
-          <CardContent>
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-2">
-                {stations.map((station) => {
-                  const rssi = station.rssi || 0;
-                  const signalQuality = rssi >= -50 ? 'excellent' : rssi >= -60 ? 'good' : rssi >= -70 ? 'fair' : 'poor';
-                  const SignalIcon = rssi >= -60 ? Signal : rssi >= -70 ? Signal : Signal;
-
-                  // Calculate throughput rates (bps)
-                  let tx = 0;
-                  let rx = 0;
-
-                  if (station.txRate !== undefined && station.txRate > 0) {
-                    tx = station.txRate * 1000000; // Mbps to bps
-                  } else {
-                    const uploadBytes = station.outBytes || station.txBytes || 0;
-                    const sessionSeconds = (station.uptime && station.uptime > 0) ? station.uptime : 3600;
-                    tx = (uploadBytes * 8) / sessionSeconds; // bytes to bps (rate)
-                  }
-
-                  if (station.rxRate !== undefined && station.rxRate > 0) {
-                    rx = station.rxRate * 1000000; // Mbps to bps
-                  } else {
-                    const downloadBytes = station.inBytes || station.rxBytes || 0;
-                    const sessionSeconds = (station.uptime && station.uptime > 0) ? station.uptime : 3600;
-                    rx = (downloadBytes * 8) / sessionSeconds; // bytes to bps (rate)
-                  }
-
-                  const totalThroughput = tx + rx;
-                  
-                  return (
-                    <div
-                      key={station.macAddress}
-                      onClick={async () => {
-                        try {
-                          // Fetch fresh station details from the API
-                          const stationDetails = await apiService.fetchStationDetails(station.macAddress);
-                          // Merge with existing station data
-                          setSelectedClient({ ...station, ...stationDetails });
-                          setIsClientDialogOpen(true);
-                        } catch (error) {
-                          console.error('[Dashboard] Failed to fetch client details:', error);
-                          // Fallback to existing station data
-                          setSelectedClient(station);
-                          setIsClientDialogOpen(true);
-                        }
-                      }}
-                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="flex flex-col items-center justify-center w-10">
-                          {station.authenticated !== false ? (
-                            <Shield className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <Shield className="h-5 w-5 text-gray-400" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium truncate">
-                              {station.hostName || station.macAddress}
-                            </span>
-                            {station.authenticated !== false && (
-                              <Badge variant="outline" className="text-xs border-green-600 text-green-600">
-                                Auth
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Router className="h-3 w-3" />
-                              {station.apName || station.apSerialNumber || 'N/A'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Network className="h-3 w-3" />
-                              {station.ssid || station.serviceName || 'Unknown'}
-                            </span>
-                            {station.ipAddress && (
-                              <span className="flex items-center gap-1">
-                                <Info className="h-3 w-3" />
-                                {station.ipAddress}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="flex items-center gap-1 text-xs">
-                            <SignalIcon 
-                              className={`h-4 w-4 ${
-                                signalQuality === 'excellent' ? 'text-green-600' :
-                                signalQuality === 'good' ? 'text-blue-600' :
-                                signalQuality === 'fair' ? 'text-yellow-600' :
-                                'text-red-600'
-                              }`}
-                            />
-                            <span>{rssi} dBm</span>
-                          </div>
-                          {totalThroughput > 0 && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {formatBps(totalThroughput)}
-                            </div>
-                          )}
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="text-center text-sm text-muted-foreground mt-4">
-                Showing all {stations.length} clients
-              </div>
-            </ScrollArea>
-          </CardContent>
-          )}
-        </Card>
-      )}
-
       {/* Poor Services Alert */}
       {poorServices.length > 0 && (
         <Card className="border-yellow-500">
@@ -2447,9 +2301,9 @@ function DashboardEnhancedComponent() {
                   </p>
                   <div className="text-xs text-muted-foreground max-w-md mx-auto space-y-1 mt-4">
                     <p>Station events may be unavailable if:</p>
-                    <p>• Your Campus Controller doesn't support the station events API</p>
+                    <p>• Your Extreme Platform ONE doesn't support the station events API</p>
                     <p>• No events have been logged for this station in the last 30 days</p>
-                    <p>• Audit logging is not enabled on your controller</p>
+                    <p>• Audit logging is not enabled on your Extreme Platform ONE</p>
                   </div>
                   <Button
                     variant="outline"

@@ -229,7 +229,7 @@ export function ServiceLevelsEnhanced() {
     } catch (error) {
       console.error('[ServiceLevels] Error loading services:', error);
       toast.error('Failed to load services', {
-        description: 'Unable to connect to Campus Controller API'
+        description: 'Unable to connect to Extreme Platform ONE API'
       });
     } finally {
       setLoading(false);

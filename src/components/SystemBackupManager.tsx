@@ -277,7 +277,7 @@ export function SystemBackupManager() {
                 Configuration Backups
               </CardTitle>
               <CardDescription className="mt-1">
-                Backup and restore controller configuration
+                Backup and restore Extreme Platform ONE configuration
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -310,7 +310,7 @@ export function SystemBackupManager() {
                 <Database className="h-16 w-16 mx-auto text-blue-500/60" />
               </div>
               <p className="text-lg font-semibold mb-2">No configuration backups found</p>
-              <p className="text-sm max-w-md mx-auto">Create your first backup to safeguard your controller configuration and enable quick restore capabilities</p>
+              <p className="text-sm max-w-md mx-auto">Create your first backup to safeguard your Extreme Platform ONE configuration and enable quick restore capabilities</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -492,7 +492,7 @@ export function SystemBackupManager() {
           <DialogHeader>
             <DialogTitle>Restore Configuration</DialogTitle>
             <DialogDescription>
-              Are you sure you want to restore from this backup? The controller will be restarted
+              Are you sure you want to restore from this backup? Extreme Platform ONE will be restarted
               and current configuration will be replaced.
             </DialogDescription>
           </DialogHeader>
@@ -500,7 +500,7 @@ export function SystemBackupManager() {
             <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Warning:</strong> This action will restart the controller and may cause
+                <strong>Warning:</strong> This action will restart Extreme Platform ONE and may cause
                 temporary service disruption.
               </p>
             </div>

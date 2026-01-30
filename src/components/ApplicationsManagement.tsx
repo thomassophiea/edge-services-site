@@ -116,9 +116,9 @@ export function ApplicationsManagement() {
           console.log('[ApplicationsManagement] Sample app:', rawApps[0]);
         }
 
-        // Transform Campus Controller format to our interface
+        // Transform Extreme Platform ONE format to our interface
         const appList: Application[] = rawApps.map((app: any, index: number) => {
-          // Map status from Campus Controller
+          // Map status from Extreme Platform ONE
           let status: Application['status'] = 'available';
           if (app.status === 'installed' || app.state === 'installed' || app.installed === true) {
             status = 'installed';
@@ -357,7 +357,7 @@ export function ApplicationsManagement() {
             <Alert className="border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-                OAuth applications management API endpoints are not available on this controller version. This feature requires API v1/oauth/applications support.
+                OAuth applications management API endpoints are not available on this Extreme Platform ONE version. This feature requires API v1/oauth/applications support.
               </AlertDescription>
             </Alert>
 

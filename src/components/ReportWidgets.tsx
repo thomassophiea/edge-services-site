@@ -133,7 +133,7 @@ export function ReportWidgets() {
       let value: string | number = 'N/A';
       let status: 'healthy' | 'warning' | 'critical' = 'healthy';
 
-      // Use actual Campus Controller API endpoints to get real data
+      // Use actual Extreme Platform ONE API endpoints to get real data
       switch (widget.id) {
         case 'network-utilization':
           try {
@@ -505,7 +505,7 @@ export function ReportWidgets() {
         <div>
           <h1 className="text-headline-5 text-high-emphasis">Analytics & Monitoring Hub</h1>
           <p className="text-muted-foreground">
-            Real-time widgets and metrics from Campus Controller
+            Real-time widgets and metrics from Extreme Platform ONE
           </p>
         </div>
         

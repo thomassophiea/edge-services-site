@@ -374,7 +374,7 @@ export function ConfigureSites({ onShowDetail }: ConfigureSitesProps) {
     try {
       console.log('Creating site with data:', formData);
       
-      // Prepare the site creation payload according to Campus Controller API
+      // Prepare the site creation payload according to Extreme Platform ONE API
       const siteData = {
         siteName: formData.name.trim(),
         ...(formData.country && { country: formData.country }),
@@ -415,19 +415,19 @@ export function ConfigureSites({ onShowDetail }: ConfigureSitesProps) {
 
   const handleEditSite = async () => {
     toast.info('Site editing not yet implemented', {
-      description: 'Please use the Campus Controller web interface to edit sites.'
+      description: 'Please use the Extreme Platform ONE web interface to edit sites.'
     });
   };
 
   const handleDeleteSite = async (site: Site) => {
     toast.info('Site deletion not yet implemented', {
-      description: 'Please use the Campus Controller web interface to delete sites.'
+      description: 'Please use the Extreme Platform ONE web interface to delete sites.'
     });
   };
 
   const handleCloneSite = async (site: Site) => {
     toast.info('Site cloning not yet implemented', {
-      description: 'Please use the Campus Controller web interface to clone sites.'
+      description: 'Please use the Extreme Platform ONE web interface to clone sites.'
     });
   };
 
@@ -491,7 +491,7 @@ export function ConfigureSites({ onShowDetail }: ConfigureSitesProps) {
                 <span>Loading Sites</span>
               </CardTitle>
               <CardDescription>
-                Fetching site data from Campus Controller...
+                Fetching site data from Extreme Platform ONE...
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

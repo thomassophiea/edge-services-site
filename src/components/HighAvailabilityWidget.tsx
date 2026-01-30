@@ -92,7 +92,7 @@ export function HighAvailabilityWidget() {
             <Shield className="h-5 w-5" />
             High Availability Status
           </CardTitle>
-          <CardDescription>Controller redundancy and clustering</CardDescription>
+          <CardDescription>Extreme Platform ONE redundancy and clustering</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
@@ -111,7 +111,7 @@ export function HighAvailabilityWidget() {
             <Shield className="h-5 w-5" />
             High Availability Status
           </CardTitle>
-          <CardDescription>Controller redundancy and clustering</CardDescription>
+          <CardDescription>Extreme Platform ONE redundancy and clustering</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
@@ -137,7 +137,7 @@ export function HighAvailabilityWidget() {
               High Availability Status
             </CardTitle>
             <CardDescription>
-              Controller redundancy and clustering
+              Extreme Platform ONE redundancy and clustering
               {lastUpdate && (
                 <span className="ml-2">• Updated {lastUpdate.toLocaleTimeString()}</span>
               )}
@@ -170,19 +170,19 @@ export function HighAvailabilityWidget() {
             </div>
           </div>
 
-          {/* Controller Role */}
+          {/* Role */}
           <div className="p-4 rounded-lg border bg-card">
             <div className="flex items-center gap-2 mb-2">
               <Server className="h-5 w-5 text-muted-foreground" />
-              <h3 className="font-semibold text-sm">Controller Role</h3>
+              <h3 className="font-semibold text-sm">Role</h3>
             </div>
             <div className="space-y-1">
               <p className={`text-2xl font-bold ${getRoleColor(haStatus.availabilityRole)}`}>
                 {haStatus.availabilityRole}
               </p>
               <Badge variant={getRoleBadgeVariant(haStatus.availabilityRole)}>
-                {haStatus.availabilityRole === 'PRIMARY' ? 'Active Controller' :
-                 haStatus.availabilityRole === 'SECONDARY' ? 'Standby Controller' :
+                {haStatus.availabilityRole === 'PRIMARY' ? 'Active' :
+                 haStatus.availabilityRole === 'SECONDARY' ? 'Standby' :
                  'Standalone Mode'}
               </Badge>
             </div>
@@ -192,7 +192,7 @@ export function HighAvailabilityWidget() {
           <div className="p-4 rounded-lg border bg-card">
             <div className="flex items-center gap-2 mb-2">
               <Network className="h-5 w-5 text-muted-foreground" />
-              <h3 className="font-semibold text-sm">Paired Controller</h3>
+              <h3 className="font-semibold text-sm">Paired Node</h3>
             </div>
             <div className="space-y-1">
               {haStatus.availabilityPairAddr ? (
@@ -203,7 +203,7 @@ export function HighAvailabilityWidget() {
                   </Badge>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">No paired controller</p>
+                <p className="text-sm text-muted-foreground">No paired node</p>
               )}
             </div>
           </div>
@@ -220,7 +220,7 @@ export function HighAvailabilityWidget() {
               </p>
               <p className="text-xs text-muted-foreground">
                 {haStatus.balanceAps
-                  ? 'APs distributed across controllers'
+                  ? 'APs distributed across nodes'
                   : 'No AP distribution'}
               </p>
             </div>
@@ -288,7 +288,7 @@ export function HighAvailabilityWidget() {
           <div className="mt-4 p-3 bg-muted/50 rounded-lg">
             <p className="text-xs text-muted-foreground">
               <strong>Note:</strong> High Availability is currently disabled. Configure HA to enable
-              controller redundancy and automatic failover for improved network resilience.
+              redundancy and automatic failover for improved network resilience.
             </p>
           </div>
         )}
@@ -296,7 +296,7 @@ export function HighAvailabilityWidget() {
         {haStatus.availabilityEnabled && !haStatus.availabilityPairAddr && (
           <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
             <p className="text-xs text-yellow-800 dark:text-yellow-200">
-              <strong>Warning:</strong> HA is enabled but no paired controller address is configured.
+              <strong>Warning:</strong> HA is enabled but no paired node address is configured.
               Set the pair address to complete the HA setup.
             </p>
           </div>

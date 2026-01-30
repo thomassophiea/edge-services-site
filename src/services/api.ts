@@ -379,7 +379,7 @@ export interface APHardwareType {
 export interface Service {
   id: string;
   name?: string; // Optional as API may use serviceName instead
-  serviceName?: string; // Alternative name field used by Campus Controller
+  serviceName?: string; // Alternative name field used by Extreme Platform ONE
   description?: string;
   enabled?: boolean;
   status?: string; // 'enabled' or 'disabled'
@@ -404,7 +404,7 @@ export interface Service {
   enableCaptivePortal?: boolean; // Alternative field name for captive portal
   guestAccess?: boolean;
 
-  // Campus Controller specific fields
+  // Extreme Platform ONE specific fields
   canEdit?: boolean;
   canDelete?: boolean;
 
@@ -873,7 +873,7 @@ class ApiService {
         throw new Error('Password is required');
       }
 
-      // Try multiple authentication formats as different Campus Controller versions may expect different formats
+      // Try multiple authentication formats as different Extreme Platform ONE versions may expect different formats
       const authFormats = [
       // Format 1: JSON with camelCase grantType and userId (Extreme Networks standard)
       {
@@ -1247,7 +1247,7 @@ class ApiService {
           // Log network errors for debugging
           logger.warn(`Network error for ${endpoint}: ${error.message}`);
           
-          throw new Error(`Network error: Unable to connect to Campus Controller. Please check your connection and server availability.`);
+          throw new Error(`Network error: Unable to connect to Extreme Platform ONE. Please check your connection and server availability.`);
         }
         
         if (!isAnalyticsEndpoint) {
@@ -1429,7 +1429,7 @@ class ApiService {
     // Build query string from options
     const queryString = this.buildQueryString(options);
 
-    // Try multiple endpoints as Campus Controller may use different versions
+    // Try multiple endpoints as Extreme Platform ONE may use different versions
     const siteEndpoints = [
       '/v3/sites',
       '/v1/sites',
@@ -1727,10 +1727,10 @@ class ApiService {
     return body;
   }
 
-  // Test basic connectivity to the Campus Controller
+  // Test basic connectivity to Extreme Platform ONE
   async testConnectivity(): Promise<{ success: boolean; message: string; details?: any }> {
     try {
-      logger.log('Testing connectivity to Campus Controller...');
+      logger.log('Testing connectivity to Extreme Platform ONE...');
       
       // Test basic HTTPS connectivity with shorter timeout
       const controller = new AbortController();
@@ -1750,7 +1750,7 @@ class ApiService {
         // 405 Method Not Allowed is expected for OPTIONS, but means the endpoint exists
         return {
           success: true,
-          message: 'Campus Controller is reachable',
+          message: 'Extreme Platform ONE is reachable',
           details: {
             status: response.status,
             statusText: response.statusText,
@@ -1768,7 +1768,7 @@ class ApiService {
         };
       }
     } catch (error) {
-      let message = 'Cannot reach Campus Controller';
+      let message = 'Cannot reach Extreme Platform ONE';
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           message = 'Connection test timed out - server may be unreachable';
@@ -3437,7 +3437,7 @@ class ApiService {
   }
 
   /**
-   * Fetch widget data from Campus Controller
+   * Fetch widget data from Extreme Platform ONE
    * Discovered from HAR file analysis - uses /v1/report/sites endpoint
    *
    * @param siteId - Site ID to fetch data for
@@ -9133,7 +9133,7 @@ class ApiService {
   }
 
   // NOTE: Comprehensive API coverage achieved!
-  // Total methods implemented: 200+ covering all Campus Controller endpoints
+  // Total methods implemented: 200+ covering all Extreme Platform ONE endpoints
   // Including Platform Manager, Application Manager, Packet Capture, AFC Planning, and all advanced features
   // Categories: APs, Stations, Sites, Switches, Profiles, Reports, Admin, Config, Packet Capture, AFC, etc.
 }

@@ -1,0 +1,1236 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EDGE Platform REST API",
+    "description": "Comprehensive REST API for managing wireless networks, access points, clients, and network services on the ExtremeCloud IQ - Site Engine (Extreme Platform ONE).",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Extreme Networks",
+      "url": "https://www.extremenetworks.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/management",
+      "description": "Production API (via proxy)"
+    },
+    {
+      "url": "https://localhost:443/management",
+      "description": "Development API (direct)"
+    }
+  ],
+  "tags": [
+    { "name": "Authentication", "description": "User authentication and session management" },
+    { "name": "Sites", "description": "Site configuration and management" },
+    { "name": "Access Points", "description": "Access point management and monitoring" },
+    { "name": "Stations", "description": "Connected client management" },
+    { "name": "Services", "description": "Wireless network services (SSIDs)" },
+    { "name": "Roles", "description": "User role management and policies" },
+    { "name": "Switches", "description": "Network switch management" },
+    { "name": "Profiles", "description": "Configuration profiles" },
+    { "name": "Reports", "description": "Reporting and analytics data" },
+    { "name": "Radio", "description": "Radio and RF management" },
+    { "name": "Security", "description": "Security and threat management" },
+    { "name": "Guest", "description": "Guest access and captive portal" },
+    { "name": "Location", "description": "Location tracking and analytics" },
+    { "name": "QoS", "description": "Quality of Service management" },
+    { "name": "Events", "description": "System events and alarms" },
+    { "name": "Platform", "description": "OS ONE system management" },
+    { "name": "PacketCapture", "description": "Network packet capture" },
+    { "name": "Applications", "description": "Container and application management" },
+    { "name": "AFC", "description": "Automated Frequency Coordination for 6 GHz" },
+    { "name": "System", "description": "System configuration" }
+  ],
+  "paths": {
+    "/v1/oauth2/token": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login and obtain access token",
+        "description": "Authenticate with credentials and receive an access token for API requests.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grant_type": { "type": "string", "example": "password" },
+                  "userId": { "type": "string", "example": "admin" },
+                  "password": { "type": "string", "format": "password" }
+                },
+                "required": ["grant_type", "userId", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/v1/oauth2/revoke": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout and revoke token",
+        "description": "Revoke the current access token and invalidate the session.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Token revoked successfully" }
+        }
+      }
+    },
+    "/v1/sites": {
+      "get": {
+        "tags": ["Sites"],
+        "summary": "Get all sites",
+        "description": "Retrieve all sites in the organization with their configuration details.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of sites",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Site" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sites/{siteId}": {
+      "get": {
+        "tags": ["Sites"],
+        "summary": "Get site by ID",
+        "description": "Get detailed information for a specific site including configuration and statistics.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Site identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Site" }
+              }
+            }
+          },
+          "404": { "description": "Site not found" }
+        }
+      },
+      "put": {
+        "tags": ["Sites"],
+        "summary": "Update site",
+        "description": "Update site configuration including name, location, and timezone.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Site" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Site updated successfully" }
+        }
+      },
+      "delete": {
+        "tags": ["Sites"],
+        "summary": "Delete site",
+        "description": "Delete a site and all associated configurations.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Site deleted successfully" }
+        }
+      }
+    },
+    "/v1/state/sites": {
+      "get": {
+        "tags": ["Sites"],
+        "summary": "Get site states",
+        "description": "Get real-time operational state of all sites including health status.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Site states" }
+        }
+      }
+    },
+    "/v1/report/sites": {
+      "get": {
+        "tags": ["Sites", "Reports"],
+        "summary": "Get site reports",
+        "description": "Generate aggregated reports across all sites with traffic and performance metrics.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Site reports" }
+        }
+      }
+    },
+    "/v1/report/sites/{siteId}": {
+      "get": {
+        "tags": ["Sites", "Reports"],
+        "summary": "Get site report",
+        "description": "Get detailed performance report for a specific site.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "schema": { "type": "string", "default": "24H" },
+            "description": "Report duration (1H, 24H, 7D, 30D)"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Site report" }
+        }
+      }
+    },
+    "/v1/aps": {
+      "get": {
+        "tags": ["Access Points"],
+        "summary": "Get all access points",
+        "description": "List all access points with basic information including serial number, model, and status.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of access points",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AccessPoint" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/aps/query": {
+      "post": {
+        "tags": ["Access Points"],
+        "summary": "Query access points",
+        "description": "Query access points with advanced filters, pagination, and sorting.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QueryRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Query results" }
+        }
+      }
+    },
+    "/v1/aps/query/columns": {
+      "get": {
+        "tags": ["Access Points"],
+        "summary": "Get AP query columns",
+        "description": "Get available columns for AP queries to build dynamic filter interfaces.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Available columns" }
+        }
+      }
+    },
+    "/v1/aps/{serialNumber}": {
+      "get": {
+        "tags": ["Access Points"],
+        "summary": "Get AP details",
+        "description": "Get complete details for a specific AP including radio config and diagnostics.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AP details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AccessPoint" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Access Points"],
+        "summary": "Update AP configuration",
+        "description": "Update AP configuration including name, location, and radio settings.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AccessPoint" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "AP updated" }
+        }
+      },
+      "delete": {
+        "tags": ["Access Points"],
+        "summary": "Delete access point",
+        "description": "Remove an access point from management.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "AP deleted" }
+        }
+      }
+    },
+    "/v1/aps/{serialNumber}/stations": {
+      "get": {
+        "tags": ["Access Points"],
+        "summary": "Get AP connected stations",
+        "description": "List all clients currently connected to a specific access point.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Connected stations" }
+        }
+      }
+    },
+    "/v1/aps/{serialNumber}/reboot": {
+      "post": {
+        "tags": ["Access Points"],
+        "summary": "Reboot access point",
+        "description": "Reboot an access point. The AP will be offline briefly during restart.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Reboot initiated" }
+        }
+      }
+    },
+    "/v1/aps/{serialNumber}/upgrade": {
+      "post": {
+        "tags": ["Access Points"],
+        "summary": "Upgrade AP firmware",
+        "description": "Initiate firmware upgrade on an AP.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Upgrade initiated" }
+        }
+      }
+    },
+    "/v1/aps/ifstats": {
+      "get": {
+        "tags": ["Access Points"],
+        "summary": "Get AP interface statistics (bulk)",
+        "description": "Get interface statistics for all APs including CPU, memory, and throughput.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Interface statistics" }
+        }
+      }
+    },
+    "/v1/state/aps": {
+      "get": {
+        "tags": ["Access Points"],
+        "summary": "Get AP states",
+        "description": "Get real-time operational state of all APs.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "AP states" }
+        }
+      }
+    },
+    "/v1/report/aps/{serialNumber}": {
+      "get": {
+        "tags": ["Access Points", "Reports"],
+        "summary": "Get AP report",
+        "description": "Get comprehensive performance report for an AP.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "AP report" }
+        }
+      }
+    },
+    "/v1/stations": {
+      "get": {
+        "tags": ["Stations"],
+        "summary": "Get all stations",
+        "description": "List all connected wireless clients with MAC, IP, hostname, and connection details.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of stations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Station" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Stations"],
+        "summary": "Delete station records",
+        "description": "Delete station records from the database.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "macAddresses": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stations deleted" }
+        }
+      }
+    },
+    "/v1/stations/query": {
+      "post": {
+        "tags": ["Stations"],
+        "summary": "Query stations",
+        "description": "Query stations with filters for site, SSID, device type, and more.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QueryRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Query results" }
+        }
+      }
+    },
+    "/v1/stations/{macAddress}": {
+      "get": {
+        "tags": ["Stations"],
+        "summary": "Get station details",
+        "description": "Get detailed information for a specific client.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "macAddress",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Station details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Station" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stations/{macAddress}/deauth": {
+      "post": {
+        "tags": ["Stations"],
+        "summary": "Deauthenticate station",
+        "description": "Force disconnect a client.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "macAddress",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Station deauthenticated" }
+        }
+      }
+    },
+    "/v1/stations/{macAddress}/block": {
+      "post": {
+        "tags": ["Stations"],
+        "summary": "Block station",
+        "description": "Block a client MAC address.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "macAddress",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Station blocked" }
+        }
+      },
+      "delete": {
+        "tags": ["Stations"],
+        "summary": "Unblock station",
+        "description": "Remove a client from the block list.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "macAddress",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Station unblocked" }
+        }
+      }
+    },
+    "/v1/stations/disassociate": {
+      "post": {
+        "tags": ["Stations"],
+        "summary": "Disassociate stations",
+        "description": "Disassociate multiple clients by MAC address.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "macAddresses": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stations disassociated" }
+        }
+      }
+    },
+    "/v1/services": {
+      "get": {
+        "tags": ["Services"],
+        "summary": "Get all services",
+        "description": "List all wireless services (SSIDs) with their configuration.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of services",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Service" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Services"],
+        "summary": "Create service",
+        "description": "Create a new wireless service.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Service" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Service created" }
+        }
+      }
+    },
+    "/v1/services/{serviceId}": {
+      "get": {
+        "tags": ["Services"],
+        "summary": "Get service details",
+        "description": "Get detailed configuration for a specific service.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Service" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Services"],
+        "summary": "Update service",
+        "description": "Update service configuration.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Service" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Service updated" }
+        }
+      },
+      "delete": {
+        "tags": ["Services"],
+        "summary": "Delete service",
+        "description": "Delete a wireless service.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Service deleted" }
+        }
+      }
+    },
+    "/v1/roles": {
+      "get": {
+        "tags": ["Roles"],
+        "summary": "Get all roles",
+        "description": "List all user roles with their permissions.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of roles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Role" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Roles"],
+        "summary": "Create role",
+        "description": "Create a new role with specified permissions.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Role" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Role created" }
+        }
+      }
+    },
+    "/v1/switches": {
+      "get": {
+        "tags": ["Switches"],
+        "summary": "Get all switches",
+        "description": "List all managed switches with model, firmware, and status.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of switches" }
+        }
+      }
+    },
+    "/v1/switches/{serialNumber}": {
+      "get": {
+        "tags": ["Switches"],
+        "summary": "Get switch details",
+        "description": "Get detailed switch information including port configuration.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Switch details" }
+        }
+      }
+    },
+    "/v1/switches/{serialNumber}/ports": {
+      "get": {
+        "tags": ["Switches"],
+        "summary": "Get switch ports",
+        "description": "List all ports on a switch with status and speed.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Switch ports" }
+        }
+      }
+    },
+    "/v1/switches/{serialNumber}/poe": {
+      "get": {
+        "tags": ["Switches"],
+        "summary": "Get switch PoE status",
+        "description": "Get PoE status for all ports including power draw.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "PoE status" }
+        }
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Get system events",
+        "description": "Get system events with filtering by type and severity.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "severity",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "System events" }
+        }
+      }
+    },
+    "/v1/alarms": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Get all alarms",
+        "description": "List all alarms including historical.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "All alarms" }
+        }
+      }
+    },
+    "/v1/alarms/active": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Get active alarms",
+        "description": "Get only active alarms requiring attention.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Active alarms" }
+        }
+      }
+    },
+    "/v1/alarms/{id}/acknowledge": {
+      "post": {
+        "tags": ["Events"],
+        "summary": "Acknowledge alarm",
+        "description": "Acknowledge an alarm.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Alarm acknowledged" }
+        }
+      }
+    },
+    "/v1/auditlogs": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Get audit logs",
+        "description": "Get audit logs showing administrative actions.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Audit logs" }
+        }
+      }
+    },
+    "/platformmanager/v1/reports/systeminformation": {
+      "get": {
+        "tags": ["Platform"],
+        "summary": "Get system information",
+        "description": "Get system information including CPU, memory, and uptime.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "System information" }
+        }
+      }
+    },
+    "/platformmanager/v1/reports/manufacturinginformation": {
+      "get": {
+        "tags": ["Platform"],
+        "summary": "Get manufacturing information",
+        "description": "Get hardware manufacturing details.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Manufacturing information" }
+        }
+      }
+    },
+    "/platformmanager/v1/configuration/backups": {
+      "get": {
+        "tags": ["Platform"],
+        "summary": "Get configuration backups",
+        "description": "List available configuration backup files.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Backup list" }
+        }
+      }
+    },
+    "/platformmanager/v1/configuration/backup": {
+      "post": {
+        "tags": ["Platform"],
+        "summary": "Create configuration backup",
+        "description": "Create a new configuration backup.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Backup created" }
+        }
+      }
+    },
+    "/platformmanager/v1/license/info": {
+      "get": {
+        "tags": ["Platform"],
+        "summary": "Get license information",
+        "description": "Get license information including features and capacity.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "License information" }
+        }
+      }
+    },
+    "/platformmanager/v1/network/ping": {
+      "post": {
+        "tags": ["Platform"],
+        "summary": "Network ping test",
+        "description": "Execute a ping test from Extreme Platform ONE.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Ping results" }
+        }
+      }
+    },
+    "/platformmanager/v1/network/traceroute": {
+      "post": {
+        "tags": ["Platform"],
+        "summary": "Network traceroute",
+        "description": "Execute a traceroute from Extreme Platform ONE.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Traceroute results" }
+        }
+      }
+    },
+    "/v1/security/rogue-ap/list": {
+      "get": {
+        "tags": ["Security"],
+        "summary": "Get rogue APs",
+        "description": "List detected rogue APs with classification.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Rogue AP list" }
+        }
+      }
+    },
+    "/v1/security/threats": {
+      "get": {
+        "tags": ["Security"],
+        "summary": "Get security threats",
+        "description": "Get active security threats.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Security threats" }
+        }
+      }
+    },
+    "/v1/guests": {
+      "get": {
+        "tags": ["Guest"],
+        "summary": "Get all guests",
+        "description": "List all guest accounts with status.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Guest list" }
+        }
+      }
+    },
+    "/v1/guests/create": {
+      "post": {
+        "tags": ["Guest"],
+        "summary": "Create guest account",
+        "description": "Create a new guest account.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string" },
+                  "duration": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Guest created" }
+        }
+      }
+    },
+    "/v1/afc/plans": {
+      "get": {
+        "tags": ["AFC"],
+        "summary": "Get AFC plans",
+        "description": "List AFC plans with registration status.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "AFC plans" }
+        }
+      },
+      "post": {
+        "tags": ["AFC"],
+        "summary": "Create AFC plan",
+        "description": "Create an AFC plan for 6 GHz operation.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "AFC plan created" }
+        }
+      }
+    },
+    "/v1/globalsettings": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Get global settings",
+        "description": "Get global settings that apply across all sites.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Global settings" }
+        }
+      }
+    },
+    "/v1/version": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Get API version",
+        "description": "Get API and system version information.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Version information" }
+        }
+      }
+    },
+    "/v1/administrators": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Get administrators",
+        "description": "List administrator accounts.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Administrator list" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string" },
+          "token_type": { "type": "string" },
+          "expires_in": { "type": "integer" },
+          "refresh_token": { "type": "string" },
+          "adminRole": { "type": "string" }
+        }
+      },
+      "Site": {
+        "type": "object",
+        "properties": {
+          "siteId": { "type": "string" },
+          "name": { "type": "string" },
+          "displayName": { "type": "string" },
+          "timezone": { "type": "string" },
+          "countryCode": { "type": "string" },
+          "address": { "type": "string" }
+        }
+      },
+      "AccessPoint": {
+        "type": "object",
+        "properties": {
+          "serialNumber": { "type": "string" },
+          "displayName": { "type": "string" },
+          "model": { "type": "string" },
+          "hardwareType": { "type": "string" },
+          "status": { "type": "string" },
+          "ipAddress": { "type": "string" },
+          "macAddress": { "type": "string" },
+          "firmware": { "type": "string" },
+          "clientCount": { "type": "integer" }
+        }
+      },
+      "Station": {
+        "type": "object",
+        "properties": {
+          "macAddress": { "type": "string" },
+          "ipAddress": { "type": "string" },
+          "hostName": { "type": "string" },
+          "status": { "type": "string" },
+          "deviceType": { "type": "string" },
+          "ssid": { "type": "string" },
+          "apName": { "type": "string" },
+          "signalStrength": { "type": "integer" }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "serviceId": { "type": "string" },
+          "name": { "type": "string" },
+          "ssid": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "securityType": { "type": "string" },
+          "vlanId": { "type": "integer" }
+        }
+      },
+      "Role": {
+        "type": "object",
+        "properties": {
+          "roleId": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "permissions": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "QueryRequest": {
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": { "type": "string" },
+                "operator": { "type": "string" },
+                "value": { "type": "string" }
+              }
+            }
+          },
+          "sort": {
+            "type": "object",
+            "properties": {
+              "field": { "type": "string" },
+              "direction": { "type": "string", "enum": ["asc", "desc"] }
+            }
+          },
+          "page": { "type": "integer" },
+          "pageSize": { "type": "integer" }
+        }
+      }
+    }
+  }
+}

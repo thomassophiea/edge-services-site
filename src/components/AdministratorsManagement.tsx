@@ -97,9 +97,9 @@ export function AdministratorsManagement() {
           console.log('[AdministratorsManagement] Sample admin:', rawAdmins[0]);
         }
 
-        // Transform Campus Controller format to our interface
+        // Transform Extreme Platform ONE format to our interface
         const adminList: Administrator[] = rawAdmins.map((admin: any) => {
-          // Map adminRole from Campus Controller to our role format
+          // Map adminRole from Extreme Platform ONE to our role format
           let role: Administrator['role'] = 'viewer';
           if (admin.adminRole === 'FULL' || admin.adminRole === 'SUPER_ADMIN') {
             role = 'super_admin';
@@ -401,7 +401,7 @@ export function AdministratorsManagement() {
             <Alert className="border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-                Administrators management API endpoints are not available on this controller version. This feature requires API v1/administrators support.
+                Administrators management API endpoints are not available on this Extreme Platform ONE version. This feature requires API v1/administrators support.
               </AlertDescription>
             </Alert>
 
@@ -447,7 +447,7 @@ export function AdministratorsManagement() {
         <Alert className="border-yellow-500">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Administrators management API endpoints are not available on this controller version.
+            Administrators management API endpoints are not available on this Extreme Platform ONE version.
             This feature requires API v1/administrators support.
           </AlertDescription>
         </Alert>

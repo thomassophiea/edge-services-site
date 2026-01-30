@@ -579,7 +579,7 @@ export function ApiTestTool() {
     <div className="space-y-6">
       <div>
 
-        <p className="text-muted-foreground">Test and explore Campus Controller API endpoints</p>
+        <p className="text-muted-foreground">Test and explore EDGE Platform API endpoints</p>
       </div>
 
       <Tabs defaultValue="test" className="space-y-4">
@@ -667,7 +667,7 @@ export function ApiTestTool() {
                 <CardHeader>
                   <CardTitle>API Request</CardTitle>
                   <CardDescription>
-                    Make authenticated requests to the Campus Controller API
+                    Make authenticated requests to the EDGE Platform API
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -21,7 +21,7 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
           <p className="text-muted-foreground">
             This section will be implemented as we add functionality piece by piece. 
             For now, you can use the API Test Tool to explore the available endpoints 
-            and test the Campus Controller API.
+            and test the Extreme Platform ONE API.
           </p>
         </CardContent>
       </Card>

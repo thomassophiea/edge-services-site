@@ -35,7 +35,7 @@ export class WLANAssignmentService {
       // Step 1: Create the WLAN/Service
       console.log('[WLANAssignment] Step 1: Creating service...');
 
-      // Build Campus Controller API compliant service payload
+      // Build Extreme Platform ONE API compliant service payload
       const servicePayload: any = {
         // Basic identification
         serviceName: serviceData.serviceName || serviceData.name,
@@ -472,7 +472,7 @@ export class WLANAssignmentService {
       // Step 4: Create the WLAN/Service
       console.log('[WLANAssignment] Step 4: Creating service...');
 
-      // Build Campus Controller API compliant service payload
+      // Build Extreme Platform ONE API compliant service payload
       const servicePayload: any = {
         // Basic identification
         serviceName: serviceData.serviceName || serviceData.name,

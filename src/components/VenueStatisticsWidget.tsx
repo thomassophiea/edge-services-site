@@ -37,7 +37,7 @@ interface VenueStats {
  * - Total traffic volume
  * - Average throughput
  *
- * Uses Campus Controller API: GET /v3/sites/{siteId}/report/venue
+ * Uses Extreme Platform ONE API: GET /v3/sites/{siteId}/report/venue
  */
 export function VenueStatisticsWidget({ siteId, duration = '24H' }: VenueStatisticsWidgetProps) {
   const [loading, setLoading] = useState(true);

@@ -288,7 +288,7 @@ const mapAuthType = (service: Service): string => {
 
 // Helper function to transform service data to network config
 const transformServiceToNetwork = (service: Service, clientCount = 0): NetworkConfig => {
-  // Handle both 'name' and 'serviceName' fields (Campus Controller uses serviceName)
+  // Handle both 'name' and 'serviceName' fields (Extreme Platform ONE uses serviceName)
   const networkName = service.name || service.serviceName || service.ssid || 'Unnamed Network';
   const networkSSID = service.ssid || service.name || service.serviceName || 'Unnamed SSID';
   
@@ -634,7 +634,7 @@ export function ConfigureNetworks() {
                 <span>Network Configurations</span>
               </CardTitle>
               <CardDescription>
-                Manage and configure wireless networks, SSIDs, and security policies using Campus Controller Services API
+                Manage and configure wireless networks, SSIDs, and security policies
               </CardDescription>
             </div>
             <div className="flex space-x-2">

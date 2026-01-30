@@ -47,6 +47,7 @@ const NetworkDiagnostics = lazy(() => import('./components/NetworkDiagnostics').
 const EventAlarmDashboard = lazy(() => import('./components/EventAlarmDashboard').then(m => ({ default: m.EventAlarmDashboard })));
 const SecurityDashboard = lazy(() => import('./components/SecurityDashboard').then(m => ({ default: m.SecurityDashboard })));
 const GuestManagement = lazy(() => import('./components/GuestManagement').then(m => ({ default: m.GuestManagement })));
+const ApiDocumentation = lazy(() => import('./components/ApiDocumentation').then(m => ({ default: m.ApiDocumentation })));
 import { apiService, ApiCallLog } from './services/api';
 import { sleDataCollectionService } from './services/sleDataCollection';
 import { Toaster } from './components/ui/sonner';
@@ -84,6 +85,7 @@ const pageInfo = {
   'guest-management': { title: 'Guest Access', description: 'Manage guest wireless access accounts' },
   'administration': { title: 'Administration', description: 'System administration, users, applications, and licensing' },
   'api-test': { title: 'API Test Tool', description: 'Test and explore EDGE API endpoints' },
+  'api-documentation': { title: 'API Documentation', description: 'EDGE Platform REST API reference' },
   'configure-sites': { title: 'Sites', description: 'Manage and configure network sites and locations' },
   'configure-networks': { title: 'Configure Networks', description: 'Set up and manage network configurations' },
 };
@@ -317,7 +319,7 @@ export default function App() {
         'Network error for /v1/applications',
         'NetworkVisualization',
         'fetching topology',
-        'Unable to connect to Campus Controller',
+        'Unable to connect to Extreme Platform ONE',
         '/v1/system/time',
         '/v1/system/info',
         '/v1/system/logging',
@@ -402,7 +404,7 @@ export default function App() {
           '/v1/sites', 'Network error for /v1/sites',
           '/v1/applications', 'Network error for /v1/applications',
           'NetworkVisualization', 'fetching topology',
-          'Unable to connect to Campus Controller',
+          'Unable to connect to Extreme Platform ONE',
           '6000ms', '30000ms', '15000ms',
           '/v1/system/time', '/v1/system/info', '/v1/system/logging', '/v1/system/maintenance',
           '/v3/topologies', 'Network error for /v3/topologies',
@@ -460,7 +462,7 @@ export default function App() {
           
           console.warn('Request timeout detected:', errorMessage);
           toast.error('Request timed out', {
-            description: 'The Campus Controller took too long to respond.',
+            description: 'The Extreme Platform ONE took too long to respond.',
             duration: 4000
           });
           event.preventDefault();
@@ -536,7 +538,7 @@ export default function App() {
         '/v1/sites', 'Network error for /v1/sites',
         '/v1/applications', 'Network error for /v1/applications',
         'NetworkVisualization', 'fetching topology',
-        'Unable to connect to Campus Controller',
+        'Unable to connect to Extreme Platform ONE',
         '/v1/system/time', '/v1/system/info', '/v1/system/logging', '/v1/system/maintenance',
         '/v3/topologies', 'Network error for /v3/topologies',
         '/v3/cos', 'Network error for /v3/cos',
@@ -579,7 +581,7 @@ export default function App() {
         '/v1/sites', 'Network error for /v1/sites',
         '/v1/applications', 'Network error for /v1/applications',
         'NetworkVisualization', 'fetching topology',
-        'Unable to connect to Campus Controller',
+        'Unable to connect to Extreme Platform ONE',
         '/v1/system/time', '/v1/system/info', '/v1/system/logging', '/v1/system/maintenance',
         '/v3/topologies', 'Network error for /v3/topologies',
         '/v3/cos', 'Network error for /v3/cos',
@@ -802,7 +804,7 @@ export default function App() {
         toast.error('Connection test failed', {
           description: errorMessage.includes('timed out') 
             ? 'Connection test timed out - server may be slow or unreachable'
-            : 'Unable to reach Campus Controller API'
+            : 'Unable to reach Extreme Platform ONE API'
         });
       }
     } finally {
@@ -918,6 +920,8 @@ export default function App() {
         );
       case 'api-test':
         return <ApiTestTool />;
+      case 'api-documentation':
+        return <ApiDocumentation onNavigateBack={() => setCurrentPage('service-levels')} />;
       default:
         const info = pageInfo[currentPage as keyof typeof pageInfo];
         if (!info) {
@@ -1063,6 +1067,7 @@ export default function App() {
                   theme={theme}
                   onThemeToggle={toggleTheme}
                   userEmail={localStorage.getItem('user_email') || undefined}
+                  onNavigateTo={handlePageChange}
                 />
               </div>
             </div>
