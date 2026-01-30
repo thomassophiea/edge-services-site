@@ -1178,7 +1178,7 @@ function DashboardEnhancedComponent() {
         </div>
 
         {/* Key Metrics Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Total APs */}
         <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity" />
@@ -1381,8 +1381,6 @@ function DashboardEnhancedComponent() {
           </CardContent>
         </Card>
 
-        {/* OS ONE Controller */}
-        <OSOneWidget compact={true} />
         </div>
       </div>
 
@@ -1744,17 +1742,6 @@ function DashboardEnhancedComponent() {
           <p className="text-sm text-muted-foreground">Network configuration and optimization recommendations</p>
         </div>
         <BestPracticesWidget />
-      </div>
-
-      {/* ========================================
-          SECTION 5: OS ONE CONTROLLER
-          ======================================== */}
-      <div className="space-y-4">
-        <div className="border-b pb-2">
-          <h3 className="text-lg font-semibold">OS ONE Controller</h3>
-          <p className="text-sm text-muted-foreground">Site controller system information and health status</p>
-        </div>
-        <OSOneWidget showManufacturing={true} />
       </div>
 
       {/* Top Clients */}
@@ -2165,8 +2152,11 @@ function DashboardEnhancedComponent() {
         />
       )}
 
-      {/* Phase 5+ Widgets: Configuration Profiles and Audit Logs */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Phase 5+ Widgets: Configuration Profiles, Audit Logs, OS ONE */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* OS ONE Controller Widget */}
+        <OSOneWidget compact={true} />
+
         {/* Configuration Profiles Widget */}
         <ConfigurationProfilesWidget />
 
