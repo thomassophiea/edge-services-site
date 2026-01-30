@@ -4,7 +4,7 @@ import {
   Settings,
   Shield,
   HelpCircle,
-  Key,
+  BookOpen,
   ExternalLink,
   ChevronRight,
   LogOut,
@@ -14,6 +14,7 @@ import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Separator } from './ui/separator';
+import { Badge } from './ui/badge';
 
 interface UserMenuProps {
   onLogout: () => void;
@@ -64,13 +65,21 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenu
     initials: getInitialsFromEmail(userEmail)
   };
 
+  // Get API documentation URL (swagger UI on the controller)
+  const getApiDocsUrl = () => {
+    // In production, use relative path; in dev, use the configured controller URL
+    const isProduction = import.meta.env.PROD || window.location.hostname !== 'localhost';
+    const devBaseUrl = import.meta.env.VITE_DEV_CAMPUS_CONTROLLER_URL || 'https://localhost:443';
+    return isProduction ? '/api/swagger-ui.html' : `${devBaseUrl}/swagger-ui.html`;
+  };
+
   const menuItems = [
     {
       type: 'item',
       label: 'About EDGE Platform',
       icon: null,
+      beta: true,
       action: () => {
-        // Handle about action
         console.log('About EDGE Platform');
       }
     },
@@ -78,17 +87,17 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenu
       type: 'item',
       label: 'Cloud Status',
       icon: Shield,
+      externalLink: 'https://cloud-status.extremecloudiq.com/',
       action: () => {
-        // Handle cloud status action
-        console.log('Cloud Status');
+        window.open('https://cloud-status.extremecloudiq.com/', '_blank', 'noopener,noreferrer');
       }
     },
     {
       type: 'item',
       label: 'Help & Support',
       icon: HelpCircle,
+      beta: true,
       action: () => {
-        // Handle help action
         console.log('Help & Support');
       }
     },
@@ -103,26 +112,26 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenu
       type: 'item',
       label: 'Account Settings',
       icon: User,
+      beta: true,
       action: () => {
-        // Handle account settings action
         console.log('Account Settings');
       }
     },
     {
       type: 'item',
-      label: 'API Keys',
-      icon: Key,
+      label: 'API Documentation',
+      icon: BookOpen,
+      externalLink: true,
       action: () => {
-        // Handle API keys action
-        console.log('API Keys');
+        window.open(getApiDocsUrl(), '_blank', 'noopener,noreferrer');
       }
     },
     {
       type: 'item',
       label: 'External Integrations',
       icon: ExternalLink,
+      beta: true,
       action: () => {
-        // Handle external integrations action
         console.log('External Integrations');
       }
     },
@@ -130,8 +139,8 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenu
       type: 'item',
       label: 'Preferences',
       icon: Settings,
+      beta: true,
       action: () => {
-        // Handle preferences action
         console.log('Preferences');
       }
     },
@@ -223,7 +232,7 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenu
             }
 
             const IconComponent = item.icon;
-            
+
             return (
               <button
                 key={index}
@@ -233,6 +242,7 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenu
                   transition-colors hover:bg-accent hover:text-accent-foreground
                   focus:bg-accent focus:text-accent-foreground focus:outline-none
                   ${item.destructive ? 'text-destructive hover:bg-destructive/10' : 'text-foreground'}
+                  ${item.beta ? 'opacity-70' : ''}
                 `}
               >
                 <div className="flex items-center gap-3">
@@ -240,11 +250,21 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail }: UserMenu
                     <IconComponent className="h-4 w-4 flex-shrink-0" />
                   )}
                   <span className="text-left">{item.label}</span>
+                  {item.beta && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal text-muted-foreground border-muted-foreground/30">
+                      Beta
+                    </Badge>
+                  )}
                 </div>
-                
-                {item.hasSubmenu && (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                )}
+
+                <div className="flex items-center gap-1">
+                  {item.externalLink && (
+                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                  )}
+                  {item.hasSubmenu && (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
               </button>
             );
           })}
