@@ -37,7 +37,12 @@ import {
   Maximize2,
   Target,
   Radio,
-  Sparkles
+  Sparkles,
+  Brain,
+  Eye,
+  X,
+  Send,
+  CheckCircle2
 } from 'lucide-react';
 import { apiService, type StationEvent } from '../services/api';
 import { throughputService, ThroughputSnapshot } from '../services/throughput';
@@ -236,6 +241,22 @@ function DashboardEnhancedComponent() {
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [selectedEntityName, setSelectedEntityName] = useState<string | null>(null);
   const [isConnectedClientsCollapsed, setIsConnectedClientsCollapsed] = useState(true);
+
+  // AI Insights - Client Health Tracking (inspired by Sunil Jose Kodiyan's design)
+  const [healthViewMode, setHealthViewMode] = useState<'clients' | 'devices'>('clients');
+  const [aiInsightsDetailPanel, setAiInsightsDetailPanel] = useState(true);
+  const [aiActiveHealthTab, setAiActiveHealthTab] = useState<'needsAttention' | 'healthy'>('healthy');
+  const [selectedNetworkEvent, setSelectedNetworkEvent] = useState<{
+    id: string;
+    time: string;
+    type: 'single' | 'group' | 'infrastructure';
+    description: string;
+    affectedCount: number;
+    aiExplanation: string;
+    severity: 'low' | 'medium' | 'high';
+    status: 'resolved' | 'in-progress' | 'monitoring' | 'stable' | 'requires-action';
+    entityNames?: string[];
+  } | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -1182,20 +1203,47 @@ function DashboardEnhancedComponent() {
           ======================================== */}
 
       {/* AI INSIGHTS VIEW - Bird's Eye Network Overview */}
+      {/* UI Design inspired by Sunil Jose Kodiyan, Analytics Director Product Line */}
       {selectorTab === 'ai-insights' && (
         <div className="space-y-6">
-          {/* Header */}
-          <div className="border-b pb-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-500" />
-              <h3 className="text-lg font-semibold">AI-Powered Network Insights</h3>
+          {/* Header with View Toggle */}
+          <div className="border-b pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  <h3 className="text-lg font-semibold">AI-Powered Network Insights</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">Bird's eye view of your entire network with intelligent analysis</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setHealthViewMode('clients')}
+                  className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                    healthViewMode === 'clients'
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Clients
+                </button>
+                <button
+                  onClick={() => setHealthViewMode('devices')}
+                  className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                    healthViewMode === 'devices'
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Devices
+                </button>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">Bird's eye view of your entire network with intelligent analysis</p>
           </div>
 
           {/* Quick Stats Overview */}
           <div className="grid gap-4 md:grid-cols-4">
-            <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+            <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => { setSelectorTab('access-point'); }}>
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1207,7 +1255,7 @@ function DashboardEnhancedComponent() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20">
+            <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => { setSelectorTab('client'); }}>
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1247,6 +1295,505 @@ function DashboardEnhancedComponent() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Client/Device Health Stacked Bar Chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-teal-600" />
+                  <CardTitle className="text-base">{healthViewMode === 'clients' ? 'Client' : 'Device'} Health Overview</CardTitle>
+                </div>
+                <span className="text-sm text-muted-foreground">Last 24 hours</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Stacked Bar Chart Visualization */}
+              <div className="border rounded-lg p-4 bg-muted/20">
+                <div className="h-32 flex items-end gap-0.5">
+                  {/* Generate 24 bars for last 24 hours */}
+                  {Array.from({ length: 24 }, (_, i) => {
+                    const hour = (new Date().getHours() - 23 + i + 24) % 24;
+                    const isCurrentHour = i === 23;
+                    const baseHealthy = healthViewMode === 'clients' ? clientStats.total : apStats.online;
+                    const baseAttention = healthViewMode === 'clients' ? Math.max(0, clientStats.total - clientStats.authenticated) : apStats.offline;
+                    const total = baseHealthy + baseAttention || 1;
+                    const healthyPct = (baseHealthy / total) * 100;
+                    const attentionPct = (baseAttention / total) * 100;
+
+                    return (
+                      <div
+                        key={i}
+                        className={`flex-1 flex flex-col justify-end cursor-pointer transition-opacity ${isCurrentHour ? 'opacity-100' : 'opacity-60 hover:opacity-80'}`}
+                        onClick={() => setAiInsightsDetailPanel(true)}
+                        title={`${hour}:00 - ${healthViewMode === 'clients' ? 'Clients' : 'Devices'}: ${baseHealthy} healthy, ${baseAttention} needs attention`}
+                      >
+                        <div
+                          className="bg-red-500 rounded-t-sm"
+                          style={{ height: `${attentionPct}%`, minHeight: attentionPct > 0 ? '2px' : '0' }}
+                        />
+                        <div
+                          className="bg-green-500"
+                          style={{ height: `${healthyPct}%`, minHeight: healthyPct > 0 ? '4px' : '0' }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* X-axis labels */}
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  <span>{((new Date().getHours() - 23 + 24) % 24).toString().padStart(2, '0')}:00</span>
+                  <span>{((new Date().getHours() - 12 + 24) % 24).toString().padStart(2, '0')}:00</span>
+                  <span>Now</span>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded" />
+                  <span className="text-sm text-muted-foreground">Healthy</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-500 rounded" />
+                  <span className="text-sm text-muted-foreground">Needs Attention</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Detail Panel - Health Category Tabs & Events */}
+          {aiInsightsDetailPanel && (
+            <Card>
+              <CardContent className="pt-4">
+                {/* Health Category Tabs */}
+                <div className="border-b mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => { setAiActiveHealthTab('needsAttention'); setSelectedNetworkEvent(null); }}
+                        className={`pb-2 px-3 transition-colors border-b-2 ${
+                          aiActiveHealthTab === 'needsAttention' && !selectedNetworkEvent
+                            ? 'text-red-600 border-red-600'
+                            : 'text-muted-foreground border-transparent hover:text-foreground'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          <div className="text-left">
+                            <div className="text-sm font-medium">Needs Attention</div>
+                            <div className="text-xs opacity-75">
+                              {healthViewMode === 'clients'
+                                ? Math.max(0, clientStats.total - clientStats.authenticated)
+                                : apStats.offline} {healthViewMode}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { setAiActiveHealthTab('healthy'); setSelectedNetworkEvent(null); }}
+                        className={`pb-2 px-3 transition-colors border-b-2 ${
+                          aiActiveHealthTab === 'healthy' && !selectedNetworkEvent
+                            ? 'text-green-600 border-green-600'
+                            : 'text-muted-foreground border-transparent hover:text-foreground'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <div className="text-left">
+                            <div className="text-sm font-medium">Healthy</div>
+                            <div className="text-xs opacity-75">
+                              {healthViewMode === 'clients' ? clientStats.authenticated : apStats.online} {healthViewMode}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                      {/* Selected Event Tab */}
+                      {selectedNetworkEvent && (
+                        <div className="pb-2 px-3 text-purple-600 border-b-2 border-purple-600">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            <div className="text-left">
+                              <div className="text-sm font-medium truncate max-w-[200px]">{selectedNetworkEvent.description}</div>
+                              <div className="text-xs opacity-75">Event Details</div>
+                            </div>
+                            <button
+                              onClick={() => setSelectedNetworkEvent(null)}
+                              className="ml-2 hover:bg-purple-100 rounded-full p-1"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setAiInsightsDetailPanel(false)}
+                      className="p-2 hover:bg-muted rounded-lg transition-colors"
+                      title="Close details panel"
+                    >
+                      <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                {!selectedNetworkEvent ? (
+                  <div className="space-y-4">
+                    {/* Events Table */}
+                    <div className="border rounded-lg">
+                      <div className="bg-muted/50 px-4 py-2 border-b flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-teal-600" />
+                        <h3 className="text-sm font-medium">Recent Events</h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b bg-muted/30">
+                              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Time</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Event</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Affected</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Status</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">AI Explanation</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {/* Generate events based on real data */}
+                            {aiActiveHealthTab === 'needsAttention' ? (
+                              <>
+                                {apStats.offline > 0 && (
+                                  <tr className="border-b hover:bg-teal-500/5 transition-colors">
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-red-500" />
+                                        <span className="text-sm">Access Points Offline</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">{apStats.offline} APs</td>
+                                    <td className="px-4 py-3">
+                                      <span className="inline-flex items-center px-2 py-1 rounded text-xs text-red-600 bg-red-50">Requires Action</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-md">AI detected {apStats.offline} access point(s) are offline. Check network connectivity, PoE power delivery, or hardware status.</td>
+                                    <td className="px-4 py-3">
+                                      <button
+                                        onClick={() => setSelectedNetworkEvent({
+                                          id: 'ap-offline',
+                                          time: new Date().toLocaleTimeString(),
+                                          type: 'infrastructure',
+                                          description: 'Access Points Offline',
+                                          affectedCount: apStats.offline,
+                                          aiExplanation: `${apStats.offline} access point(s) are currently offline. This may impact wireless coverage for clients in affected areas. Check cable connections, PoE power budget, and AP hardware status.`,
+                                          severity: 'high',
+                                          status: 'requires-action'
+                                        })}
+                                        className="p-2 hover:bg-teal-100 rounded-lg transition-colors text-teal-600"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                )}
+                                {alertCounts.critical > 0 && (
+                                  <tr className="border-b hover:bg-teal-500/5 transition-colors">
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-red-500" />
+                                        <span className="text-sm">Critical Alerts Active</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">{alertCounts.critical} alerts</td>
+                                    <td className="px-4 py-3">
+                                      <span className="inline-flex items-center px-2 py-1 rounded text-xs text-red-600 bg-red-50">Critical</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-md">Multiple critical alerts require immediate attention to prevent service degradation.</td>
+                                    <td className="px-4 py-3">
+                                      <button
+                                        onClick={() => setSelectedNetworkEvent({
+                                          id: 'critical-alerts',
+                                          time: new Date().toLocaleTimeString(),
+                                          type: 'infrastructure',
+                                          description: 'Critical Alerts Active',
+                                          affectedCount: alertCounts.critical,
+                                          aiExplanation: `There are ${alertCounts.critical} critical alerts that require immediate attention. These may indicate hardware failures, configuration issues, or security concerns.`,
+                                          severity: 'high',
+                                          status: 'requires-action'
+                                        })}
+                                        className="p-2 hover:bg-teal-100 rounded-lg transition-colors text-teal-600"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                )}
+                                {clientStats.total > clientStats.authenticated && (
+                                  <tr className="border-b hover:bg-teal-500/5 transition-colors">
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                                        <span className="text-sm">Unauthenticated Clients</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">{clientStats.total - clientStats.authenticated} clients</td>
+                                    <td className="px-4 py-3">
+                                      <span className="inline-flex items-center px-2 py-1 rounded text-xs text-amber-600 bg-amber-50">Monitoring</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-md">Some clients are connected but not fully authenticated. This may indicate captive portal users or authentication issues.</td>
+                                    <td className="px-4 py-3">
+                                      <button
+                                        onClick={() => setSelectedNetworkEvent({
+                                          id: 'unauth-clients',
+                                          time: new Date().toLocaleTimeString(),
+                                          type: 'group',
+                                          description: 'Unauthenticated Clients',
+                                          affectedCount: clientStats.total - clientStats.authenticated,
+                                          aiExplanation: `${clientStats.total - clientStats.authenticated} client(s) are connected but not authenticated. This could be normal for guest networks with captive portals, or may indicate authentication server issues.`,
+                                          severity: 'medium',
+                                          status: 'monitoring'
+                                        })}
+                                        className="p-2 hover:bg-teal-100 rounded-lg transition-colors text-teal-600"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                )}
+                                {apStats.offline === 0 && alertCounts.critical === 0 && clientStats.total === clientStats.authenticated && (
+                                  <tr className="border-b">
+                                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                      <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500 opacity-50" />
+                                      No issues requiring attention
+                                    </td>
+                                  </tr>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <tr className="border-b hover:bg-teal-500/5 transition-colors">
+                                  <td className="px-4 py-3 text-sm text-muted-foreground">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                                      <span className="text-sm">Access Points Online</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-muted-foreground">{apStats.online} APs</td>
+                                  <td className="px-4 py-3">
+                                    <span className="inline-flex items-center px-2 py-1 rounded text-xs text-green-600 bg-green-50">Stable</span>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-muted-foreground max-w-md">All {apStats.online} access points are operational with normal performance metrics.</td>
+                                  <td className="px-4 py-3">
+                                    <button
+                                      onClick={() => setSelectorTab('access-point')}
+                                      className="p-2 hover:bg-teal-100 rounded-lg transition-colors text-teal-600"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                                <tr className="border-b hover:bg-teal-500/5 transition-colors">
+                                  <td className="px-4 py-3 text-sm text-muted-foreground">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                                      <span className="text-sm">Authenticated Clients</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-muted-foreground">{clientStats.authenticated} clients</td>
+                                  <td className="px-4 py-3">
+                                    <span className="inline-flex items-center px-2 py-1 rounded text-xs text-green-600 bg-green-50">Stable</span>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-muted-foreground max-w-md">All authenticated clients have stable connections with good signal quality.</td>
+                                  <td className="px-4 py-3">
+                                    <button
+                                      onClick={() => setSelectorTab('client')}
+                                      className="p-2 hover:bg-teal-100 rounded-lg transition-colors text-teal-600"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                                <tr className="border-b hover:bg-teal-500/5 transition-colors">
+                                  <td className="px-4 py-3 text-sm text-muted-foreground">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                                      <span className="text-sm">Network Throughput Normal</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-muted-foreground">{formatBps(clientStats.throughputUpload + clientStats.throughputDownload)}</td>
+                                  <td className="px-4 py-3">
+                                    <span className="inline-flex items-center px-2 py-1 rounded text-xs text-green-600 bg-green-50">Optimal</span>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-muted-foreground max-w-md">Network throughput is within normal parameters with no congestion detected.</td>
+                                  <td className="px-4 py-3">
+                                    <button className="p-2 hover:bg-teal-100 rounded-lg transition-colors text-teal-600">
+                                      <Eye className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              </>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* AI Assistant Panel */}
+                    <div className="border rounded-lg">
+                      <div className="bg-muted/50 px-4 py-2 border-b flex items-center gap-2">
+                        <Brain className="w-4 h-4 text-teal-600" />
+                        <h3 className="text-sm font-medium">AI Network Analysis</h3>
+                      </div>
+                      <div className="p-4">
+                        <div className="bg-muted/30 rounded-lg p-4">
+                          <pre className="whitespace-pre-wrap text-sm font-sans">
+                            {aiActiveHealthTab === 'needsAttention'
+                              ? `Network Analysis Summary:
+
+${apStats.offline > 0 ? `• ${apStats.offline} Access Point(s) are currently offline
+  Impact: Reduced wireless coverage in affected areas
+  Recommendation: Check PoE power delivery and network cables
+
+` : ''}${alertCounts.critical > 0 ? `• ${alertCounts.critical} Critical Alert(s) requiring attention
+  Impact: Potential service degradation
+  Recommendation: Review alert details and take corrective action
+
+` : ''}${clientStats.total > clientStats.authenticated ? `• ${clientStats.total - clientStats.authenticated} Client(s) pending authentication
+  Impact: Users may experience limited network access
+  Recommendation: Verify authentication server status
+
+` : ''}${apStats.offline === 0 && alertCounts.critical === 0 && clientStats.total === clientStats.authenticated ? `No issues detected. All systems operating normally.
+
+` : ''}Last analysis: ${lastUpdate?.toLocaleTimeString() || 'Updating...'}`
+                              : `Network Health Summary:
+
+• ${apStats.online} Access Points Online (${apStats.total > 0 ? Math.round((apStats.online / apStats.total) * 100) : 0}% availability)
+  All online APs are operating within normal parameters
+
+• ${clientStats.authenticated} Clients Authenticated (${clientStats.total > 0 ? Math.round((clientStats.authenticated / clientStats.total) * 100) : 0}% auth rate)
+  Average ${apStats.online > 0 ? Math.round(clientStats.total / apStats.online) : 0} clients per AP
+
+• Network Performance: ${formatBps(clientStats.throughputUpload + clientStats.throughputDownload)} total throughput
+  ↑ Upload: ${formatBps(clientStats.throughputUpload)}
+  ↓ Download: ${formatBps(clientStats.throughputDownload)}
+
+• ${Object.keys(apStats.models).length} AP model types deployed across the network
+
+Last analysis: ${lastUpdate?.toLocaleTimeString() || 'Updating...'}`}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Selected Event Detail View */
+                  <div className="space-y-4">
+                    {/* Event Context Header */}
+                    <div className="bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-sm font-medium text-teal-900 dark:text-teal-100 mb-1">Root Cause Analysis</h3>
+                          <p className="text-sm text-teal-700 dark:text-teal-300">{selectedNetworkEvent.description}</p>
+                        </div>
+                        <div className="text-sm text-teal-600 dark:text-teal-400">
+                          Event Time: {selectedNetworkEvent.time}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Event Details */}
+                    <div className="border rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`w-1 h-full rounded-full min-h-[80px] ${
+                            selectedNetworkEvent.severity === 'high' ? 'bg-red-600' :
+                            selectedNetworkEvent.severity === 'medium' ? 'bg-amber-500' :
+                            'bg-teal-600'
+                          }`}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-sm px-2 py-1 text-white rounded ${
+                              selectedNetworkEvent.severity === 'high' ? 'bg-red-600' :
+                              selectedNetworkEvent.severity === 'medium' ? 'bg-amber-500' :
+                              'bg-teal-600'
+                            }`}>
+                              {selectedNetworkEvent.type === 'infrastructure' ? 'Infrastructure Issue' :
+                               selectedNetworkEvent.type === 'group' ? 'Client Group Issue' :
+                               'Single Client Issue'}
+                            </span>
+                            <span className="text-sm text-muted-foreground">{selectedNetworkEvent.time}</span>
+                          </div>
+                          <h4 className="font-medium mb-2">{selectedNetworkEvent.description}</h4>
+                          <p className="text-muted-foreground mb-4">{selectedNetworkEvent.aiExplanation}</p>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <span className="text-sm text-muted-foreground">Affected</span>
+                              <p className="font-medium">{selectedNetworkEvent.affectedCount} {healthViewMode}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm text-muted-foreground">Severity</span>
+                              <p className="font-medium capitalize">{selectedNetworkEvent.severity}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm text-muted-foreground">Status</span>
+                              <p className="font-medium capitalize">{selectedNetworkEvent.status.replace('-', ' ')}</p>
+                            </div>
+                          </div>
+                          <div className="mt-4 pt-4 border-t">
+                            <h5 className="text-sm font-medium mb-2">Recommended Actions:</h5>
+                            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                              {selectedNetworkEvent.type === 'infrastructure' && (
+                                <>
+                                  <li>Check physical network connections and cable integrity</li>
+                                  <li>Verify PoE power budget and power source unit status</li>
+                                  <li>Review switch port configuration and status</li>
+                                  <li>Check for firmware updates or known issues</li>
+                                </>
+                              )}
+                              {selectedNetworkEvent.type === 'group' && (
+                                <>
+                                  <li>Review authentication server logs and status</li>
+                                  <li>Check RADIUS/LDAP connectivity</li>
+                                  <li>Verify client configuration and credentials</li>
+                                  <li>Monitor for pattern in affected clients</li>
+                                </>
+                              )}
+                              {selectedNetworkEvent.type === 'single' && (
+                                <>
+                                  <li>Check client device compatibility</li>
+                                  <li>Review client roaming history</li>
+                                  <li>Verify signal strength and interference</li>
+                                </>
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="flex gap-3">
+                      <Button variant="outline" size="sm" onClick={() => setSelectedNetworkEvent(null)}>
+                        <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                        Back to Events
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setSelectorTab('access-point')}>
+                        View Access Points
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setSelectorTab('client')}>
+                        View Clients
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Insight Cards Grid */}
           <div className="grid gap-6 md:grid-cols-2">
@@ -1295,6 +1842,47 @@ function DashboardEnhancedComponent() {
               </CardContent>
             </Card>
 
+            {/* Capacity Planning */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Capacity Planning</CardTitle>
+                    <CardDescription>Resource utilization trends</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Avg Clients per AP</span>
+                    <span className="font-medium">{apStats.online > 0 ? Math.round(clientStats.total / apStats.online) : 0}</span>
+                  </div>
+                  <Progress value={Math.min((apStats.online > 0 ? clientStats.total / apStats.online : 0) / 50 * 100, 100)} className="h-2" />
+                  <p className="text-xs text-muted-foreground">Recommended: &lt;50 clients per AP</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Upload className="h-4 w-4 text-blue-500" />
+                      <span className="text-xs text-muted-foreground">Upload</span>
+                    </div>
+                    <p className="text-lg font-semibold">{formatBps(clientStats.throughputUpload)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Download className="h-4 w-4 text-green-500" />
+                      <span className="text-xs text-muted-foreground">Download</span>
+                    </div>
+                    <p className="text-lg font-semibold">{formatBps(clientStats.throughputDownload)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Anomaly Detection */}
             <Card>
               <CardHeader className="pb-3">
@@ -1338,47 +1926,6 @@ function DashboardEnhancedComponent() {
                 )}
                 <div className="pt-2 text-xs text-muted-foreground">
                   Last checked: {lastUpdate?.toLocaleTimeString() || 'Updating...'}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Capacity Planning */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-blue-500/10">
-                    <BarChart3 className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Capacity Planning</CardTitle>
-                    <CardDescription>Resource utilization trends</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Avg Clients per AP</span>
-                    <span className="font-medium">{apStats.online > 0 ? Math.round(clientStats.total / apStats.online) : 0}</span>
-                  </div>
-                  <Progress value={Math.min((apStats.online > 0 ? clientStats.total / apStats.online : 0) / 50 * 100, 100)} className="h-2" />
-                  <p className="text-xs text-muted-foreground">Recommended: &lt;50 clients per AP</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Upload className="h-4 w-4 text-blue-500" />
-                      <span className="text-xs text-muted-foreground">Upload</span>
-                    </div>
-                    <p className="text-lg font-semibold">{formatBps(clientStats.throughputUpload)}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Download className="h-4 w-4 text-green-500" />
-                      <span className="text-xs text-muted-foreground">Download</span>
-                    </div>
-                    <p className="text-lg font-semibold">{formatBps(clientStats.throughputDownload)}</p>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1434,12 +1981,15 @@ function DashboardEnhancedComponent() {
             </Card>
           </div>
 
-          {/* Drill-down hint */}
+          {/* Drill-down hint & Attribution */}
           <Card className="bg-muted/30 border-dashed">
             <CardContent className="py-4">
-              <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-                <Sparkles className="h-4 w-4" />
-                <span>Select <strong>Site</strong>, <strong>AP</strong>, <strong>Switch</strong>, or <strong>Client</strong> above to drill into specific details</span>
+              <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4">
+                  <Sparkles className="h-4 w-4" />
+                  <span>Select <strong>Site</strong>, <strong>AP</strong>, <strong>Switch</strong> <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-amber-500/50 text-amber-600">Beta</Badge>, or <strong>Client</strong> above to drill into specific details</span>
+                </div>
+                <p className="text-xs opacity-60 mt-2">UI Design inspired by Sunil Jose Kodiyan, Analytics Director Product Line</p>
               </div>
             </CardContent>
           </Card>
