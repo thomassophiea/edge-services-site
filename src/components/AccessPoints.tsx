@@ -1547,6 +1547,16 @@ export function AccessPoints({ onShowDetail }: AccessPointsProps) {
               </span>
             </div>
             <div className="flex items-center gap-2">
+              {/* Live Update Configuration - Pulsing gear icon */}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0 relative"
+                title="Configure Live E911 Updates (RedSky)"
+              >
+                <span className="absolute inset-0 rounded-md bg-red-500/20 animate-ping" />
+                <Settings className="h-3.5 w-3.5 text-red-600 animate-[spin_3s_linear_infinite]" />
+              </Button>
               <Button
                 onClick={handleDownloadBSSIDs}
                 size="sm"
