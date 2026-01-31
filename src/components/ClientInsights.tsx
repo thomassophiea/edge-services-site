@@ -1626,6 +1626,13 @@ export function ClientInsightsFullScreen({ macAddress, clientName, onClose }: Cl
                 {chartConfigs.map(config => renderChart(config))}
               </div>
             )}
+
+            {/* Attribution */}
+            <div className="text-center pt-4 border-t mt-6">
+              <p className="text-[10px] text-muted-foreground opacity-60">
+                UI Design by Karl Benedict, Mgr of Systems Engineering
+              </p>
+            </div>
           </div>
         </div>
       </div>
