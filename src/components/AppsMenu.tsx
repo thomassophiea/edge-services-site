@@ -34,8 +34,8 @@ interface App {
 const APPS: App[] = [
   {
     id: 'mobility-engine-mgmt',
-    name: 'EDGE Management',
-    description: 'Full-featured management dashboard for EDGE platform',
+    name: 'AIO Management',
+    description: 'Full-featured management dashboard for AIO platform',
     isActive: true,
     icon: Activity,
     url: 'https://tsophiea.ddns.net:443/management'

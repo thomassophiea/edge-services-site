@@ -1714,7 +1714,7 @@ What specific issue can I help you troubleshoot?`;
   private getHelpResponse(): string {
     return `🤖 **Network Assistant Help:**
 
-I can help you with information about your EDGE network:
+I can help you with information about your AIO network:
 
 **📡 Access Points:**
 • "How many access points?" - Get AP count and status

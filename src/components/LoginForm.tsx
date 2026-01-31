@@ -57,13 +57,13 @@ export function LoginForm({ onLoginSuccess, theme = 'system', onThemeToggle }: L
             <div className="flex justify-center mb-4">
               <ImageWithFallback 
                 src={extremeNetworksLogo}
-                alt="EDGE Platform"
+                alt="AIO Platform"
                 className="h-12 w-12 object-contain"
               />
             </div>
-            <CardTitle className="text-2xl"><span className="font-bold">Extreme</span> Platform ONE™ | EDGE</CardTitle>
+            <CardTitle className="text-2xl"><span className="font-bold">Extreme</span> Platform ONE™ | AIO</CardTitle>
             <CardDescription className="text-center mt-2">
-              Edge Data Gateway Engine
+              AI-Informed Orchestration
             </CardDescription>
           </CardHeader>
         <CardContent>

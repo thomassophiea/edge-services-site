@@ -15,16 +15,16 @@ export interface BrandConfig {
 
 export const branding: Record<ThemeMode, BrandConfig> = {
   default: {
-    name: 'EDGE',
-    fullName: 'Extreme Platform ONE | EDGE',
-    tagline: 'Edge Data Gateway Engine',
+    name: 'AIO',
+    fullName: 'Extreme Platform ONE | AIO',
+    tagline: 'AI-Informed Orchestration',
     logo: '/logo.svg',
     icon: '/favicon.ico'
   },
   dark: {
-    name: 'EDGE',
-    fullName: 'Extreme Platform ONE | EDGE',
-    tagline: 'Edge Data Gateway Engine',
+    name: 'AIO',
+    fullName: 'Extreme Platform ONE | AIO',
+    tagline: 'AI-Informed Orchestration',
     logo: '/logo.svg',
     icon: '/favicon.ico'
   }
