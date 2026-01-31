@@ -69,11 +69,11 @@ export function UserMenu({ onLogout, theme, onThemeToggle, userEmail, onNavigate
   const menuItems = [
     {
       type: 'item',
-      label: 'About EDGE Platform',
+      label: 'About AIO Platform',
       icon: null,
       beta: true,
       action: () => {
-        console.log('About EDGE Platform');
+        console.log('About AIO Platform');
       }
     },
     {

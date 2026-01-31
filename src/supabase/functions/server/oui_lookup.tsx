@@ -45,7 +45,7 @@ export async function lookupVendor(mac: string): Promise<string> {
       method: 'GET',
       headers: {
         'Accept': 'text/plain',
-        'User-Agent': 'EDGE-Platform-Dashboard/1.0'
+        'User-Agent': 'AIO-Platform-Dashboard/1.0'
       }
     });
     
